@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
-import { MonsterInstance } from "../data/types";
+import { MonsterInstance, PlayerState, TrainerData } from "../data/types";
+import { EncounterData, rollEncounter } from "../data/encounterSystem";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -8,7 +9,9 @@ interface SceneData {
   mapKey?: string;
   playerX?: number;
   playerY?: number;
-  playerInstance?: MonsterInstance;
+  playerState?: PlayerState;
+  playerInstance?: MonsterInstance; // legacy
+  trainerDefeated?: string;
 }
 
 export class MapScene extends Phaser.Scene {
@@ -33,8 +36,12 @@ export class MapScene extends Phaser.Scene {
   // Battle
   private battleKey?: Phaser.Input.Keyboard.Key;
   private startingBattle = false;
-  // Player monster data (persisted)
-  private playerInstance?: MonsterInstance;
+  // Player state
+  private playerState?: PlayerState;
+  // Encounter & trainers
+  private encounterData?: EncounterData;
+  private allTrainers: TrainerData[] = [];
+  private trainerSprites: Map<string, Phaser.GameObjects.Image> = new Map();
 
   constructor() {
     super({ key: "MapScene" });
@@ -51,8 +58,23 @@ export class MapScene extends Phaser.Scene {
     this.animFrame = 0;
     this.animTimer = 0;
     this.startingBattle = false;
-    if (data.playerInstance) {
-      this.playerInstance = data.playerInstance;
+    if (data.playerState) {
+      this.playerState = data.playerState;
+    } else if (data.playerInstance) {
+      // Legacy compat
+      this.playerState = {
+        party: [data.playerInstance],
+        box: [],
+        items: [{ id: "moon_capsule", count: 5 }],
+        money: 1000,
+        defeatedTrainers: [],
+      };
+    }
+    // Track defeated trainer
+    if (data.trainerDefeated && this.playerState) {
+      if (!this.playerState.defeatedTrainers.includes(data.trainerDefeated)) {
+        this.playerState.defeatedTrainers.push(data.trainerDefeated);
+      }
     }
   }
 
@@ -68,6 +90,8 @@ export class MapScene extends Phaser.Scene {
     this.setupDpad();
     this.setupCamera();
     this.setupBattleKey();
+    this.loadEncounterData();
+    this.placeTrainers();
 
     // Fade in
     this.cameras.main.fadeIn(300, 0, 0, 0);
@@ -289,7 +313,11 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  private startBattle(): void {
+  private startBattle(
+    enemyDataId?: string,
+    enemyLevel?: number,
+    trainerData?: TrainerData
+  ): void {
     if (this.startingBattle || this.isWarping) return;
     this.startingBattle = true;
     this.moveQueue = null;
@@ -298,22 +326,91 @@ export class MapScene extends Phaser.Scene {
       mapKey: this.currentMapKey,
       playerX: this.gridX,
       playerY: this.gridY,
-      playerInstance: this.playerInstance,
+      playerState: this.playerState,
+      enemyDataId,
+      enemyLevel,
+      isWild: !trainerData,
+      trainerData,
     });
+  }
+
+  private loadEncounterData(): void {
+    this.encounterData = this.cache.json.get("encounters") as EncounterData;
+    this.allTrainers = (this.cache.json.get("trainers") || []) as TrainerData[];
+  }
+
+  private placeTrainers(): void {
+    this.trainerSprites.clear();
+    const mapTrainers = this.allTrainers.filter(
+      t => t.mapKey === this.currentMapKey
+    );
+
+    for (const trainer of mapTrainers) {
+      // Skip defeated trainers
+      if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
+
+      const sprite = this.add.image(
+        trainer.x * this.tileSize + this.tileSize / 2,
+        trainer.y * this.tileSize + this.tileSize / 2,
+        "player-frame-0"
+      ).setDepth(9).setTint(0xff6644);
+      this.trainerSprites.set(trainer.id, sprite);
+    }
+  }
+
+  private checkTrainerSight(): void {
+    if (this.startingBattle || this.isWarping) return;
+    const mapTrainers = this.allTrainers.filter(
+      t => t.mapKey === this.currentMapKey
+    );
+
+    for (const trainer of mapTrainers) {
+      if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
+
+      let inSight = false;
+      const dx = this.gridX - trainer.x;
+      const dy = this.gridY - trainer.y;
+
+      switch (trainer.direction) {
+        case "down":
+          inSight = dx === 0 && dy > 0 && dy <= trainer.sightRange;
+          break;
+        case "up":
+          inSight = dx === 0 && dy < 0 && Math.abs(dy) <= trainer.sightRange;
+          break;
+        case "left":
+          inSight = dy === 0 && dx < 0 && Math.abs(dx) <= trainer.sightRange;
+          break;
+        case "right":
+          inSight = dy === 0 && dx > 0 && dx <= trainer.sightRange;
+          break;
+      }
+
+      if (inSight) {
+        this.startBattle(undefined, undefined, trainer);
+        return;
+      }
+    }
   }
 
   private checkRandomEncounter(): void {
     if (this.startingBattle || this.isWarping) return;
-    if (this.currentMapKey !== "sand_route_1") return;
+
+    // Check encounter table for this map
+    const table = this.encounterData?.[this.currentMapKey];
+    if (!table) return;
 
     // Check if current tile is sand (tileId === 5)
     const { layers } = this.mapData;
     const tileId = layers.floor[this.gridY]?.[this.gridX];
     if (tileId !== 5) return;
 
-    // 15% chance per step
-    if (Math.random() < 0.15) {
-      this.startBattle();
+    // Use encounter rate from data
+    if (Math.random() < table.encounterRate) {
+      const result = rollEncounter(table);
+      if (result) {
+        this.startBattle(result.monsterId, result.level);
+      }
     }
   }
 
@@ -401,6 +498,9 @@ export class MapScene extends Phaser.Scene {
 
         // Check for warp after movement completes
         this.checkWarp();
+
+        // Check trainer sight
+        this.checkTrainerSight();
 
         // Check random encounter
         this.checkRandomEncounter();

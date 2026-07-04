@@ -1,0 +1,11 @@
+{
+  "sand_route_1": {
+    "encounterRate": 0.15,
+    "monsters": [
+      { "id": "mochichi", "weight": 40, "minLevel": 3, "maxLevel": 5 },
+      { "id": "sunagani", "weight": 35, "minLevel": 3, "maxLevel": 5 },
+      { "id": "rairai", "weight": 20, "minLevel": 4, "maxLevel": 6 },
+      { "id": "regonyas", "weight": 5, "minLevel": 5, "maxLevel": 7 }
+    ]
+  }
+}

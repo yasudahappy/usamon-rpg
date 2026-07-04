@@ -28,6 +28,8 @@ export class BootScene extends Phaser.Scene {
     this.load.json("types", "/data/types.json");
     this.load.json("monsters", "/data/monsters/monsters.json");
     this.load.json("moves", "/data/moves/moves.json");
+    this.load.json("encounters", "/data/encounters.json");
+    this.load.json("trainers", "/data/trainers.json");
   }
 
   create(): void {

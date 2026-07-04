@@ -6,7 +6,10 @@ import {
   MonsterData,
   MoveData,
   MonsterInstance,
+  PlayerState,
+  TrainerData,
 } from "../data/types";
+import { attemptCapture } from "../data/encounterSystem";
 import {
   getExpReward,
   getExpForLevel,
@@ -94,6 +97,14 @@ export class BattleScene extends Phaser.Scene {
   // Move learning
   private pendingMoveId: string | null = null;
 
+  // Player state (party, items, money)
+  private playerState!: PlayerState;
+
+  // Battle mode
+  private isWild = true;
+  private trainerData: TrainerData | null = null;
+  private trainerPartyIndex = 0;
+
   constructor() {
     super({ key: "BattleScene" });
   }
@@ -102,9 +113,12 @@ export class BattleScene extends Phaser.Scene {
     mapKey?: string;
     playerX?: number;
     playerY?: number;
-    playerInstance?: MonsterInstance;
+    playerState?: PlayerState;
+    playerInstance?: MonsterInstance; // legacy compat
     enemyDataId?: string;
     enemyLevel?: number;
+    isWild?: boolean;
+    trainerData?: TrainerData;
   }): void {
     this.returnMapKey = data.mapKey || "moonbase";
     this.returnPlayerX = data.playerX || 0;
@@ -120,24 +134,42 @@ export class BattleScene extends Phaser.Scene {
     this.evolutionCancelled = false;
     this.pendingEvolution = null;
     this.pendingMoveId = null;
+    this.isWild = data.isWild !== false;
+    this.trainerData = data.trainerData || null;
+    this.trainerPartyIndex = 0;
 
     // Load JSON data
     this.allMonsters = this.cache.json.get("monsters") as MonsterData[];
     this.allMoves = this.cache.json.get("moves") as MoveData[];
     this.typeChart = this.cache.json.get("types") as TypeChart;
 
-    // Player instance
-    if (data.playerInstance) {
-      this.playerInstance = data.playerInstance;
+    // Player state
+    if (data.playerState) {
+      this.playerState = data.playerState;
     } else {
-      // Default test: usamon Lv5
-      this.playerInstance = this.createDefaultPlayer();
+      // Default state
+      const defaultInstance = data.playerInstance || this.createDefaultPlayer();
+      this.playerState = {
+        party: [defaultInstance],
+        box: [],
+        items: [{ id: "moon_capsule", count: 5 }],
+        money: 1000,
+        defeatedTrainers: [],
+      };
     }
 
+    // Player instance is first alive party member
+    this.playerInstance = this.playerState.party.find(m => m.currentHp > 0) || this.playerState.party[0];
+
     // Enemy instance
-    const enemyDataId = data.enemyDataId || this.randomWildMonster();
-    const enemyLevel = data.enemyLevel || Phaser.Math.Between(3, 6);
-    this.enemyInstance = this.createInstance(enemyDataId, enemyLevel);
+    if (this.trainerData) {
+      const firstEnemy = this.trainerData.party[0];
+      this.enemyInstance = this.createInstance(firstEnemy.id, firstEnemy.level);
+    } else {
+      const enemyDataId = data.enemyDataId || this.randomWildMonster();
+      const enemyLevel = data.enemyLevel || Phaser.Math.Between(3, 6);
+      this.enemyInstance = this.createInstance(enemyDataId, enemyLevel);
+    }
   }
 
   private createDefaultPlayer(): MonsterInstance {
@@ -236,16 +268,19 @@ export class BattleScene extends Phaser.Scene {
 
     this.time.delayedCall(600, () => {
       const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
-      this.showMessages(
-        [
-          `やせいの ${enemyData.name} が あらわれた！`,
-          `ゆけっ！ ${this.playerMon.name}！`,
-        ],
-        () => {
-          this.phase = "command";
-          this.showCommandWindow();
-        }
-      );
+      const introMsgs: string[] = [];
+      if (this.trainerData) {
+        introMsgs.push(`${this.trainerData.name}が しょうぶを しかけてきた！`);
+        introMsgs.push(this.trainerData.dialogBefore);
+        introMsgs.push(`${this.trainerData.name}は ${enemyData.name}を くりだした！`);
+      } else {
+        introMsgs.push(`やせいの ${enemyData.name} が あらわれた！`);
+      }
+      introMsgs.push(`ゆけっ！ ${this.playerMon.name}！`);
+      this.showMessages(introMsgs, () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      });
     });
   }
 
@@ -667,16 +702,10 @@ export class BattleScene extends Phaser.Scene {
         this.showMoveSelect();
         break;
       case 1:
-        this.showMessages(["まだ もっていない！"], () => {
-          this.phase = "command";
-          this.showCommandWindow();
-        });
+        this.handleItemUse();
         break;
       case 2:
-        this.showMessages(["なかまが いない！"], () => {
-          this.phase = "command";
-          this.showCommandWindow();
-        });
+        this.handleSwitch();
         break;
       case 3:
         this.hideCommandWindow();
@@ -952,7 +981,15 @@ export class BattleScene extends Phaser.Scene {
       });
       const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
       this.showMessages([`${enemyData.name} を たおした！`], () => {
-        this.handleExpGain();
+        if (this.trainerData && this.trainerPartyIndex < this.trainerData.party.length - 1) {
+          // Trainer has more monsters
+          this.handleExpGain(() => this.trainerSendNext());
+        } else if (this.trainerData) {
+          // Last trainer mon defeated
+          this.trainerSendNext();
+        } else {
+          this.handleExpGain();
+        }
       });
     } else if (this.playerMon.currentHp <= 0) {
       this.phase = "defeat";
@@ -970,7 +1007,10 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Experience & Level Up ----
 
-  private handleExpGain(): void {
+  private afterExpCallback: (() => void) | null = null;
+
+  private handleExpGain(afterDone?: () => void): void {
+    this.afterExpCallback = afterDone || null;
     const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
     const expGain = getExpReward(enemyData.baseExp, this.enemyInstance.level);
     this.playerInstance.exp += expGain;
@@ -1198,6 +1238,10 @@ export class BattleScene extends Phaser.Scene {
     if (evoResult) {
       this.pendingEvolution = evoResult;
       this.startEvolution();
+    } else if (this.afterExpCallback) {
+      const cb = this.afterExpCallback;
+      this.afterExpCallback = null;
+      this.time.delayedCall(500, () => cb());
     } else {
       this.time.delayedCall(500, () => this.endBattle());
     }
@@ -1282,6 +1326,191 @@ export class BattleScene extends Phaser.Scene {
     );
   }
 
+  // ---- Item Use (Capture) ----
+
+  private handleItemUse(): void {
+    this.hideCommandWindow();
+
+    if (!this.isWild) {
+      this.showMessages(["トレーナーのモンスターには 使えない！"], () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      });
+      return;
+    }
+
+    const capsuleItem = this.playerState.items.find(i => i.id === "moon_capsule");
+    if (!capsuleItem || capsuleItem.count <= 0) {
+      this.showMessages(["ムーンカプセルを もっていない！"], () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      });
+      return;
+    }
+
+    capsuleItem.count--;
+    this.phase = "executing";
+    const enemyData = this.allMonsters.find(m => m.id === this.enemyInstance.dataId)!;
+
+    const { success, shakes } = attemptCapture(
+      this.enemyMon.currentHp,
+      this.enemyMon.maxHp
+    );
+
+    const msgs: string[] = [`ムーンカプセルを なげた！`];
+
+    // Shake animation messages
+    for (let i = 0; i < shakes; i++) {
+      msgs.push("コロン…");
+    }
+
+    if (success) {
+      msgs.push(`やった！ ${enemyData.name}を つかまえた！`);
+
+      this.showMessages(msgs, () => {
+        // Add to party or box
+        if (this.playerState.party.length < 6) {
+          this.playerState.party.push(this.enemyInstance);
+          this.showMessages(
+            [`${enemyData.name}が なかまに くわわった！`],
+            () => this.endBattle()
+          );
+        } else {
+          this.playerState.box.push(this.enemyInstance);
+          this.showMessages(
+            [
+              `手持ちが いっぱいだ！`,
+              `${enemyData.name}は あずかりボックスに おくられた！`,
+            ],
+            () => this.endBattle()
+          );
+        }
+      });
+    } else {
+      msgs.push(`だめだ！ ${enemyData.name}に にげられた！`);
+      this.showMessages(msgs, () => {
+        // Enemy gets a turn
+        const enemyMove = this.enemyMon.moves[
+          Math.floor(Math.random() * this.enemyMon.moves.length)
+        ];
+        this.executeAction(
+          this.enemyMon, enemyMove, this.playerMon, this.playerSprite,
+          () => {
+            if (this.playerMon.currentHp <= 0) {
+              this.checkBattleEnd();
+            } else {
+              this.phase = "command";
+              this.showCommandWindow();
+            }
+          }
+        );
+      });
+    }
+  }
+
+  // ---- Monster Switch ----
+
+  private handleSwitch(): void {
+    this.hideCommandWindow();
+    const aliveParty = this.playerState.party.filter(
+      (m, i) => m.currentHp > 0 && m !== this.playerInstance
+    );
+
+    if (aliveParty.length === 0) {
+      this.showMessages(["こうたいできる なかまが いない！"], () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      });
+      return;
+    }
+
+    // Show switch UI using command slots
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+
+    const positions = [
+      { x: 160, y: 360 }, { x: 480, y: 360 },
+      { x: 160, y: 410 }, { x: 480, y: 410 },
+      { x: 160, y: 455 }, { x: 480, y: 455 },
+    ];
+
+    const options = [
+      ...aliveParty.map(m => {
+        const d = this.allMonsters.find(md => md.id === m.dataId)!;
+        return `${d.name} Lv${m.level} HP${m.currentHp}/${m.maxHp}`;
+      }),
+      "もどる",
+    ];
+
+    this.phase = "learn_move"; // Reuse for selection
+    this.selectedCommand = 0;
+
+    for (let i = 0; i < options.length; i++) {
+      const px = positions[i % positions.length].x;
+      const py = positions[i % positions.length].y;
+      const bg = this.add.graphics().setDepth(20);
+      const text = this.add.text(px, py, options[i], {
+        fontSize: "14px", color: "#ffffff", fontFamily: "monospace",
+      }).setOrigin(0.5).setDepth(21);
+      const zone = this.add.zone(px, py, 280, 40).setInteractive().setDepth(22).setOrigin(0.5);
+      const idx = i;
+      zone.on("pointerdown", () => {
+        if (idx === aliveParty.length) {
+          // Cancel
+          this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+          this.commandSlots = [];
+          this.rebuildCommandWindow();
+          this.phase = "command";
+          this.showCommandWindow();
+        } else {
+          this.doSwitch(aliveParty[idx]);
+        }
+      });
+      this.commandSlots.push({ label: options[i], x: px, y: py, bg, text, zone });
+    }
+    this.highlightLearnSlots(0);
+    this.setMessage("だれを だす？");
+  }
+
+  private doSwitch(newMon: MonsterInstance): void {
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+
+    const oldData = this.allMonsters.find(m => m.id === this.playerInstance.dataId)!;
+    const newData = this.allMonsters.find(m => m.id === newMon.dataId)!;
+
+    this.playerInstance = newMon;
+    this.playerMon = this.instanceToBattleMonster(this.playerInstance);
+
+    // Update sprite
+    this.playerSprite.setTexture(`monster-${newMon.dataId}`);
+    this.playerNameText.setText(`${newData.name}  Lv${newMon.level}`);
+    this.drawHpBarGraphic(this.playerHpBar, 30, 218, 150, this.playerMon.currentHp / this.playerMon.maxHp);
+    this.playerHpText.setText(`${this.playerMon.currentHp}/${this.playerMon.maxHp}`);
+
+    this.showMessages(
+      [`${oldData.name} もどれ！ ゆけっ！${newData.name}！`],
+      () => {
+        // Enemy gets a turn
+        const enemyMove = this.enemyMon.moves[
+          Math.floor(Math.random() * this.enemyMon.moves.length)
+        ];
+        this.executeAction(
+          this.enemyMon, enemyMove, this.playerMon, this.playerSprite,
+          () => {
+            if (this.playerMon.currentHp <= 0) {
+              this.checkBattleEnd();
+            } else {
+              this.rebuildCommandWindow();
+              this.phase = "command";
+              this.showCommandWindow();
+            }
+          }
+        );
+      }
+    );
+  }
+
   // ---- End Battle ----
 
   private endBattle(): void {
@@ -1291,22 +1520,62 @@ export class BattleScene extends Phaser.Scene {
         mapKey: this.returnMapKey,
         playerX: this.returnPlayerX,
         playerY: this.returnPlayerY,
-        playerInstance: this.playerInstance,
+        playerState: this.playerState,
+        trainerDefeated: this.trainerData?.id,
       });
     });
   }
 
   private endBattleDefeat(): void {
-    // Reset player HP for respawn
-    const data = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
-    this.playerInstance.currentHp = this.playerInstance.maxHp;
+    // Reset all party HP for respawn
+    this.playerState.party.forEach(m => { m.currentHp = m.maxHp; });
 
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       this.scene.start("MapScene", {
         mapKey: "moonbase",
-        playerInstance: this.playerInstance,
+        playerState: this.playerState,
       });
     });
+  }
+
+  // ---- Trainer: next monster ----
+
+  private trainerSendNext(): void {
+    this.trainerPartyIndex++;
+    if (!this.trainerData || this.trainerPartyIndex >= this.trainerData.party.length) {
+      // Trainer defeated!
+      const prize = this.trainerData!.prizeMoneyBase;
+      this.playerState.money += prize;
+      this.playerState.defeatedTrainers.push(this.trainerData!.id);
+      this.showMessages(
+        [
+          this.trainerData!.dialogWin,
+          `${prize}円 もらった！`,
+        ],
+        () => this.handleExpGain()
+      );
+      return;
+    }
+
+    const next = this.trainerData!.party[this.trainerPartyIndex];
+    this.enemyInstance = this.createInstance(next.id, next.level);
+    this.enemyMon = this.instanceToBattleMonster(this.enemyInstance);
+
+    const enemyData = this.allMonsters.find(m => m.id === next.id)!;
+    this.enemySprite.setTexture(`monster-${next.id}`);
+    this.enemySprite.setAlpha(1);
+    this.enemySprite.setY(80);
+    this.enemyNameText.setText(`${enemyData.name}  Lv${next.level}`);
+    this.drawHpBarGraphic(this.enemyHpBar, 400, 58, 200, 1);
+    this.enemyHpText.setText(`${this.enemyMon.currentHp}/${this.enemyMon.maxHp}`);
+
+    this.showMessages(
+      [`${this.trainerData!.name}は ${enemyData.name}を くりだした！`],
+      () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      }
+    );
   }
 }

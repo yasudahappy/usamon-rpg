@@ -54,3 +54,30 @@ export interface MonsterInstance {
   stats: Stats;
   moves: string[]; // moveId array, max 4
 }
+
+// ---- Player state ----
+
+export interface PlayerState {
+  party: MonsterInstance[]; // max 6
+  box: MonsterInstance[]; // overflow storage
+  items: { id: string; count: number }[];
+  money: number;
+  defeatedTrainers: string[]; // trainer ids
+}
+
+// ---- Trainer data ----
+
+export interface TrainerData {
+  id: string;
+  name: string;
+  mapKey: string;
+  x: number;
+  y: number;
+  direction: string;
+  sightRange: number;
+  prizeMoneyBase: number;
+  dialogBefore: string;
+  dialogWin: string;
+  dialogLose: string;
+  party: { id: string; level: number }[];
+}
