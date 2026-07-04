@@ -28,6 +28,9 @@ export class MapScene extends Phaser.Scene {
   private currentMapKey = "moonbase";
   private spawnX?: number;
   private spawnY?: number;
+  // Battle
+  private battleKey?: Phaser.Input.Keyboard.Key;
+  private startingBattle = false;
 
   constructor() {
     super({ key: "MapScene" });
@@ -43,6 +46,7 @@ export class MapScene extends Phaser.Scene {
     this.dpadState = null;
     this.animFrame = 0;
     this.animTimer = 0;
+    this.startingBattle = false;
   }
 
   create(): void {
@@ -56,6 +60,7 @@ export class MapScene extends Phaser.Scene {
     this.setupInput();
     this.setupDpad();
     this.setupCamera();
+    this.setupBattleKey();
 
     // Fade in
     this.cameras.main.fadeIn(300, 0, 0, 0);
@@ -269,6 +274,41 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
+  private setupBattleKey(): void {
+    if (this.input.keyboard) {
+      this.battleKey = this.input.keyboard.addKey(
+        Phaser.Input.Keyboard.KeyCodes.B
+      );
+    }
+  }
+
+  private startBattle(): void {
+    if (this.startingBattle || this.isWarping) return;
+    this.startingBattle = true;
+    this.moveQueue = null;
+
+    this.scene.start("BattleScene", {
+      mapKey: this.currentMapKey,
+      playerX: this.gridX,
+      playerY: this.gridY,
+    });
+  }
+
+  private checkRandomEncounter(): void {
+    if (this.startingBattle || this.isWarping) return;
+    if (this.currentMapKey !== "sand_route_1") return;
+
+    // Check if current tile is sand (tileId === 5)
+    const { layers } = this.mapData;
+    const tileId = layers.floor[this.gridY]?.[this.gridX];
+    if (tileId !== 5) return;
+
+    // 15% chance per step
+    if (Math.random() < 0.15) {
+      this.startBattle();
+    }
+  }
+
   private checkWarp(): void {
     if (!this.mapData.warps || this.isWarping) return;
 
@@ -354,6 +394,9 @@ export class MapScene extends Phaser.Scene {
         // Check for warp after movement completes
         this.checkWarp();
 
+        // Check random encounter
+        this.checkRandomEncounter();
+
         // Process queued move (only if not warping)
         if (this.moveQueue && !this.isWarping) {
           const queued = this.moveQueue;
@@ -365,7 +408,16 @@ export class MapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.isWarping) return;
+    if (this.isWarping || this.startingBattle) return;
+
+    // B key → battle (test)
+    if (
+      this.battleKey &&
+      Phaser.Input.Keyboard.JustDown(this.battleKey)
+    ) {
+      this.startBattle();
+      return;
+    }
 
     // Walk animation
     this.animTimer += delta;

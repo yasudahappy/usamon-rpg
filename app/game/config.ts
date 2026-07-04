@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { MapScene } from "./scenes/MapScene";
+import { BattleScene } from "./scenes/BattleScene";
 
 export function createGameConfig(
   parent: string | HTMLElement
@@ -16,6 +17,6 @@ export function createGameConfig(
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, MapScene],
+    scene: [BootScene, MapScene, BattleScene],
   };
 }

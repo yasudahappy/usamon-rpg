@@ -44,6 +44,7 @@ export class BootScene extends Phaser.Scene {
 
     this.generateTileset(allTileTypes);
     this.generatePlayerSprite();
+    this.generateMonsterSprites();
     this.scene.start("MapScene", { mapKey: "moonbase" });
   }
 
@@ -257,6 +258,74 @@ export class BootScene extends Phaser.Scene {
 
       this.textures.addCanvas(key, canvas);
     });
+  }
+
+  private generateMonsterSprites(): void {
+    // うさもん: シアン(#40d0ff)の円形、直径64px
+    {
+      const size = 64;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#40d0ff";
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+      // Highlight
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.beginPath();
+      ctx.arc(size / 2 - 8, size / 2 - 8, 10, 0, Math.PI * 2);
+      ctx.fill();
+      // Eyes
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(size / 2 - 8, size / 2 - 4, 5, 0, Math.PI * 2);
+      ctx.arc(size / 2 + 8, size / 2 - 4, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#111111";
+      ctx.beginPath();
+      ctx.arc(size / 2 - 7, size / 2 - 3, 2.5, 0, Math.PI * 2);
+      ctx.arc(size / 2 + 9, size / 2 - 3, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Mouth
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2 + 2, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+      ctx.stroke();
+      this.textures.addCanvas("monster-usamon", canvas);
+    }
+
+    // レゴニャス: 紫(#9040c0)の円形、直径48px
+    {
+      const size = 48;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#9040c0";
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+      // Highlight
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.beginPath();
+      ctx.arc(size / 2 - 6, size / 2 - 6, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // Eyes (cat-like)
+      ctx.fillStyle = "#ffff00";
+      ctx.beginPath();
+      ctx.ellipse(size / 2 - 6, size / 2 - 3, 4, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(size / 2 + 6, size / 2 - 3, 4, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#111111";
+      ctx.beginPath();
+      ctx.ellipse(size / 2 - 6, size / 2 - 3, 1.5, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(size / 2 + 6, size / 2 - 3, 1.5, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      this.textures.addCanvas("monster-regonyas", canvas);
+    }
   }
 
   private generatePlayerSprite(): void {
