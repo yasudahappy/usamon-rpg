@@ -1093,17 +1093,17 @@
   "tileTypes": {
     "8": {
       "name": "建物",
-      "color": "#9a9aa0",
+      "color": "#c8d8e8",
       "walkable": false
     },
     "9": {
       "name": "ドア",
-      "color": "#30d5c8",
+      "color": "#60e8d8",
       "walkable": true
     },
     "11": {
       "name": "道",
-      "color": "#5a5a60",
+      "color": "#d0ccc0",
       "walkable": true
     }
   },

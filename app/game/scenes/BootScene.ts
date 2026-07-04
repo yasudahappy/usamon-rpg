@@ -82,23 +82,22 @@ export class BootScene extends Phaser.Scene {
       ctx.fillRect(0, 0, ts, ts);
 
       if (id === "0") {
-        // Floor: subtle grid lines
-        ctx.strokeStyle = "#333338";
+        // Floor: subtle grid lines (bright cream)
+        ctx.strokeStyle = "#d8d0c0";
         ctx.lineWidth = 1;
         ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
-        // Small dot pattern
-        ctx.fillStyle = "#333338";
+        ctx.fillStyle = "#d0c8b8";
         ctx.fillRect(ts / 2, ts / 2, 2, 2);
       } else if (id === "1") {
-        // Wall: metallic border effect
-        ctx.fillStyle = "#7a7a82";
+        // Wall: bright metallic
+        ctx.fillStyle = "#d0d8e0";
         ctx.fillRect(0, 0, ts, 3);
         ctx.fillRect(0, 0, 3, ts);
-        ctx.fillStyle = "#5a5a62";
+        ctx.fillStyle = "#a8b0c0";
         ctx.fillRect(ts - 3, 0, 3, ts);
         ctx.fillRect(0, ts - 3, ts, 3);
         // Rivet details
-        ctx.fillStyle = "#8a8a92";
+        ctx.fillStyle = "#d8e0e8";
         ctx.beginPath();
         ctx.arc(6, 6, 2, 0, Math.PI * 2);
         ctx.arc(ts - 6, 6, 2, 0, Math.PI * 2);
@@ -106,59 +105,56 @@ export class BootScene extends Phaser.Scene {
         ctx.arc(ts - 6, ts - 6, 2, 0, Math.PI * 2);
         ctx.fill();
       } else if (id === "2") {
-        // Equipment: panel with lines
-        ctx.strokeStyle = "#4a5a6c";
+        // Equipment: bright blue panel
+        ctx.strokeStyle = "#70a8d0";
         ctx.lineWidth = 2;
         ctx.strokeRect(2, 2, ts - 4, ts - 4);
-        ctx.fillStyle = "#2a3a4c";
+        ctx.fillStyle = "#60a0c8";
         ctx.fillRect(6, 8, ts - 12, 3);
         ctx.fillRect(6, 14, ts - 12, 3);
         ctx.fillRect(6, 20, ts - 12, 3);
       } else if (id === "3") {
-        // Console: glowing screen
-        ctx.fillStyle = "#0a4a6a";
+        // Console: bright glowing screen
+        ctx.fillStyle = "#40b0d8";
         ctx.fillRect(4, 4, ts - 8, ts - 8);
-        ctx.fillStyle = "#2a8aaa";
+        ctx.fillStyle = "#70d0f0";
         ctx.fillRect(6, 6, ts - 12, ts - 12);
         // Blinking light
-        ctx.fillStyle = "#4affaa";
+        ctx.fillStyle = "#a0ffc0";
         ctx.fillRect(8, 8, 4, 4);
       } else if (id === "4") {
-        // Central device: purple glow
-        ctx.fillStyle = "#3a2a5b";
+        // Central device: bright purple
+        ctx.fillStyle = "#a080d0";
         ctx.fillRect(2, 2, ts - 4, ts - 4);
-        ctx.strokeStyle = "#6a4a9b";
+        ctx.strokeStyle = "#c0a0f0";
         ctx.lineWidth = 2;
         ctx.strokeRect(4, 4, ts - 8, ts - 8);
-        ctx.fillStyle = "#8a6abb";
+        ctx.fillStyle = "#d0b8ff";
         ctx.beginPath();
         ctx.arc(ts / 2, ts / 2, 4, 0, Math.PI * 2);
         ctx.fill();
       } else if (id === "5") {
-        // Sand (regolith): beige-gray with grain texture
+        // Sand: bright cream with grain texture
         const seed = 42;
         let s = seed;
         const rand = () => {
           s = (s * 16807) % 2147483647;
           return s / 2147483647;
         };
-        // Dark grains
-        ctx.fillStyle = "#7a7468";
+        ctx.fillStyle = "#c8c0a8";
         for (let i = 0; i < 30; i++) {
           ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
         }
-        // Light grains
-        ctx.fillStyle = "#9a9488";
+        ctx.fillStyle = "#e0d8c0";
         for (let i = 0; i < 15; i++) {
           ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
         }
-        // Subtle border for tile separation
-        ctx.strokeStyle = "#7a7a70";
+        ctx.strokeStyle = "#c8c0b0";
         ctx.lineWidth = 0.5;
         ctx.strokeRect(0, 0, ts, ts);
       } else if (id === "6") {
-        // Rock: dark with jagged shape
-        ctx.fillStyle = "#3a3a40";
+        // Rock: light gray
+        ctx.fillStyle = "#98a0a8";
         ctx.beginPath();
         ctx.moveTo(4, ts - 4);
         ctx.lineTo(8, 6);
@@ -168,7 +164,7 @@ export class BootScene extends Phaser.Scene {
         ctx.closePath();
         ctx.fill();
         // Highlight edges
-        ctx.strokeStyle = "#6a6a70";
+        ctx.strokeStyle = "#b8c0c8";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(8, 6);
@@ -176,7 +172,7 @@ export class BootScene extends Phaser.Scene {
         ctx.lineTo(24, 8);
         ctx.stroke();
         // Shadow edge
-        ctx.strokeStyle = "#2a2a30";
+        ctx.strokeStyle = "#8890a0";
         ctx.beginPath();
         ctx.moveTo(4, ts - 4);
         ctx.lineTo(ts - 4, ts - 4);
@@ -187,15 +183,15 @@ export class BootScene extends Phaser.Scene {
         const cy = ts / 2;
         const r = ts / 2 - 2;
         const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-        grd.addColorStop(0, "#0a0a10");
-        grd.addColorStop(0.6, "#151520");
-        grd.addColorStop(1, "#2a2a35");
+        grd.addColorStop(0, "#706880");
+        grd.addColorStop(0.6, "#807898");
+        grd.addColorStop(1, "#9890a8");
         ctx.fillStyle = grd;
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
         // Rim highlight (top-left lit)
-        ctx.strokeStyle = "#5a5a65";
+        ctx.strokeStyle = "#b0a8c0";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(cx, cy, r, Math.PI * 1.1, Math.PI * 1.7);
@@ -203,14 +199,14 @@ export class BootScene extends Phaser.Scene {
       } else if (id === "8") {
         // Building: metal panel with rivets and seams
         // Raised border
-        ctx.fillStyle = "#a8a8b0";
+        ctx.fillStyle = "#d8e0e8";
         ctx.fillRect(0, 0, ts, 3);
         ctx.fillRect(0, 0, 3, ts);
-        ctx.fillStyle = "#858590";
+        ctx.fillStyle = "#b0b8c8";
         ctx.fillRect(ts - 3, 0, 3, ts);
         ctx.fillRect(0, ts - 3, ts, 3);
         // Panel seams
-        ctx.strokeStyle = "#8a8a95";
+        ctx.strokeStyle = "#b8c0d0";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(ts / 2, 3);
@@ -221,7 +217,7 @@ export class BootScene extends Phaser.Scene {
         ctx.lineTo(ts - 3, ts / 2);
         ctx.stroke();
         // Rivets
-        ctx.fillStyle = "#babac0";
+        ctx.fillStyle = "#e0e8f0";
         ctx.beginPath();
         ctx.arc(6, 6, 1.5, 0, Math.PI * 2);
         ctx.arc(ts - 6, 6, 1.5, 0, Math.PI * 2);
@@ -229,43 +225,43 @@ export class BootScene extends Phaser.Scene {
         ctx.arc(ts - 6, ts - 6, 1.5, 0, Math.PI * 2);
         ctx.fill();
       } else if (id === "9") {
-        // Door: glowing cyan portal
-        ctx.fillStyle = "#1a3a4a";
+        // Door: bright turquoise portal
+        ctx.fillStyle = "#40d0c0";
         ctx.fillRect(2, 0, ts - 4, ts);
         // Gradient glow
         const grd = ctx.createLinearGradient(0, 0, ts, 0);
-        grd.addColorStop(0, "rgba(48,213,200,0.2)");
-        grd.addColorStop(0.5, "rgba(48,213,200,0.7)");
-        grd.addColorStop(1, "rgba(48,213,200,0.2)");
+        grd.addColorStop(0, "rgba(96,232,216,0.3)");
+        grd.addColorStop(0.5, "rgba(96,232,216,0.8)");
+        grd.addColorStop(1, "rgba(96,232,216,0.3)");
         ctx.fillStyle = grd;
         ctx.fillRect(4, 2, ts - 8, ts - 4);
         // Center light bar
-        ctx.fillStyle = "#60f0e8";
+        ctx.fillStyle = "#a0fff0";
         ctx.fillRect(ts / 2 - 1, 4, 2, ts - 8);
         // Glow border
-        ctx.strokeStyle = "#40e0d8";
+        ctx.strokeStyle = "#80f0e0";
         ctx.lineWidth = 1;
         ctx.strokeRect(3, 1, ts - 6, ts - 2);
       } else if (id === "10") {
-        // Gym floor: red-black checkered
+        // Gym floor: bright red-pink checkered
         const half = ts / 2;
-        ctx.fillStyle = "#6a2020";
+        ctx.fillStyle = "#e8a0a0";
         ctx.fillRect(0, 0, half, half);
         ctx.fillRect(half, half, half, half);
-        ctx.fillStyle = "#3a1010";
+        ctx.fillStyle = "#f0c0c0";
         ctx.fillRect(half, 0, half, half);
         ctx.fillRect(0, half, half, half);
         // Subtle border
-        ctx.strokeStyle = "#4a1515";
+        ctx.strokeStyle = "#d8b0b0";
         ctx.lineWidth = 1;
         ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
       } else if (id === "11") {
-        // Road: medium gray with subtle texture
-        ctx.strokeStyle = "#656570";
+        // Road: bright beige
+        ctx.strokeStyle = "#c0b8a8";
         ctx.lineWidth = 1;
         ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
         // Road texture dots
-        ctx.fillStyle = "#686870";
+        ctx.fillStyle = "#c8c0b0";
         ctx.fillRect(8, 8, 2, 2);
         ctx.fillRect(22, 22, 2, 2);
       }

@@ -31,7 +31,7 @@ export default function PhaserGame() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#0a0a0f",
+        backgroundColor: "#1a2040",
         overflow: "hidden",
         touchAction: "none",
       }}

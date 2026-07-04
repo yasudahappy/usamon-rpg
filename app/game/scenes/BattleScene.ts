@@ -288,26 +288,31 @@ export class BattleScene extends Phaser.Scene {
 
   private drawBackground(): void {
     const g = this.add.graphics();
+    // Sky: dark navy gradient (not black)
     for (let y = 0; y < 160; y++) {
       const t = y / 160;
-      const r = Math.floor(5 + t * 10);
-      const gv = Math.floor(5 + t * 12);
-      const b = Math.floor(15 + t * 20);
+      const r = Math.floor(20 + t * 30);
+      const gv = Math.floor(25 + t * 40);
+      const b = Math.floor(60 + t * 50);
       g.fillStyle(Phaser.Display.Color.GetColor(r, gv, b));
       g.fillRect(0, y, 640, 1);
     }
+    // Bright stars
     const rng = new Phaser.Math.RandomDataGenerator(["battlestars"]);
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 50; i++) {
       const sx = rng.between(0, 640);
-      const sy = rng.between(0, 130);
-      const brightness = rng.between(150, 255);
+      const sy = rng.between(0, 140);
+      const brightness = rng.between(200, 255);
       g.fillStyle(Phaser.Display.Color.GetColor(brightness, brightness, brightness));
-      g.fillRect(sx, sy, 1, 1);
+      g.fillRect(sx, sy, rng.between(1, 2), rng.between(1, 2));
     }
+    // Ground: cream-light gray
     for (let y = 160; y < 240; y++) {
       const t = (y - 160) / 80;
-      const c = Math.floor(40 + t * 20);
-      g.fillStyle(Phaser.Display.Color.GetColor(c, c, c + 5));
+      const r = Math.floor(200 + t * 20);
+      const gv = Math.floor(195 + t * 15);
+      const b = Math.floor(180 + t * 10);
+      g.fillStyle(Phaser.Display.Color.GetColor(r, gv, b));
       g.fillRect(0, y, 640, 1);
     }
   }

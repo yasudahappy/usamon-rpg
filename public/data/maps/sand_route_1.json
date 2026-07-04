@@ -1293,22 +1293,22 @@
   "tileTypes": {
     "5": {
       "name": "砂場",
-      "color": "#8a8278",
+      "color": "#d8d0b8",
       "walkable": true
     },
     "6": {
       "name": "岩",
-      "color": "#4a4a50",
+      "color": "#a0a8b0",
       "walkable": false
     },
     "7": {
       "name": "クレーター",
-      "color": "#1a1a20",
+      "color": "#90889c",
       "walkable": false
     },
     "9": {
       "name": "ドア",
-      "color": "#30d5c8",
+      "color": "#60e8d8",
       "walkable": true
     }
   },

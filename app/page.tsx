@@ -12,7 +12,7 @@ const PhaserGame = dynamic(() => import("./game/PhaserGame"), {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#0a0a0f",
+        backgroundColor: "#1a2040",
         color: "#666",
         fontFamily: "monospace",
         fontSize: "16px",

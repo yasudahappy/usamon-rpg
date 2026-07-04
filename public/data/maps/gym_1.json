@@ -421,22 +421,22 @@
   "tileTypes": {
     "1": {
       "name": "壁",
-      "color": "#6b6b73",
+      "color": "#b8c0cc",
       "walkable": false
     },
     "4": {
       "name": "中央装置",
-      "color": "#4a3a6b",
+      "color": "#b090e0",
       "walkable": false
     },
     "9": {
       "name": "ドア",
-      "color": "#30d5c8",
+      "color": "#60e8d8",
       "walkable": true
     },
     "10": {
       "name": "ジム床",
-      "color": "#5a2020",
+      "color": "#e8a0a0",
       "walkable": true
     }
   },

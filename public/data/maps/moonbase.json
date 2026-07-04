@@ -673,32 +673,32 @@
   "tileTypes": {
     "0": {
       "name": "床",
-      "color": "#2a2a2e",
+      "color": "#e8e0d0",
       "walkable": true
     },
     "1": {
       "name": "壁",
-      "color": "#6b6b73",
+      "color": "#b8c0cc",
       "walkable": false
     },
     "2": {
       "name": "機器",
-      "color": "#3a4a5c",
+      "color": "#88b8d8",
       "walkable": false
     },
     "3": {
       "name": "コンソール",
-      "color": "#1a6b8a",
+      "color": "#50c8e8",
       "walkable": false
     },
     "4": {
       "name": "中央装置",
-      "color": "#4a3a6b",
+      "color": "#b090e0",
       "walkable": false
     },
     "9": {
       "name": "ドア",
-      "color": "#30d5c8",
+      "color": "#60e8d8",
       "walkable": true
     }
   },
