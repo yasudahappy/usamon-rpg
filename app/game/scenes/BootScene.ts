@@ -83,17 +83,24 @@ export class BootScene extends Phaser.Scene {
     this.generatePlayerSprite();
     this.generateMonsterSprites();
 
-    // Show credits briefly
-    const w = this.cameras.main.width;
-    const h = this.cameras.main.height;
-    const credits = this.add.text(w / 2, h - 30,
-      "Tileset: Ninja Adventure by Pixel-Boy & AAA (CC0)",
-      { fontSize: "10px", color: "#888888", fontFamily: "monospace" }
-    ).setOrigin(0.5).setAlpha(0.8);
+    // Check for existing save data
+    let hasSave = false;
+    try {
+      hasSave = !!localStorage.getItem("usamon-player-setup");
+    } catch (e) { /* ignore */ }
 
-    this.time.delayedCall(100, () => {
+    if (hasSave) {
+      // Load saved setup and apply suit color
+      try {
+        const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
+        if (setup.suitColor) {
+          this.applySuitFrames(setup.suitColor);
+        }
+      } catch (e) { /* ignore */ }
       this.scene.start("MapScene", { mapKey: "moonbase" });
-    });
+    } else {
+      this.scene.start("SetupScene");
+    }
   }
 
   private generateTileset(
@@ -383,6 +390,29 @@ export class BootScene extends Phaser.Scene {
 
       this.textures.addCanvas(key, canvas);
     });
+  }
+
+  private applySuitFrames(suitColor: string): void {
+    const suitKey = `player-${suitColor}`;
+    if (!this.textures.exists(suitKey)) return;
+    for (let frame = 0; frame < 2; frame++) {
+      const srcFrame = this.textures.getFrame(suitKey, frame);
+      if (srcFrame) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext("2d")!;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(
+          srcFrame.source.image as HTMLImageElement,
+          srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
+          0, 0, 32, 32
+        );
+        const key = `player-frame-${frame}`;
+        if (this.textures.exists(key)) this.textures.remove(key);
+        this.textures.addCanvas(key, canvas);
+      }
+    }
   }
 
   private generatePlayerSprite(): void {
