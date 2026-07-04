@@ -3,11 +3,18 @@ import { MapData } from "../types";
 
 type Direction = "up" | "down" | "left" | "right";
 
+interface SceneData {
+  mapKey?: string;
+  playerX?: number;
+  playerY?: number;
+}
+
 export class MapScene extends Phaser.Scene {
   private mapData!: MapData;
   private player!: Phaser.GameObjects.Image;
   private tileSize!: number;
   private isMoving = false;
+  private isWarping = false;
   private moveQueue: Direction | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -17,13 +24,31 @@ export class MapScene extends Phaser.Scene {
   private gridY = 0;
   // Virtual d-pad
   private dpadState: Direction | null = null;
+  // Map transition
+  private currentMapKey = "moonbase";
+  private spawnX?: number;
+  private spawnY?: number;
 
   constructor() {
     super({ key: "MapScene" });
   }
 
+  init(data: SceneData): void {
+    this.currentMapKey = data.mapKey || "moonbase";
+    this.spawnX = data.playerX;
+    this.spawnY = data.playerY;
+    this.isMoving = false;
+    this.isWarping = false;
+    this.moveQueue = null;
+    this.dpadState = null;
+    this.animFrame = 0;
+    this.animTimer = 0;
+  }
+
   create(): void {
-    this.mapData = this.cache.json.get("map-moonbase") as MapData;
+    this.mapData = this.cache.json.get(
+      `map-${this.currentMapKey}`
+    ) as MapData;
     this.tileSize = this.mapData.tileSize;
 
     this.drawMap();
@@ -31,6 +56,12 @@ export class MapScene extends Phaser.Scene {
     this.setupInput();
     this.setupDpad();
     this.setupCamera();
+
+    // Fade in
+    this.cameras.main.fadeIn(300, 0, 0, 0);
+
+    // Show map name overlay
+    this.showMapName(this.mapData.name);
   }
 
   private drawMap(): void {
@@ -39,15 +70,23 @@ export class MapScene extends Phaser.Scene {
       for (let x = 0; x < width; x++) {
         const tileId = layers.floor[y][x];
         const key = `tile-${tileId}`;
-        this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, key);
+        this.add.image(
+          x * tileSize + tileSize / 2,
+          y * tileSize + tileSize / 2,
+          key
+        );
       }
     }
   }
 
   private createPlayer(): void {
-    const { playerStart, tileSize } = this.mapData;
-    this.gridX = playerStart.x;
-    this.gridY = playerStart.y;
+    if (this.spawnX !== undefined && this.spawnY !== undefined) {
+      this.gridX = this.spawnX;
+      this.gridY = this.spawnY;
+    } else {
+      this.gridX = this.mapData.playerStart.x;
+      this.gridY = this.mapData.playerStart.y;
+    }
 
     // Find first walkable position if start is blocked
     if (this.isCollision(this.gridX, this.gridY)) {
@@ -64,8 +103,8 @@ export class MapScene extends Phaser.Scene {
     }
 
     this.player = this.add.image(
-      this.gridX * tileSize + tileSize / 2,
-      this.gridY * tileSize + tileSize / 2,
+      this.gridX * this.tileSize + this.tileSize / 2,
+      this.gridY * this.tileSize + this.tileSize / 2,
       "player-frame-0"
     );
     this.player.setDepth(10);
@@ -89,7 +128,10 @@ export class MapScene extends Phaser.Scene {
     const baseX = 90;
     const baseY = this.scale.height - 100;
 
-    const dpadContainer = this.add.container(0, 0).setDepth(100).setScrollFactor(0);
+    const dpadContainer = this.add
+      .container(0, 0)
+      .setDepth(100)
+      .setScrollFactor(0);
 
     // Semi-transparent background circle
     const bg = this.add.graphics();
@@ -97,7 +139,12 @@ export class MapScene extends Phaser.Scene {
     bg.fillCircle(baseX, baseY, 85);
     dpadContainer.add(bg);
 
-    const buttons: { dir: Direction; x: number; y: number; label: string }[] = [
+    const buttons: {
+      dir: Direction;
+      x: number;
+      y: number;
+      label: string;
+    }[] = [
       { dir: "up", x: baseX, y: baseY - btnSize - gap, label: "▲" },
       { dir: "down", x: baseX, y: baseY + btnSize + gap, label: "▼" },
       { dir: "left", x: baseX - btnSize - gap, y: baseY, label: "◀" },
@@ -105,10 +152,16 @@ export class MapScene extends Phaser.Scene {
     ];
 
     buttons.forEach(({ dir, x, y, label }) => {
-      const bg = this.add.graphics();
-      bg.fillStyle(0x444455, 0.6);
-      bg.fillRoundedRect(x - btnSize / 2, y - btnSize / 2, btnSize, btnSize, 8);
-      dpadContainer.add(bg);
+      const btnBg = this.add.graphics();
+      btnBg.fillStyle(0x444455, 0.6);
+      btnBg.fillRoundedRect(
+        x - btnSize / 2,
+        y - btnSize / 2,
+        btnSize,
+        btnSize,
+        8
+      );
+      dpadContainer.add(btnBg);
 
       const text = this.add
         .text(x, y, label, {
@@ -128,21 +181,39 @@ export class MapScene extends Phaser.Scene {
 
       zone.on("pointerdown", () => {
         this.dpadState = dir;
-        bg.clear();
-        bg.fillStyle(0x6688aa, 0.8);
-        bg.fillRoundedRect(x - btnSize / 2, y - btnSize / 2, btnSize, btnSize, 8);
+        btnBg.clear();
+        btnBg.fillStyle(0x6688aa, 0.8);
+        btnBg.fillRoundedRect(
+          x - btnSize / 2,
+          y - btnSize / 2,
+          btnSize,
+          btnSize,
+          8
+        );
       });
       zone.on("pointerup", () => {
         this.dpadState = null;
-        bg.clear();
-        bg.fillStyle(0x444455, 0.6);
-        bg.fillRoundedRect(x - btnSize / 2, y - btnSize / 2, btnSize, btnSize, 8);
+        btnBg.clear();
+        btnBg.fillStyle(0x444455, 0.6);
+        btnBg.fillRoundedRect(
+          x - btnSize / 2,
+          y - btnSize / 2,
+          btnSize,
+          btnSize,
+          8
+        );
       });
       zone.on("pointerout", () => {
         this.dpadState = null;
-        bg.clear();
-        bg.fillStyle(0x444455, 0.6);
-        bg.fillRoundedRect(x - btnSize / 2, y - btnSize / 2, btnSize, btnSize, 8);
+        btnBg.clear();
+        btnBg.fillStyle(0x444455, 0.6);
+        btnBg.fillRoundedRect(
+          x - btnSize / 2,
+          y - btnSize / 2,
+          btnSize,
+          btnSize,
+          8
+        );
       });
     });
   }
@@ -152,6 +223,72 @@ export class MapScene extends Phaser.Scene {
     const worldHeight = this.mapData.height * this.tileSize;
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+  }
+
+  private showMapName(name: string): void {
+    const w = this.cameras.main.width;
+
+    // Semi-transparent black bar
+    const bar = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bar.fillStyle(0x000000, 0.7);
+    bar.fillRect(0, 16, w, 40);
+    bar.setAlpha(0);
+
+    // Map name text
+    const text = this.add
+      .text(w / 2, 36, name, {
+        fontSize: "18px",
+        color: "#ffffff",
+        fontFamily: "monospace",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(201)
+      .setAlpha(0);
+
+    // Fade in → hold → fade out
+    this.tweens.add({
+      targets: [bar, text],
+      alpha: 1,
+      duration: 400,
+      ease: "Power2",
+      onComplete: () => {
+        this.time.delayedCall(2000, () => {
+          this.tweens.add({
+            targets: [bar, text],
+            alpha: 0,
+            duration: 400,
+            ease: "Power2",
+            onComplete: () => {
+              bar.destroy();
+              text.destroy();
+            },
+          });
+        });
+      },
+    });
+  }
+
+  private checkWarp(): void {
+    if (!this.mapData.warps || this.isWarping) return;
+
+    const warp = this.mapData.warps.find(
+      (w) => w.x === this.gridX && w.y === this.gridY
+    );
+
+    if (warp) {
+      this.isWarping = true;
+      this.moveQueue = null;
+
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.restart({
+          mapKey: warp.targetMap,
+          playerX: warp.targetX,
+          playerY: warp.targetY,
+        });
+      });
+    }
   }
 
   private getInputDirection(): Direction | null {
@@ -176,8 +313,8 @@ export class MapScene extends Phaser.Scene {
   }
 
   private tryMove(dir: Direction): void {
-    if (this.isMoving) {
-      this.moveQueue = dir;
+    if (this.isMoving || this.isWarping) {
+      if (!this.isWarping) this.moveQueue = dir;
       return;
     }
 
@@ -213,8 +350,12 @@ export class MapScene extends Phaser.Scene {
       ease: "Linear",
       onComplete: () => {
         this.isMoving = false;
-        // Process queued move
-        if (this.moveQueue) {
+
+        // Check for warp after movement completes
+        this.checkWarp();
+
+        // Process queued move (only if not warping)
+        if (this.moveQueue && !this.isWarping) {
           const queued = this.moveQueue;
           this.moveQueue = null;
           this.tryMove(queued);
@@ -224,6 +365,8 @@ export class MapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    if (this.isWarping) return;
+
     // Walk animation
     this.animTimer += delta;
     if (this.animTimer > 250) {

@@ -1,3 +1,11 @@
+export interface Warp {
+  x: number;
+  y: number;
+  targetMap: string;
+  targetX: number;
+  targetY: number;
+}
+
 export interface MapData {
   name: string;
   description: string;
@@ -13,6 +21,7 @@ export interface MapData {
     { name: string; color: string; walkable: boolean }
   >;
   playerStart: { x: number; y: number };
+  warps?: Warp[];
 }
 
 export interface TypeChart {

@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
 
+const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1"];
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: "BootScene" });
@@ -18,22 +20,42 @@ export class BootScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Load map data
-    this.load.json("map-moonbase", "/data/maps/moonbase.json");
+    // Load all map data
+    MAP_KEYS.forEach((name) => {
+      this.load.json(`map-${name}`, `/data/maps/${name}.json`);
+    });
     this.load.json("types", "/data/types.json");
   }
 
   create(): void {
-    const mapData = this.cache.json.get("map-moonbase") as MapData;
-    this.generateTileset(mapData);
+    // Collect all unique tileTypes across all maps
+    const allTileTypes: Record<
+      string,
+      { name: string; color: string; walkable: boolean }
+    > = {};
+    MAP_KEYS.forEach((name) => {
+      const mapData = this.cache.json.get(`map-${name}`) as MapData;
+      Object.entries(mapData.tileTypes).forEach(([id, tile]) => {
+        if (!allTileTypes[id]) {
+          allTileTypes[id] = tile;
+        }
+      });
+    });
+
+    this.generateTileset(allTileTypes);
     this.generatePlayerSprite();
-    this.scene.start("MapScene");
+    this.scene.start("MapScene", { mapKey: "moonbase" });
   }
 
-  private generateTileset(mapData: MapData): void {
-    const ts = mapData.tileSize;
+  private generateTileset(
+    tileTypes: Record<
+      string,
+      { name: string; color: string; walkable: boolean }
+    >
+  ): void {
+    const ts = 32;
 
-    Object.entries(mapData.tileTypes).forEach(([id, tile]) => {
+    Object.entries(tileTypes).forEach(([id, tile]) => {
       const key = `tile-${id}`;
       const canvas = document.createElement("canvas");
       canvas.width = ts;
@@ -97,6 +119,140 @@ export class BootScene extends Phaser.Scene {
         ctx.beginPath();
         ctx.arc(ts / 2, ts / 2, 4, 0, Math.PI * 2);
         ctx.fill();
+      } else if (id === "5") {
+        // Sand (regolith): beige-gray with grain texture
+        const seed = 42;
+        let s = seed;
+        const rand = () => {
+          s = (s * 16807) % 2147483647;
+          return s / 2147483647;
+        };
+        // Dark grains
+        ctx.fillStyle = "#7a7468";
+        for (let i = 0; i < 30; i++) {
+          ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        }
+        // Light grains
+        ctx.fillStyle = "#9a9488";
+        for (let i = 0; i < 15; i++) {
+          ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        }
+        // Subtle border for tile separation
+        ctx.strokeStyle = "#7a7a70";
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(0, 0, ts, ts);
+      } else if (id === "6") {
+        // Rock: dark with jagged shape
+        ctx.fillStyle = "#3a3a40";
+        ctx.beginPath();
+        ctx.moveTo(4, ts - 4);
+        ctx.lineTo(8, 6);
+        ctx.lineTo(16, 2);
+        ctx.lineTo(24, 8);
+        ctx.lineTo(ts - 4, ts - 4);
+        ctx.closePath();
+        ctx.fill();
+        // Highlight edges
+        ctx.strokeStyle = "#6a6a70";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(8, 6);
+        ctx.lineTo(16, 2);
+        ctx.lineTo(24, 8);
+        ctx.stroke();
+        // Shadow edge
+        ctx.strokeStyle = "#2a2a30";
+        ctx.beginPath();
+        ctx.moveTo(4, ts - 4);
+        ctx.lineTo(ts - 4, ts - 4);
+        ctx.stroke();
+      } else if (id === "7") {
+        // Crater: dark circular depression with rim
+        const cx = ts / 2;
+        const cy = ts / 2;
+        const r = ts / 2 - 2;
+        const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grd.addColorStop(0, "#0a0a10");
+        grd.addColorStop(0.6, "#151520");
+        grd.addColorStop(1, "#2a2a35");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        // Rim highlight (top-left lit)
+        ctx.strokeStyle = "#5a5a65";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, Math.PI * 1.1, Math.PI * 1.7);
+        ctx.stroke();
+      } else if (id === "8") {
+        // Building: metal panel with rivets and seams
+        // Raised border
+        ctx.fillStyle = "#a8a8b0";
+        ctx.fillRect(0, 0, ts, 3);
+        ctx.fillRect(0, 0, 3, ts);
+        ctx.fillStyle = "#858590";
+        ctx.fillRect(ts - 3, 0, 3, ts);
+        ctx.fillRect(0, ts - 3, ts, 3);
+        // Panel seams
+        ctx.strokeStyle = "#8a8a95";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ts / 2, 3);
+        ctx.lineTo(ts / 2, ts - 3);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(3, ts / 2);
+        ctx.lineTo(ts - 3, ts / 2);
+        ctx.stroke();
+        // Rivets
+        ctx.fillStyle = "#babac0";
+        ctx.beginPath();
+        ctx.arc(6, 6, 1.5, 0, Math.PI * 2);
+        ctx.arc(ts - 6, 6, 1.5, 0, Math.PI * 2);
+        ctx.arc(6, ts - 6, 1.5, 0, Math.PI * 2);
+        ctx.arc(ts - 6, ts - 6, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (id === "9") {
+        // Door: glowing cyan portal
+        ctx.fillStyle = "#1a3a4a";
+        ctx.fillRect(2, 0, ts - 4, ts);
+        // Gradient glow
+        const grd = ctx.createLinearGradient(0, 0, ts, 0);
+        grd.addColorStop(0, "rgba(48,213,200,0.2)");
+        grd.addColorStop(0.5, "rgba(48,213,200,0.7)");
+        grd.addColorStop(1, "rgba(48,213,200,0.2)");
+        ctx.fillStyle = grd;
+        ctx.fillRect(4, 2, ts - 8, ts - 4);
+        // Center light bar
+        ctx.fillStyle = "#60f0e8";
+        ctx.fillRect(ts / 2 - 1, 4, 2, ts - 8);
+        // Glow border
+        ctx.strokeStyle = "#40e0d8";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(3, 1, ts - 6, ts - 2);
+      } else if (id === "10") {
+        // Gym floor: red-black checkered
+        const half = ts / 2;
+        ctx.fillStyle = "#6a2020";
+        ctx.fillRect(0, 0, half, half);
+        ctx.fillRect(half, half, half, half);
+        ctx.fillStyle = "#3a1010";
+        ctx.fillRect(half, 0, half, half);
+        ctx.fillRect(0, half, half, half);
+        // Subtle border
+        ctx.strokeStyle = "#4a1515";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+      } else if (id === "11") {
+        // Road: medium gray with subtle texture
+        ctx.strokeStyle = "#656570";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        // Road texture dots
+        ctx.fillStyle = "#686870";
+        ctx.fillRect(8, 8, 2, 2);
+        ctx.fillRect(22, 22, 2, 2);
       }
 
       this.textures.addCanvas(key, canvas);
