@@ -1,8 +1,22 @@
 import type { Metadata } from "next";
 
+const baseUrl = "https://yasudahappy.github.io/usamon-rpg";
+
 export const metadata: Metadata = {
-  title: "うさもんRPG",
-  description: "月面を舞台にしたモンスター収集RPG",
+  title: "うさもんの大冒険 〜月面探索編〜",
+  description: "月面を舞台にしたモンスター収集RPG。うさもんと一緒に月の砂場を探検しよう！",
+  metadataBase: new URL(baseUrl),
+  openGraph: {
+    title: "うさもんの大冒険 〜月面探索編〜",
+    description: "月面を舞台にしたモンスター収集RPG",
+    images: [{ url: `${baseUrl}/ogp.jpg`, width: 1024, height: 1024 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "うさもんの大冒険 〜月面探索編〜",
+    images: [`${baseUrl}/ogp.jpg`],
+  },
 };
 
 export default function RootLayout({

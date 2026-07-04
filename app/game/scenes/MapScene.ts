@@ -25,6 +25,10 @@ export class MapScene extends Phaser.Scene {
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
   private animFrame = 0;
   private animTimer = 0;
+  // Tile animation
+  private tileAnimTimer = 0;
+  private tileAnimFrame = 0;
+  private animatedTileSprites: Map<string, Phaser.GameObjects.Image> = new Map();
   private gridX = 0;
   private gridY = 0;
   // Virtual d-pad
@@ -100,17 +104,32 @@ export class MapScene extends Phaser.Scene {
     this.showMapName(this.mapData.name);
   }
 
+  // Sand tile IDs that should animate
+  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36];
+  // Sparkle frame mapping: sand tile -> [sparkle frame A, sparkle frame B]
+  private static SPARKLE_MAP: Record<number, [number, number]> = {
+    5: [41, 45], 6: [42, 46], 7: [43, 47], 8: [44, 48],
+    9: [41, 45], 10: [42, 46], 11: [43, 47], 12: [44, 48],
+    32: [41, 45], 33: [42, 46], 34: [43, 47], 35: [44, 48],
+    36: [41, 45],
+  };
+
   private drawMap(): void {
     const { width, height, layers, tileSize } = this.mapData;
+    this.animatedTileSprites.clear();
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const tileId = layers.floor[y][x];
         const key = `tile-${tileId}`;
-        this.add.image(
+        const img = this.add.image(
           x * tileSize + tileSize / 2,
           y * tileSize + tileSize / 2,
           key
         );
+        // Track sand tiles for animation
+        if (MapScene.SAND_TILE_IDS.includes(tileId)) {
+          this.animatedTileSprites.set(`${x},${y}`, img);
+        }
       }
     }
   }
@@ -539,6 +558,28 @@ export class MapScene extends Phaser.Scene {
       } else {
         this.player.setTexture("player-frame-0");
       }
+    }
+
+    // Tile animation (sand sparkle) - cycle every 600ms
+    this.tileAnimTimer += delta;
+    if (this.tileAnimTimer > 600) {
+      this.tileAnimTimer = 0;
+      this.tileAnimFrame = (this.tileAnimFrame + 1) % 3; // 0=base, 1=sparkleA, 2=sparkleB
+      this.animatedTileSprites.forEach((sprite, key) => {
+        const [xStr, yStr] = key.split(",");
+        const tx = parseInt(xStr); const ty = parseInt(yStr);
+        const tileId = this.mapData.layers.floor[ty]?.[tx];
+        if (tileId === undefined) return;
+        const sparkle = MapScene.SPARKLE_MAP[tileId];
+        if (!sparkle) return;
+        if (this.tileAnimFrame === 0) {
+          sprite.setTexture(`tile-${tileId}`);
+        } else if (this.tileAnimFrame === 1) {
+          sprite.setTexture(`tile-${sparkle[0]}`);
+        } else {
+          sprite.setTexture(`tile-${sparkle[1]}`);
+        }
+      });
     }
 
     // Movement input
