@@ -39,6 +39,12 @@ export class BootScene extends Phaser.Scene {
     this.load.json("moves", `${base}/data/moves/moves.json`);
     this.load.json("encounters", `${base}/data/encounters.json`);
     this.load.json("trainers", `${base}/data/trainers.json`);
+
+    // Load tileset spritesheet (Ninja Adventure based)
+    this.load.spritesheet("moon-tileset", `${base}/assets/tiles/moon_tileset.png`, {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
   }
 
   create(): void {
@@ -59,7 +65,18 @@ export class BootScene extends Phaser.Scene {
     this.generateTileset(allTileTypes);
     this.generatePlayerSprite();
     this.generateMonsterSprites();
-    this.scene.start("MapScene", { mapKey: "moonbase" });
+
+    // Show credits briefly
+    const w = this.cameras.main.width;
+    const h = this.cameras.main.height;
+    const credits = this.add.text(w / 2, h - 30,
+      "Tileset: Ninja Adventure by Pixel-Boy & AAA (CC0)",
+      { fontSize: "10px", color: "#888888", fontFamily: "monospace" }
+    ).setOrigin(0.5).setAlpha(0.8);
+
+    this.time.delayedCall(100, () => {
+      this.scene.start("MapScene", { mapKey: "moonbase" });
+    });
   }
 
   private generateTileset(
@@ -69,15 +86,37 @@ export class BootScene extends Phaser.Scene {
     >
   ): void {
     const ts = 32;
+    const hasSpritesheet = this.textures.exists("moon-tileset");
 
     Object.entries(tileTypes).forEach(([id, tile]) => {
       const key = `tile-${id}`;
+      const tileIndex = parseInt(id, 10);
+
+      // Use spritesheet tile if available (scale 16x16 → 32x32)
+      if (hasSpritesheet && tileIndex <= 12) {
+        const frame = this.textures.getFrame("moon-tileset", tileIndex);
+        if (frame) {
+          const canvas = document.createElement("canvas");
+          canvas.width = ts;
+          canvas.height = ts;
+          const ctx = canvas.getContext("2d")!;
+          ctx.imageSmoothingEnabled = false; // pixel art!
+          ctx.drawImage(
+            frame.source.image as HTMLImageElement,
+            frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight,
+            0, 0, ts, ts
+          );
+          this.textures.addCanvas(key, canvas);
+          return;
+        }
+      }
+
+      // Fallback: programmatic tile
       const canvas = document.createElement("canvas");
       canvas.width = ts;
       canvas.height = ts;
       const ctx = canvas.getContext("2d")!;
 
-      // Base color
       ctx.fillStyle = tile.color;
       ctx.fillRect(0, 0, ts, ts);
 
