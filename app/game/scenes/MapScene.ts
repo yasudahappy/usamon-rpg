@@ -89,6 +89,7 @@ export class MapScene extends Phaser.Scene {
     this.tileSize = this.mapData.tileSize;
 
     this.drawMap();
+    this.drawBuildings();
     this.createPlayer();
     this.setupInput();
     this.setupDpad();
@@ -107,11 +108,12 @@ export class MapScene extends Phaser.Scene {
   // Sand tile IDs that should animate
   private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36];
   // Sparkle frame mapping: sand tile -> [sparkle frame A, sparkle frame B]
+  // Sparkle tiles: A=41-48, B=49-56 (8 variants each)
   private static SPARKLE_MAP: Record<number, [number, number]> = {
-    5: [41, 45], 6: [42, 46], 7: [43, 47], 8: [44, 48],
-    9: [41, 45], 10: [42, 46], 11: [43, 47], 12: [44, 48],
-    32: [41, 45], 33: [42, 46], 34: [43, 47], 35: [44, 48],
-    36: [41, 45],
+    5: [41, 49], 6: [42, 50], 7: [43, 51], 8: [44, 52],
+    9: [45, 53], 10: [46, 54], 11: [47, 55], 12: [48, 56],
+    32: [41, 49], 33: [42, 50], 34: [43, 51], 35: [44, 52],
+    36: [45, 53],
   };
 
   private drawMap(): void {
@@ -130,6 +132,23 @@ export class MapScene extends Phaser.Scene {
         if (MapScene.SAND_TILE_IDS.includes(tileId)) {
           this.animatedTileSprites.set(`${x},${y}`, img);
         }
+      }
+    }
+  }
+
+  private drawBuildings(): void {
+    const buildings = (this.mapData as MapData & { buildings?: { sprite: string; x: number; y: number; width: number; height: number }[] }).buildings;
+    if (!buildings) return;
+    const ts = this.tileSize;
+    for (const bldg of buildings) {
+      if (this.textures.exists(bldg.sprite)) {
+        const img = this.add.image(
+          bldg.x * ts + (bldg.width * ts) / 2,
+          bldg.y * ts + (bldg.height * ts) / 2,
+          bldg.sprite
+        );
+        img.setDepth(5);
+        img.setDisplaySize(bldg.width * ts, bldg.height * ts);
       }
     }
   }
@@ -560,8 +579,27 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
-    // Tile animation disabled for now (sparkle tiles need rework)
-    // TODO: re-enable after fixing sparkle tile generation
+    // Tile animation (sand sparkle) - cycle every 800ms
+    this.tileAnimTimer += delta;
+    if (this.tileAnimTimer > 800) {
+      this.tileAnimTimer = 0;
+      this.tileAnimFrame = (this.tileAnimFrame + 1) % 3; // 0=base, 1=sparkleA, 2=sparkleB
+      this.animatedTileSprites.forEach((sprite, key) => {
+        const [xStr, yStr] = key.split(",");
+        const tx = parseInt(xStr); const ty = parseInt(yStr);
+        const tileId = this.mapData.layers.floor[ty]?.[tx];
+        if (tileId === undefined) return;
+        const sparkle = MapScene.SPARKLE_MAP[tileId];
+        if (!sparkle) return;
+        if (this.tileAnimFrame === 0) {
+          sprite.setTexture(`tile-${tileId}`);
+        } else if (this.tileAnimFrame === 1) {
+          sprite.setTexture(`tile-${sparkle[0]}`);
+        } else {
+          sprite.setTexture(`tile-${sparkle[1]}`);
+        }
+      });
+    }
 
     // Movement input
     const dir = this.getInputDirection();

@@ -1140,5 +1140,35 @@
       "targetX": 1,
       "targetY": 6
     }
+  ],
+  "buildings": [
+    {
+      "sprite": "bldg-dome-green",
+      "x": 3,
+      "y": 4,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "sprite": "bldg-dome-red",
+      "x": 8,
+      "y": 3,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "sprite": "bldg-dome-yellow",
+      "x": 14,
+      "y": 5,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "sprite": "bldg-dome-blue",
+      "x": 20,
+      "y": 4,
+      "width": 2,
+      "height": 2
+    }
   ]
 }

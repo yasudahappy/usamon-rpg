@@ -40,11 +40,19 @@ export class BootScene extends Phaser.Scene {
     this.load.json("encounters", `${base}/data/encounters.json`);
     this.load.json("trainers", `${base}/data/trainers.json`);
 
-    // Load tileset spritesheet (Ninja Adventure based)
+    // Load tileset spritesheet
     this.load.spritesheet("moon-tileset", `${base}/assets/tiles/moon_tileset.png`, {
       frameWidth: 16,
       frameHeight: 16,
     });
+
+    // Load building sprites
+    this.load.image("bldg-habitat", `${base}/assets/buildings/sprites/habitat.png`);
+    this.load.image("bldg-observatory", `${base}/assets/buildings/sprites/observatory.png`);
+    this.load.image("bldg-dome-green", `${base}/assets/buildings/sprites/dome_green.png`);
+    this.load.image("bldg-dome-red", `${base}/assets/buildings/sprites/dome_red.png`);
+    this.load.image("bldg-dome-yellow", `${base}/assets/buildings/sprites/dome_yellow.png`);
+    this.load.image("bldg-dome-blue", `${base}/assets/buildings/sprites/dome_blue.png`);
   }
 
   create(): void {
@@ -93,7 +101,7 @@ export class BootScene extends Phaser.Scene {
       const tileIndex = parseInt(id, 10);
 
       // Use spritesheet tile if available (scale 16x16 → 32x32)
-      if (hasSpritesheet && tileIndex <= 48) {
+      if (hasSpritesheet && tileIndex <= 56) {
         const frame = this.textures.getFrame("moon-tileset", tileIndex);
         if (frame) {
           const canvas = document.createElement("canvas");

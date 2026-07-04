@@ -721,5 +721,21 @@
       "targetX": 15,
       "targetY": 1
     }
+  ],
+  "buildings": [
+    {
+      "sprite": "bldg-habitat",
+      "x": 4,
+      "y": 3,
+      "width": 3,
+      "height": 3
+    },
+    {
+      "sprite": "bldg-observatory",
+      "x": 13,
+      "y": 2,
+      "width": 4,
+      "height": 4
+    }
   ]
 }
