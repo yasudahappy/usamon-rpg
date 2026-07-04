@@ -403,7 +403,9 @@ export class MapScene extends Phaser.Scene {
     // Check if current tile is sand (tileId === 5)
     const { layers } = this.mapData;
     const tileId = layers.floor[this.gridY]?.[this.gridX];
-    if (tileId !== 5) return;
+    // Sand tiles: 5-12, 14-21 (edges), 32-36 (variants)
+    const sandTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36];
+    if (!sandTiles.includes(tileId)) return;
 
     // Use encounter rate from data
     if (Math.random() < table.encounterRate) {
