@@ -9,6 +9,13 @@ export class BootScene extends Phaser.Scene {
     super({ key: "BootScene" });
   }
 
+  private getBasePath(): string {
+    // Support GitHub Pages basePath
+    return typeof window !== "undefined" && window.location.pathname.startsWith("/usamon-rpg")
+      ? "/usamon-rpg"
+      : "";
+  }
+
   preload(): void {
     // Show loading text
     const w = this.cameras.main.width;
@@ -21,15 +28,17 @@ export class BootScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    const base = this.getBasePath();
+
     // Load all map data
     MAP_KEYS.forEach((name) => {
-      this.load.json(`map-${name}`, `/data/maps/${name}.json`);
+      this.load.json(`map-${name}`, `${base}/data/maps/${name}.json`);
     });
-    this.load.json("types", "/data/types.json");
-    this.load.json("monsters", "/data/monsters/monsters.json");
-    this.load.json("moves", "/data/moves/moves.json");
-    this.load.json("encounters", "/data/encounters.json");
-    this.load.json("trainers", "/data/trainers.json");
+    this.load.json("types", `${base}/data/types.json`);
+    this.load.json("monsters", `${base}/data/monsters/monsters.json`);
+    this.load.json("moves", `${base}/data/moves/moves.json`);
+    this.load.json("encounters", `${base}/data/encounters.json`);
+    this.load.json("trainers", `${base}/data/trainers.json`);
   }
 
   create(): void {
