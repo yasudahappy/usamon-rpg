@@ -3,10 +3,16 @@ export interface BattleMove {
   type: string; // "光", "影", "ノーマル" etc
   power: number; // 0 = 補助技
   isSupport: boolean;
+  priority?: boolean; // 先制技
+  accuracy?: number; // 命中率 (default 100)
   effect?: {
-    stat: "attack" | "defense" | "speed";
-    multiplier: number; // 1.5 = 50%アップ
-    target: "self" | "enemy";
+    type?: string; // "statChange" | "allStatsUp" | "heal" | "healAndBuff" | "multiHit"
+    stat?: "attack" | "defense" | "speed";
+    multiplier?: number; // 1.5 = 50%アップ
+    target?: "self" | "enemy";
+    healPercent?: number;
+    min?: number;
+    max?: number;
   };
 }
 

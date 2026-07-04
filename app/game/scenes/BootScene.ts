@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
+import { MonsterData } from "../data/types";
 
 const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1"];
 
@@ -25,6 +26,8 @@ export class BootScene extends Phaser.Scene {
       this.load.json(`map-${name}`, `/data/maps/${name}.json`);
     });
     this.load.json("types", "/data/types.json");
+    this.load.json("monsters", "/data/monsters/monsters.json");
+    this.load.json("moves", "/data/moves/moves.json");
   }
 
   create(): void {
@@ -261,71 +264,62 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateMonsterSprites(): void {
-    // うさもん: シアン(#40d0ff)の円形、直径64px
-    {
-      const size = 64;
+    const monsters = this.cache.json.get("monsters") as MonsterData[];
+
+    monsters.forEach((mon) => {
+      const key = `monster-${mon.id}`;
+      // Evolved forms are slightly larger
+      const isEvolved = mon.evolution === null && mon.id !== "usamon" && mon.id !== "mochichi" && mon.id !== "sunagani" && mon.id !== "rairai" && mon.id !== "regonyas";
+      const size = isEvolved ? 56 : 48;
+      // usamon is special (larger, partner)
+      const finalSize = mon.id === "usamon" ? 64 : size;
+
       const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = finalSize;
+      canvas.height = finalSize;
       const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#40d0ff";
+
+      // Main body circle
+      ctx.fillStyle = mon.color;
       ctx.beginPath();
-      ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+      ctx.arc(finalSize / 2, finalSize / 2, finalSize / 2 - 2, 0, Math.PI * 2);
       ctx.fill();
+
       // Highlight
-      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
       ctx.beginPath();
-      ctx.arc(size / 2 - 8, size / 2 - 8, 10, 0, Math.PI * 2);
+      ctx.arc(finalSize / 2 - finalSize * 0.15, finalSize / 2 - finalSize * 0.15, finalSize * 0.18, 0, Math.PI * 2);
       ctx.fill();
+
       // Eyes
+      const eyeY = finalSize / 2 - 3;
+      const eyeSpacing = finalSize * 0.15;
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.arc(size / 2 - 8, size / 2 - 4, 5, 0, Math.PI * 2);
-      ctx.arc(size / 2 + 8, size / 2 - 4, 5, 0, Math.PI * 2);
+      ctx.arc(finalSize / 2 - eyeSpacing, eyeY, finalSize * 0.09, 0, Math.PI * 2);
+      ctx.arc(finalSize / 2 + eyeSpacing, eyeY, finalSize * 0.09, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#111111";
       ctx.beginPath();
-      ctx.arc(size / 2 - 7, size / 2 - 3, 2.5, 0, Math.PI * 2);
-      ctx.arc(size / 2 + 9, size / 2 - 3, 2.5, 0, Math.PI * 2);
+      ctx.arc(finalSize / 2 - eyeSpacing + 1, eyeY + 1, finalSize * 0.045, 0, Math.PI * 2);
+      ctx.arc(finalSize / 2 + eyeSpacing + 1, eyeY + 1, finalSize * 0.045, 0, Math.PI * 2);
       ctx.fill();
-      // Mouth
+
+      // Mouth (smile)
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(size / 2, size / 2 + 2, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+      ctx.arc(finalSize / 2, finalSize / 2 + 2, finalSize * 0.12, 0.1 * Math.PI, 0.9 * Math.PI);
       ctx.stroke();
-      this.textures.addCanvas("monster-usamon", canvas);
-    }
 
-    // レゴニャス: 紫(#9040c0)の円形、直径48px
-    {
-      const size = 48;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#9040c0";
-      ctx.beginPath();
-      ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
-      ctx.fill();
-      // Highlight
-      ctx.fillStyle = "rgba(255,255,255,0.2)";
-      ctx.beginPath();
-      ctx.arc(size / 2 - 6, size / 2 - 6, 8, 0, Math.PI * 2);
-      ctx.fill();
-      // Eyes (cat-like)
-      ctx.fillStyle = "#ffff00";
-      ctx.beginPath();
-      ctx.ellipse(size / 2 - 6, size / 2 - 3, 4, 5, 0, 0, Math.PI * 2);
-      ctx.ellipse(size / 2 + 6, size / 2 - 3, 4, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#111111";
-      ctx.beginPath();
-      ctx.ellipse(size / 2 - 6, size / 2 - 3, 1.5, 4, 0, 0, Math.PI * 2);
-      ctx.ellipse(size / 2 + 6, size / 2 - 3, 1.5, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
-      this.textures.addCanvas("monster-regonyas", canvas);
-    }
+      // Type indicator line at bottom
+      ctx.fillStyle = mon.color;
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(4, finalSize - 6, finalSize - 8, 3);
+      ctx.globalAlpha = 1;
+
+      this.textures.addCanvas(key, canvas);
+    });
   }
 
   private generatePlayerSprite(): void {

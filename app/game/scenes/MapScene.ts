@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
+import { MonsterInstance } from "../data/types";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -7,6 +8,7 @@ interface SceneData {
   mapKey?: string;
   playerX?: number;
   playerY?: number;
+  playerInstance?: MonsterInstance;
 }
 
 export class MapScene extends Phaser.Scene {
@@ -31,6 +33,8 @@ export class MapScene extends Phaser.Scene {
   // Battle
   private battleKey?: Phaser.Input.Keyboard.Key;
   private startingBattle = false;
+  // Player monster data (persisted)
+  private playerInstance?: MonsterInstance;
 
   constructor() {
     super({ key: "MapScene" });
@@ -47,6 +51,9 @@ export class MapScene extends Phaser.Scene {
     this.animFrame = 0;
     this.animTimer = 0;
     this.startingBattle = false;
+    if (data.playerInstance) {
+      this.playerInstance = data.playerInstance;
+    }
   }
 
   create(): void {
@@ -291,6 +298,7 @@ export class MapScene extends Phaser.Scene {
       mapKey: this.currentMapKey,
       playerX: this.gridX,
       playerY: this.gridY,
+      playerInstance: this.playerInstance,
     });
   }
 
