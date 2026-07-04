@@ -93,7 +93,7 @@ export class BootScene extends Phaser.Scene {
       const tileIndex = parseInt(id, 10);
 
       // Use spritesheet tile if available (scale 16x16 → 32x32)
-      if (hasSpritesheet && tileIndex <= 31) {
+      if (hasSpritesheet && tileIndex <= 36) {
         const frame = this.textures.getFrame("moon-tileset", tileIndex);
         if (frame) {
           const canvas = document.createElement("canvas");
