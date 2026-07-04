@@ -560,27 +560,8 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
-    // Tile animation (sand sparkle) - cycle every 600ms
-    this.tileAnimTimer += delta;
-    if (this.tileAnimTimer > 600) {
-      this.tileAnimTimer = 0;
-      this.tileAnimFrame = (this.tileAnimFrame + 1) % 3; // 0=base, 1=sparkleA, 2=sparkleB
-      this.animatedTileSprites.forEach((sprite, key) => {
-        const [xStr, yStr] = key.split(",");
-        const tx = parseInt(xStr); const ty = parseInt(yStr);
-        const tileId = this.mapData.layers.floor[ty]?.[tx];
-        if (tileId === undefined) return;
-        const sparkle = MapScene.SPARKLE_MAP[tileId];
-        if (!sparkle) return;
-        if (this.tileAnimFrame === 0) {
-          sprite.setTexture(`tile-${tileId}`);
-        } else if (this.tileAnimFrame === 1) {
-          sprite.setTexture(`tile-${sparkle[0]}`);
-        } else {
-          sprite.setTexture(`tile-${sparkle[1]}`);
-        }
-      });
-    }
+    // Tile animation disabled for now (sparkle tiles need rework)
+    // TODO: re-enable after fixing sparkle tile generation
 
     // Movement input
     const dir = this.getInputDirection();
