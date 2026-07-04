@@ -46,6 +46,15 @@ export class BootScene extends Phaser.Scene {
       frameHeight: 16,
     });
 
+    // Load player character spritesheets (5 suit colors)
+    const suits = ["white", "blue", "orange", "pink", "black"];
+    suits.forEach(suit => {
+      this.load.spritesheet(`player-${suit}`, `${base}/assets/characters/player_${suit}.png`, {
+        frameWidth: 16,
+        frameHeight: 16,
+      });
+    });
+
     // Load building sprites
     this.load.image("bldg-habitat", `${base}/assets/buildings/sprites/habitat.png`);
     this.load.image("bldg-observatory", `${base}/assets/buildings/sprites/observatory.png`);
@@ -377,43 +386,52 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generatePlayerSprite(): void {
-    const size = 32;
-    // Two frames for walk animation
-    for (let frame = 0; frame < 2; frame++) {
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d")!;
-
-      // Body - spacesuit white
-      ctx.fillStyle = "#d0d0e0";
-      const bodyY = frame === 0 ? 8 : 7;
-      ctx.fillRect(8, bodyY, 16, 18);
-
-      // Helmet visor - cyan
-      ctx.fillStyle = "#40d0ff";
-      ctx.fillRect(10, bodyY, 12, 8);
-
-      // Helmet border
-      ctx.strokeStyle = "#a0a0b0";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(9.5, bodyY - 0.5, 13, 9);
-
-      // Legs
-      ctx.fillStyle = "#b0b0c0";
-      if (frame === 0) {
-        ctx.fillRect(10, 26, 5, 4);
-        ctx.fillRect(17, 26, 5, 4);
-      } else {
-        ctx.fillRect(9, 25, 5, 5);
-        ctx.fillRect(18, 25, 5, 5);
+    // Use the loaded spritesheet for the default suit (white)
+    // Generate legacy player-frame-0 and player-frame-1 from the spritesheet
+    const suitKey = "player-white";
+    if (this.textures.exists(suitKey)) {
+      const sheet = this.textures.get(suitKey);
+      // Frame 0: first frame of "down" direction (row 0, col 0)
+      // Frame 1: second frame of "down" direction (row 0, col 1)
+      for (let frame = 0; frame < 2; frame++) {
+        const srcFrame = this.textures.getFrame(suitKey, frame);
+        if (srcFrame) {
+          const canvas = document.createElement("canvas");
+          canvas.width = 32;
+          canvas.height = 32;
+          const ctx = canvas.getContext("2d")!;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(
+            srcFrame.source.image as HTMLImageElement,
+            srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
+            0, 0, 32, 32
+          );
+          this.textures.addCanvas(`player-frame-${frame}`, canvas);
+        }
       }
-
-      // Backpack (life support)
-      ctx.fillStyle = "#8888a0";
-      ctx.fillRect(5, bodyY + 4, 3, 10);
-
-      this.textures.addCanvas(`player-frame-${frame}`, canvas);
+    } else {
+      // Fallback: simple colored rectangles
+      const size = 32;
+      for (let frame = 0; frame < 2; frame++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "#d0d0e0";
+        const bodyY = frame === 0 ? 8 : 7;
+        ctx.fillRect(8, bodyY, 16, 18);
+        ctx.fillStyle = "#40d0ff";
+        ctx.fillRect(10, bodyY, 12, 8);
+        ctx.fillStyle = "#b0b0c0";
+        if (frame === 0) {
+          ctx.fillRect(10, 26, 5, 4);
+          ctx.fillRect(17, 26, 5, 4);
+        } else {
+          ctx.fillRect(9, 25, 5, 5);
+          ctx.fillRect(18, 25, 5, 5);
+        }
+        this.textures.addCanvas(`player-frame-${frame}`, canvas);
+      }
     }
   }
 }
