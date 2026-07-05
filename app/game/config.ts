@@ -13,6 +13,11 @@ export function createGameConfig(
     const rect = parent.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       h = Math.round(640 * (rect.height / rect.width));
+    } else if (typeof window !== "undefined") {
+      // Fallback: estimate from window dimensions
+      const winW = window.innerWidth || 375;
+      const winH = (window.innerHeight || 812) * 0.7;
+      h = Math.round(640 * (winH / winW));
     }
   }
 

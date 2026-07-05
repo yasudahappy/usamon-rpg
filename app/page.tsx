@@ -7,8 +7,8 @@ const PhaserGame = dynamic(() => import("./game/PhaserGame"), {
   loading: () => (
     <div
       style={{
-        width: "100vw",
-        height: "100vh",
+        position: "fixed",
+        inset: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

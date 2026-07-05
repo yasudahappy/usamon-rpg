@@ -12,10 +12,20 @@ export default function PhaserGame() {
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
 
-    const config = createGameConfig(containerRef.current);
-    gameRef.current = new Phaser.Game(config);
+    // Double RAF ensures CSS layout is fully computed before measuring
+    let raf1: number;
+    let raf2: number;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (!containerRef.current || gameRef.current) return;
+        const config = createGameConfig(containerRef.current);
+        gameRef.current = new Phaser.Game(config);
+      });
+    });
 
     return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;
@@ -26,8 +36,10 @@ export default function PhaserGame() {
   return (
     <div
       style={{
-        width: "100vw",
-        height: "100vh",
+        position: "fixed",
+        inset: 0,
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
         backgroundColor: "#1a1a2e",
