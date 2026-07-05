@@ -825,28 +825,29 @@ export class MapScene extends Phaser.Scene {
     const hpColor = (ratio: number) => ratio > 0.5 ? HP_GREEN : ratio > 0.2 ? HP_YELLOW : HP_RED;
     const EXP_BLUE = 0x58a8e8;
 
-    // ===== Layout =====
+    // ===== Layout: scale to fill vertical space =====
     const margin = 8;
     const topPad = 6;
     const usableH = barY - topPad;
-    const gap = 2;  // ② tight gap between right rows
 
-    // Left column: lead card (~1/3 width, compact square-ish)
+    // Right column: 5 slots sized so 5 rows fill the full height
+    const maxRightSlots = 5;
+    const rightSlotH = Math.floor(usableH / (maxRightSlots + (maxRightSlots - 1) / 20));
+    const gap = Math.max(2, Math.floor(rightSlotH / 20));
+    const rightSlotCount = Math.max(party.length - 1, 1);
+    const rightIconSize = rightSlotH - 8;
+    const rightStartY = topPad;
+
+    // Left column: ~1/3 width, height ~half usable
     const leadW = Math.floor(W * 0.33);
     const leadX = margin;
     const leadY = topPad;
-    // ① Lead card: compact height (icon + name + Lv + HP bar + HP num)
-    const leadIconSize = Math.min(leadW - 16, 68);
-    const leadH = leadIconSize + 78; // icon + text + hp bar + hp num
+    const leadIconSize = Math.min(leadW - 16, Math.floor(rightSlotH * 1.6));
+    const leadH = Math.min(Math.floor(usableH * 0.55), leadIconSize + Math.floor(rightSlotH * 1.8));
 
-    // Right column
+    // Right column position
     const rightX = leadX + leadW + gap + 4;
     const rightW = W - rightX - margin;
-    const rightSlotCount = Math.max(party.length - 1, 1);
-    // ② Rows packed from top with tight gap (not full height)
-    const rightSlotH = 42;  // compact 2-row height
-    const rightIconSize = rightSlotH - 6;
-    const rightStartY = topPad;
 
     // ===== Slot 0: Lead card (small card at top-left) =====
     const lead = party[0];
@@ -863,11 +864,15 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(leadX + 3), this.uiY(leadY + 3), this.uiS(leadW - 6), this.uiS(14));
       this.menuElements.push(card);
 
+      // Scale factor (base design was rightSlotH=42)
+      const lScale = rightSlotH / 42;
+      const lFs = (base: number) => `${Math.round(base * lScale)}px`;
+
       // Icon
       const iconKey = this.textures.exists(`icon-${leadData.id}`) ? `icon-${leadData.id}` : `monster-${leadData.id}`;
       if (this.textures.exists(iconKey)) {
         const ibx = leadX + (leadW - leadIconSize) / 2;
-        const iby = leadY + 8;
+        const iby = leadY + Math.round(8 * lScale);
         this.menuElements.push(
           this.add.image(this.uiX(ibx + leadIconSize / 2), this.uiY(iby + leadIconSize / 2), iconKey)
             .setScrollFactor(0).setDepth(203)
@@ -876,41 +881,40 @@ export class MapScene extends Phaser.Scene {
       }
 
       // Name
-      const nameY = leadY + leadIconSize + 12;
+      const nameY = leadY + leadIconSize + Math.round(14 * lScale);
       this.menuElements.push(
         this.add.text(this.uiX(leadX + leadW / 2), this.uiY(nameY), leadData.name, {
-          fontSize: "14px", color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+          fontSize: lFs(14), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
-      // Lv
       this.menuElements.push(
-        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(nameY + 16), `Lv${lead.level}`, {
-          fontSize: "12px", color: "#ffffff", fontFamily: F, ...STK2,
+        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(nameY + Math.round(18 * lScale)), `Lv${lead.level}`, {
+          fontSize: lFs(12), color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
 
       // HP bar
       const hpRatio = lead.currentHp / lead.maxHp;
-      const hpY = nameY + 32;
+      const hpY = nameY + Math.round(36 * lScale);
       const hpLX = leadX + 6;
       const hpBarInnerW = leadW - 36;
+      const hpBarH = Math.max(8, Math.round(8 * lScale));
       this.menuElements.push(
         this.add.text(this.uiX(hpLX), this.uiY(hpY), "HP", {
-          fontSize: "10px", color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
+          fontSize: lFs(10), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
-      const hpBx = hpLX + 24;
+      const hpBx = hpLX + Math.round(24 * lScale);
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawCapsuleBar(hpG, hpBx, hpY + 1, hpBarInnerW, 8, hpRatio, hpColor(hpRatio));
+      drawCapsuleBar(hpG, hpBx, hpY + 1, hpBarInnerW, hpBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
 
-      // HP number below bar, large centered
+      // HP number below bar
       this.menuElements.push(
-        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(hpY + 14), `${lead.currentHp} / ${lead.maxHp}`, {
-          fontSize: "13px", color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(hpY + hpBarH + Math.round(6 * lScale)), `${lead.currentHp} / ${lead.maxHp}`, {
+          fontSize: lFs(13), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
-      // (EXP bar removed — shown in detail screen)
     }
 
     // ===== Slots 1-5: Right column (packed from top, tight gap) =====
@@ -931,12 +935,16 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(cx + 3), this.uiY(cy + 3), this.uiS(rightW - 6), this.uiS(8));
       this.menuElements.push(card);
 
-      // ③ Icon (left, spans full row height)
+      // Scale factor (base design was rightSlotH=42)
+      const s = rightSlotH / 42;
+      const fs = (base: number) => `${Math.round(base * s)}px`;
+
+      // Icon (left, spans full row height)
       const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
       if (this.textures.exists(iconKey)) {
         this.menuElements.push(
           this.add.image(
-            this.uiX(cx + 3 + rightIconSize / 2),
+            this.uiX(cx + 4 + rightIconSize / 2),
             this.uiY(cy + rightSlotH / 2),
             iconKey
           ).setScrollFactor(0).setDepth(203)
@@ -944,40 +952,37 @@ export class MapScene extends Phaser.Scene {
         );
       }
 
-      // ③ Two-row text: top=name, bottom=Lv+HP bar+HP num
-      const tx = cx + rightIconSize + 10;
-      // Row 1: name
+      // Two-row text: top=name, bottom=Lv+HP bar+HP num
+      const tx = cx + rightIconSize + Math.round(10 * s);
+      const row1Y = cy + Math.round(4 * s);
       this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(cy + 4), data.name, {
-          fontSize: "12px", color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
+        this.add.text(this.uiX(tx), this.uiY(row1Y), data.name, {
+          fontSize: fs(12), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
 
-      // Row 2: Lv + HP bar + HP numbers
-      const row2Y = cy + 22;
-      const rBarW = rightW - rightIconSize - 16;
-      // Lv label
+      const row2Y = cy + Math.round(22 * s);
+      const rBarW = rightW - rightIconSize - Math.round(16 * s);
+      const rBarH = Math.max(6, Math.round(7 * s));
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(row2Y), `Lv${mon.level}`, {
-          fontSize: "10px", color: "#ffffff", fontFamily: F, ...STK2,
+          fontSize: fs(10), color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
-      // HP label + bar
-      const hpLabelX = tx + 36;
+      const hpLabelX = tx + Math.round(36 * s);
       this.menuElements.push(
         this.add.text(this.uiX(hpLabelX), this.uiY(row2Y), "HP", {
-          fontSize: "9px", color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
+          fontSize: fs(9), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
-      const hpBx = hpLabelX + 20;
+      const hpBx = hpLabelX + Math.round(20 * s);
       const hpRatio = mon.currentHp / mon.maxHp;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawCapsuleBar(hpG, hpBx, row2Y + 2, rBarW - 80, 7, hpRatio, hpColor(hpRatio));
+      drawCapsuleBar(hpG, hpBx, row2Y + 2, rBarW - Math.round(80 * s), rBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
-      // HP numbers (right-aligned)
       this.menuElements.push(
         this.add.text(this.uiX(cx + rightW - 6), this.uiY(row2Y - 1), `${mon.currentHp}/${mon.maxHp}`, {
-          fontSize: "9px", color: "#ffffff", fontFamily: F, ...STK2,
+          fontSize: fs(9), color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
     }
@@ -985,8 +990,8 @@ export class MapScene extends Phaser.Scene {
     // If only 1 mon
     if (party.length === 1) {
       this.menuElements.push(
-        this.add.text(this.uiX(rightX + rightW / 2), this.uiY(rightStartY + 80), "ほかの なかまは\nまだ いない", {
-          fontSize: "12px", color: "#ffffff", fontFamily: F, ...STK2, align: "center",
+        this.add.text(this.uiX(rightX + rightW / 2), this.uiY(rightStartY + Math.round(80 * (rightSlotH / 42))), "ほかの なかまは\nまだ いない", {
+          fontSize: `${Math.round(12 * rightSlotH / 42)}px`, color: "#ffffff", fontFamily: F, ...STK2, align: "center",
         }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
       );
     }
