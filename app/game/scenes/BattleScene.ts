@@ -85,6 +85,9 @@ export class BattleScene extends Phaser.Scene {
   private bKey!: Phaser.Input.Keyboard.Key;
   private escKey!: Phaser.Input.Keyboard.Key;
 
+  // Gamepad tracking for edge detection
+  private gpPrevDpad: string | null = null;
+
   // Return data
   private returnMapKey = "moonbase";
   private returnPlayerX = 0;
@@ -601,17 +604,43 @@ export class BattleScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (!this.input.keyboard) return;
+    // Keyboard input (may not be available on mobile)
+    let kbUp = false, kbDown = false, kbLeft = false, kbRight = false;
+    let kbEnter = false, kbSpace = false, kbB = false, kbEsc = false;
 
-    const justUp = Phaser.Input.Keyboard.JustDown(this.cursorKeys.up);
-    const justDown = Phaser.Input.Keyboard.JustDown(this.cursorKeys.down);
-    const justLeft = Phaser.Input.Keyboard.JustDown(this.cursorKeys.left);
-    const justRight = Phaser.Input.Keyboard.JustDown(this.cursorKeys.right);
-    const justEnter = Phaser.Input.Keyboard.JustDown(this.enterKey);
-    const justSpace = Phaser.Input.Keyboard.JustDown(this.spaceKey);
-    const justB = Phaser.Input.Keyboard.JustDown(this.bKey);
-    const justEsc = Phaser.Input.Keyboard.JustDown(this.escKey);
-    const confirm = justEnter || justSpace;
+    if (this.input.keyboard && this.cursorKeys) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursorKeys.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursorKeys.down);
+      kbLeft = Phaser.Input.Keyboard.JustDown(this.cursorKeys.left);
+      kbRight = Phaser.Input.Keyboard.JustDown(this.cursorKeys.right);
+      kbEnter = Phaser.Input.Keyboard.JustDown(this.enterKey);
+      kbSpace = Phaser.Input.Keyboard.JustDown(this.spaceKey);
+      kbB = Phaser.Input.Keyboard.JustDown(this.bKey);
+      kbEsc = Phaser.Input.Keyboard.JustDown(this.escKey);
+    }
+
+    // Gamepad input
+    const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
+    const gpDpad = gp?.dpad || null;
+    const gpDpadJustUp = gpDpad === "up" && this.gpPrevDpad !== "up";
+    const gpDpadJustDown = gpDpad === "down" && this.gpPrevDpad !== "down";
+    const gpDpadJustLeft = gpDpad === "left" && this.gpPrevDpad !== "left";
+    const gpDpadJustRight = gpDpad === "right" && this.gpPrevDpad !== "right";
+    this.gpPrevDpad = gpDpad;
+
+    let gpA = false, gpB = false;
+    if (gp) {
+      if (gp.aJust) { gpA = true; gp.aJust = false; }
+      if (gp.bJust) { gpB = true; gp.bJust = false; }
+    }
+
+    // Combined input
+    const justUp = kbUp || gpDpadJustUp;
+    const justDown = kbDown || gpDpadJustDown;
+    const justLeft = kbLeft || gpDpadJustLeft;
+    const justRight = kbRight || gpDpadJustRight;
+    const confirm = kbEnter || kbSpace || gpA;
+    const cancel = kbB || kbEsc || gpB;
 
     if (this.waitingForInput && confirm) {
       this.waitingForInput = false;
@@ -620,7 +649,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     // Evolution cancel
-    if (this.phase === "evolution" && (justB || justEsc)) {
+    if (this.phase === "evolution" && cancel) {
       this.evolutionCancelled = true;
     }
 
@@ -668,7 +697,7 @@ export class BattleScene extends Phaser.Scene {
           this.executeTurn(move);
         }
       }
-      if (justEsc) {
+      if (kbEsc || gpB) {
         this.hideMoveSelect();
         this.phase = "command";
         this.showCommandWindow();

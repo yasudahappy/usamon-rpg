@@ -31,8 +31,7 @@ export class MapScene extends Phaser.Scene {
   private animatedTileSprites: Map<string, Phaser.GameObjects.Image> = new Map();
   private gridX = 0;
   private gridY = 0;
-  // Virtual d-pad
-  private dpadState: Direction | null = null;
+
   // Map transition
   private currentMapKey = "moonbase";
   private spawnX?: number;
@@ -58,7 +57,6 @@ export class MapScene extends Phaser.Scene {
     this.isMoving = false;
     this.isWarping = false;
     this.moveQueue = null;
-    this.dpadState = null;
     this.animFrame = 0;
     this.animTimer = 0;
     this.startingBattle = false;
@@ -92,7 +90,6 @@ export class MapScene extends Phaser.Scene {
     this.drawBuildings();
     this.createPlayer();
     this.setupInput();
-    this.setupDpad();
     this.setupCamera();
     this.setupBattleKey();
     this.loadEncounterData();
@@ -194,102 +191,6 @@ export class MapScene extends Phaser.Scene {
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
     }
-  }
-
-  private setupDpad(): void {
-    const btnSize = 52;
-    const gap = 4;
-    const baseX = 90;
-    const baseY = this.scale.height - 100;
-
-    const dpadContainer = this.add
-      .container(0, 0)
-      .setDepth(100)
-      .setScrollFactor(0);
-
-    // Semi-transparent background circle
-    const bg = this.add.graphics();
-    bg.fillStyle(0x000000, 0.3);
-    bg.fillCircle(baseX, baseY, 85);
-    dpadContainer.add(bg);
-
-    const buttons: {
-      dir: Direction;
-      x: number;
-      y: number;
-      label: string;
-    }[] = [
-      { dir: "up", x: baseX, y: baseY - btnSize - gap, label: "▲" },
-      { dir: "down", x: baseX, y: baseY + btnSize + gap, label: "▼" },
-      { dir: "left", x: baseX - btnSize - gap, y: baseY, label: "◀" },
-      { dir: "right", x: baseX + btnSize + gap, y: baseY, label: "▶" },
-    ];
-
-    buttons.forEach(({ dir, x, y, label }) => {
-      const btnBg = this.add.graphics();
-      btnBg.fillStyle(0x444455, 0.6);
-      btnBg.fillRoundedRect(
-        x - btnSize / 2,
-        y - btnSize / 2,
-        btnSize,
-        btnSize,
-        8
-      );
-      dpadContainer.add(btnBg);
-
-      const text = this.add
-        .text(x, y, label, {
-          fontSize: "22px",
-          color: "#aabbcc",
-          fontFamily: "monospace",
-        })
-        .setOrigin(0.5);
-      dpadContainer.add(text);
-
-      // Interactive zone
-      const zone = this.add
-        .zone(x, y, btnSize, btnSize)
-        .setInteractive()
-        .setScrollFactor(0)
-        .setDepth(101);
-
-      zone.on("pointerdown", () => {
-        this.dpadState = dir;
-        btnBg.clear();
-        btnBg.fillStyle(0x6688aa, 0.8);
-        btnBg.fillRoundedRect(
-          x - btnSize / 2,
-          y - btnSize / 2,
-          btnSize,
-          btnSize,
-          8
-        );
-      });
-      zone.on("pointerup", () => {
-        this.dpadState = null;
-        btnBg.clear();
-        btnBg.fillStyle(0x444455, 0.6);
-        btnBg.fillRoundedRect(
-          x - btnSize / 2,
-          y - btnSize / 2,
-          btnSize,
-          btnSize,
-          8
-        );
-      });
-      zone.on("pointerout", () => {
-        this.dpadState = null;
-        btnBg.clear();
-        btnBg.fillStyle(0x444455, 0.6);
-        btnBg.fillRoundedRect(
-          x - btnSize / 2,
-          y - btnSize / 2,
-          btnSize,
-          btnSize,
-          8
-        );
-      });
-    });
   }
 
   private setupCamera(): void {
@@ -477,8 +378,9 @@ export class MapScene extends Phaser.Scene {
   }
 
   private getInputDirection(): Direction | null {
-    // D-pad takes priority for mobile
-    if (this.dpadState) return this.dpadState;
+    // External gamepad D-pad (mobile)
+    const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
+    if (gp?.dpad) return gp.dpad as Direction;
 
     // Keyboard
     if (!this.input.keyboard) return null;
