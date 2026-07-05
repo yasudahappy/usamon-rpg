@@ -201,8 +201,8 @@ export class MapScene extends Phaser.Scene {
     const canvasW = this.scale.width;
     const canvasH = this.scale.height;
 
-    // Target: ~12 tiles visible horizontally (Ruby/Sapphire feel)
-    const targetZoom = canvasW / (12 * ts);
+    // Target: ~17 tiles visible horizontally (original size feel)
+    const targetZoom = canvasW / (17 * ts);
 
     // Minimum zoom: map must fill the entire screen (no empty space)
     const minZoomX = canvasW / worldW;
