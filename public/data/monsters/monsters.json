@@ -28,7 +28,7 @@
     "type": "ガス",
     "role": "耐久型",
     "description": "月の餅から生まれた精。ふわふわ癒やし系。",
-    "baseStats": { "hp": 28, "attack": 10, "defense": 14, "speed": 7 },
+    "baseStats": { "hp": 25, "attack": 10, "defense": 14, "speed": 7 },
     "statsAt50": { "hp": 140, "attack": 65, "defense": 72, "speed": 30 },
     "evolution": { "level": 20, "to": "mochigori" },
     "learnset": [

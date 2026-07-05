@@ -2,10 +2,16 @@ import { MonsterData, MoveData, MonsterInstance, Stats } from "./types";
 
 /**
  * Calculate stats for a given monster at a given level.
- * Uses linear interpolation between baseStats (Lv5) and statsAt50 (Lv50).
+ * Lv1–4: proportional scaling  stat = floor(base * level / 5)
+ * Lv5:   base value
+ * Lv6–100: linear interpolation toward statsAt50
  */
 export function calculateStats(data: MonsterData, level: number): Stats {
   const interp = (base: number, at50: number): number => {
+    if (level < 5) {
+      // Proportional scaling below Lv5 so low-level wilds are weaker
+      return Math.max(1, Math.floor(base * level / 5));
+    }
     if (level <= 5) return base;
     const growth = (at50 - base) / (50 - 5);
     return Math.floor(base + growth * (level - 5));

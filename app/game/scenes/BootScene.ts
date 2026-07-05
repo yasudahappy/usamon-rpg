@@ -410,13 +410,16 @@ export class BootScene extends Phaser.Scene {
   }
 
   // Spritesheet layout (Ninja Adventure 16x16, 4 cols × 7 rows):
-  // Row 0: Down, Row 1: Up, Row 2: Left, Row 3: Right
+  // Row 0: Down (facing camera), Row 1: Up (facing away)
+  // Row 2: Down variant, Row 3: Up variant
+  // Row 4: Left, Row 5: Right
+  // Row 6: Extra animation
   // Col 0: idle, Col 1: walk frame
   private static DIR_FRAMES: Record<string, [number, number]> = {
     down:  [0, 1],
     up:    [4, 5],
-    left:  [8, 9],
-    right: [12, 13],
+    left:  [16, 17],
+    right: [20, 21],
   };
 
   private generateDirectionalFrames(suitKey: string): void {
