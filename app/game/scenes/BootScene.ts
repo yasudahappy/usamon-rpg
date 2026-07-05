@@ -97,7 +97,24 @@ export class BootScene extends Phaser.Scene {
           this.applySuitFrames(setup.suitColor);
         }
       } catch (e) { /* ignore */ }
-      this.scene.start("MapScene", { mapKey: "moonbase" });
+
+      // Load full save data if available
+      let mapKey = "moonbase";
+      let sceneData: Record<string, unknown> = { mapKey };
+      try {
+        const raw = localStorage.getItem("usamon-save-data");
+        if (raw) {
+          const save = JSON.parse(raw);
+          sceneData = {
+            mapKey: save.mapKey || "moonbase",
+            playerX: save.gridX,
+            playerY: save.gridY,
+            playerState: save.playerState,
+          };
+        }
+      } catch (e) { /* ignore */ }
+
+      this.scene.start("MapScene", sceneData);
     } else {
       this.scene.start("SetupScene");
     }

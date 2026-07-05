@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
-import { MonsterInstance, PlayerState, TrainerData } from "../data/types";
+import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData } from "../data/types";
+
+const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 
 type Direction = "up" | "down" | "left" | "right";
@@ -45,6 +47,15 @@ export class MapScene extends Phaser.Scene {
   private encounterData?: EncounterData;
   private allTrainers: TrainerData[] = [];
   private trainerSprites: Map<string, Phaser.GameObjects.Image> = new Map();
+
+  // Menu system
+  private menuOpen = false;
+  private menuSubScreen: "none" | "party" | "save" | "stub" = "none";
+  private menuSelectedIndex = 0;
+  private menuElements: Phaser.GameObjects.GameObject[] = [];
+  private menuGpPrevDpad: string | null = null;
+  private mKey?: Phaser.Input.Keyboard.Key;
+  private escKey?: Phaser.Input.Keyboard.Key;
 
   constructor() {
     super({ key: "MapScene" });
@@ -190,6 +201,8 @@ export class MapScene extends Phaser.Scene {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
+      this.mKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+      this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     }
   }
 
@@ -477,6 +490,24 @@ export class MapScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (this.isWarping || this.startingBattle) return;
 
+    // --- Gamepad button reads ---
+    const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
+    let gpMenu = false, gpA = false, gpB = false;
+    if (gp) {
+      if (gp.menuJust) { gpMenu = true; gp.menuJust = false; }
+      if (gp.aJust) { gpA = true; gp.aJust = false; }
+      if (gp.bJust) { gpB = true; gp.bJust = false; }
+    }
+    const kbMenu = this.mKey && Phaser.Input.Keyboard.JustDown(this.mKey);
+    const kbEsc = this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey);
+
+    // --- Menu open/close ---
+    if (this.menuOpen) {
+      this.updateMenu(gpA, gpB || !!kbEsc, gpMenu || !!kbMenu, gp?.dpad || null);
+      return; // freeze game while menu open
+    }
+    if (gpMenu || kbMenu) { this.openMenu(); return; }
+
     // B key → battle (test)
     if (
       this.battleKey &&
@@ -525,5 +556,354 @@ export class MapScene extends Phaser.Scene {
     if (dir) {
       this.tryMove(dir);
     }
+  }
+
+  // ========== MENU SYSTEM ==========
+
+  private clearMenuElements(): void {
+    this.menuElements.forEach(el => el.destroy());
+    this.menuElements = [];
+  }
+
+  private openMenu(): void {
+    this.menuOpen = true;
+    this.menuSelectedIndex = 0;
+    this.menuSubScreen = "none";
+    this.menuGpPrevDpad = null;
+    this.drawMainMenu();
+  }
+
+  private closeMenu(): void {
+    this.menuOpen = false;
+    this.clearMenuElements();
+    this.menuGpPrevDpad = null;
+  }
+
+  private drawMainMenu(): void {
+    this.clearMenuElements();
+    const W = this.scale.width;
+    const H = this.scale.height;
+
+    // Dark overlay
+    const overlay = this.add.graphics().setScrollFactor(0).setDepth(200);
+    overlay.fillStyle(0x000000, 0.4);
+    overlay.fillRect(0, 0, W, H);
+    this.menuElements.push(overlay);
+
+    // Panel (right side, Pokemon-style)
+    const pw = 230, pad = 16;
+    const px = W - pw - 20;
+    const ph = MENU_LABELS.length * 48 + pad * 2;
+    const py = 30;
+
+    const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+    panel.fillStyle(0x0a1628, 0.95);
+    panel.fillRoundedRect(px, py, pw, ph, 12);
+    panel.lineStyle(2, 0x3366aa);
+    panel.strokeRoundedRect(px, py, pw, ph, 12);
+    this.menuElements.push(panel);
+
+    // Items
+    MENU_LABELS.forEach((label, i) => {
+      const iy = py + pad + i * 48;
+      const bg = this.add.graphics().setScrollFactor(0).setDepth(202);
+      const arrow = this.add.text(px + 14, iy + 18, "▶", {
+        fontSize: "16px", color: "#66aaff", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
+      const text = this.add.text(px + 38, iy + 18, label, {
+        fontSize: "20px", color: "#ffffff", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
+      this.menuElements.push(bg, arrow, text);
+    });
+
+    this.highlightMenuItem(this.menuSelectedIndex);
+  }
+
+  private highlightMenuItem(idx: number): void {
+    const pw = 230, px = this.scale.width - pw - 20, pad = 16, py = 30;
+    for (let i = 0; i < MENU_LABELS.length; i++) {
+      const base = 2 + i * 3; // overlay(0), panel(1), then per-item: bg, arrow, text
+      const bg = this.menuElements[base] as Phaser.GameObjects.Graphics;
+      const arrow = this.menuElements[base + 1] as Phaser.GameObjects.Text;
+      const text = this.menuElements[base + 2] as Phaser.GameObjects.Text;
+      const iy = py + pad + i * 48;
+      bg.clear();
+      if (i === idx) {
+        bg.fillStyle(0x1a3366, 0.9);
+        bg.fillRoundedRect(px + 6, iy + 2, pw - 12, 36, 6);
+        arrow.setVisible(true);
+        text.setColor("#ffffff");
+      } else {
+        arrow.setVisible(false);
+        text.setColor("#8899aa");
+      }
+    }
+  }
+
+  private updateMenu(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    if (this.menuSubScreen !== "none") {
+      if (b || menu) { this.closeSubScreen(); return; }
+      // Sub-screen specific: save confirm
+      if (this.menuSubScreen === "save" && a) { this.doSave(); return; }
+      return;
+    }
+
+    // Close menu
+    if (b || menu) { this.closeMenu(); return; }
+
+    // D-pad navigation (edge detection)
+    const justUp = dpad === "up" && this.menuGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.menuGpPrevDpad !== "down";
+    this.menuGpPrevDpad = dpad;
+
+    // Keyboard arrows
+    if (this.input.keyboard && this.cursors) {
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) { this.menuSelectedIndex = (this.menuSelectedIndex - 1 + MENU_LABELS.length) % MENU_LABELS.length; this.highlightMenuItem(this.menuSelectedIndex); return; }
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) { this.menuSelectedIndex = (this.menuSelectedIndex + 1) % MENU_LABELS.length; this.highlightMenuItem(this.menuSelectedIndex); return; }
+      if (Phaser.Input.Keyboard.JustDown(this.input.keyboard.addKey("ENTER"))) { this.selectMenuItem(); return; }
+    }
+
+    if (justUp) {
+      this.menuSelectedIndex = (this.menuSelectedIndex - 1 + MENU_LABELS.length) % MENU_LABELS.length;
+      this.highlightMenuItem(this.menuSelectedIndex);
+    } else if (justDown) {
+      this.menuSelectedIndex = (this.menuSelectedIndex + 1) % MENU_LABELS.length;
+      this.highlightMenuItem(this.menuSelectedIndex);
+    }
+    if (a) this.selectMenuItem();
+  }
+
+  private selectMenuItem(): void {
+    switch (this.menuSelectedIndex) {
+      case 0: this.showStubScreen("ずかん"); break;
+      case 1: this.showPartyScreen(); break;
+      case 2: this.showStubScreen("どうぐ"); break;
+      case 3: this.showPlayerInfoScreen(); break;
+      case 4: this.showSaveScreen(); break;
+      case 5: this.showStubScreen("せってい"); break;
+      case 6: this.closeMenu(); break;
+    }
+  }
+
+  // ---- Party Screen ----
+  private showPartyScreen(): void {
+    this.menuSubScreen = "party";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    const allMoves = this.cache.json.get("moves") as MoveData[];
+    const party = this.playerState?.party || [];
+
+    // Background
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97);
+    bg.fillRect(0, 0, W, H);
+    this.menuElements.push(bg);
+
+    // Title
+    const title = this.add.text(W / 2, 24, "てもち", {
+      fontSize: "22px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title);
+
+    const hint = this.add.text(W / 2, H - 30, "Bボタンでもどる", {
+      fontSize: "13px", color: "#556677", fontFamily: "monospace",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(hint);
+
+    if (party.length === 0) {
+      const empty = this.add.text(W / 2, H / 2, "なかまが いない", {
+        fontSize: "18px", color: "#667788", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      this.menuElements.push(empty);
+      return;
+    }
+
+    const cardH = 100, gap = 8, startY = 55;
+    party.forEach((mon, i) => {
+      const data = allMonsters.find(m => m.id === mon.dataId);
+      if (!data) return;
+      const cy = startY + i * (cardH + gap);
+
+      // Card bg
+      const card = this.add.graphics().setScrollFactor(0).setDepth(201);
+      card.fillStyle(0x152040, 0.9);
+      card.fillRoundedRect(20, cy, W - 40, cardH, 8);
+      card.lineStyle(1, 0x334466);
+      card.strokeRoundedRect(20, cy, W - 40, cardH, 8);
+      this.menuElements.push(card);
+
+      // Name + Level + Type
+      const nameStr = `${data.name}  Lv.${mon.level}`;
+      const nameT = this.add.text(40, cy + 12, nameStr, {
+        fontSize: "17px", color: "#ffffff", fontFamily: "monospace", fontStyle: "bold",
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(nameT);
+
+      const typeT = this.add.text(W - 50, cy + 12, data.type, {
+        fontSize: "13px", color: "#88aacc", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(202).setOrigin(1, 0);
+      this.menuElements.push(typeT);
+
+      // HP bar
+      const hpRatio = mon.currentHp / mon.maxHp;
+      const barW = 180, barH = 10, barX = 40, barY = cy + 36;
+      const hpBar = this.add.graphics().setScrollFactor(0).setDepth(202);
+      hpBar.fillStyle(0x333333); hpBar.fillRect(barX, barY, barW, barH);
+      const hpColor = hpRatio > 0.5 ? 0x22cc44 : hpRatio > 0.2 ? 0xcccc22 : 0xcc2222;
+      hpBar.fillStyle(hpColor); hpBar.fillRect(barX, barY, Math.floor(barW * hpRatio), barH);
+      this.menuElements.push(hpBar);
+
+      const hpT = this.add.text(barX + barW + 8, barY - 1, `${mon.currentHp}/${mon.maxHp}`, {
+        fontSize: "12px", color: "#aabbcc", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(hpT);
+
+      // Moves
+      const moveNames = mon.moves.map(mid => allMoves.find(m => m.id === mid)?.name || "???").join(" / ");
+      const movT = this.add.text(40, cy + 54, moveNames, {
+        fontSize: "12px", color: "#7799aa", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(movT);
+
+      // Stats
+      const statsStr = `ATK:${mon.stats.attack}  DEF:${mon.stats.defense}  SPD:${mon.stats.speed}`;
+      const statT = this.add.text(40, cy + 74, statsStr, {
+        fontSize: "12px", color: "#667788", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(statT);
+    });
+  }
+
+  // ---- Player Info Screen ----
+  private showPlayerInfoScreen(): void {
+    this.menuSubScreen = "stub";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    this.menuElements.push(bg);
+
+    let playerName = "???";
+    try { playerName = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}").playerName || "???"; } catch(e) {}
+
+    const money = this.playerState?.money || 0;
+    const badges = this.playerState?.defeatedTrainers.length || 0;
+    const party = this.playerState?.party.length || 0;
+
+    const title = this.add.text(W/2, 30, "プレイヤー情報", {
+      fontSize: "22px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title);
+
+    const lines = [
+      `なまえ:  ${playerName}`,
+      `しょじきん: ${money}円`,
+      `てもち:  ${party}匹`,
+      `たおしたトレーナー: ${badges}人`,
+    ];
+    lines.forEach((line, i) => {
+      const t = this.add.text(60, 80 + i * 44, line, {
+        fontSize: "18px", color: "#ccddee", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(201);
+      this.menuElements.push(t);
+    });
+
+    const hint = this.add.text(W/2, H - 30, "Bボタンでもどる", {
+      fontSize: "13px", color: "#556677", fontFamily: "monospace",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(hint);
+  }
+
+  // ---- Save Screen ----
+  private showSaveScreen(): void {
+    this.menuSubScreen = "save";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    this.menuElements.push(bg);
+
+    const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+    panel.fillStyle(0x152040, 0.95);
+    panel.fillRoundedRect(W/2 - 200, H/2 - 80, 400, 160, 12);
+    panel.lineStyle(2, 0x3366aa);
+    panel.strokeRoundedRect(W/2 - 200, H/2 - 80, 400, 160, 12);
+    this.menuElements.push(panel);
+
+    const msg = this.add.text(W/2, H/2 - 30, "レポートに きろくしますか？", {
+      fontSize: "20px", color: "#ffffff", fontFamily: "monospace",
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(msg);
+
+    const hint = this.add.text(W/2, H/2 + 30, "Aボタン: はい  /  Bボタン: いいえ", {
+      fontSize: "16px", color: "#88aacc", fontFamily: "monospace",
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
+  }
+
+  private doSave(): void {
+    try {
+      const saveData = {
+        playerState: this.playerState,
+        mapKey: this.currentMapKey,
+        gridX: this.gridX,
+        gridY: this.gridY,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem("usamon-save-data", JSON.stringify(saveData));
+    } catch(e) { /* ignore */ }
+
+    // Show success
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    this.menuElements.push(bg);
+
+    const msg = this.add.text(W/2, H/2, "レポートに きろくしました！", {
+      fontSize: "22px", color: "#44cc88", fontFamily: "monospace", fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(msg);
+
+    // Auto-close after 1.2s
+    this.menuSubScreen = "stub"; // prevent double-save
+    this.time.delayedCall(1200, () => {
+      if (this.menuOpen) this.closeMenu();
+    });
+  }
+
+  // ---- Stub Screen ----
+  private showStubScreen(title: string): void {
+    this.menuSubScreen = "stub";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    this.menuElements.push(bg);
+
+    const t = this.add.text(W/2, H/2 - 20, title, {
+      fontSize: "24px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(t);
+
+    const sub = this.add.text(W/2, H/2 + 20, "― じゅんびちゅう ―", {
+      fontSize: "16px", color: "#556677", fontFamily: "monospace",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(sub);
+
+    const hint = this.add.text(W/2, H - 30, "Bボタンでもどる", {
+      fontSize: "13px", color: "#556677", fontFamily: "monospace",
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(hint);
+  }
+
+  private closeSubScreen(): void {
+    this.menuSubScreen = "none";
+    this.drawMainMenu();
   }
 }
