@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData } from "../data/types";
+import { calculateStats, getExpForLevel } from "../data/levelSystem";
 
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
@@ -96,6 +97,11 @@ export class MapScene extends Phaser.Scene {
       `map-${this.currentMapKey}`
     ) as MapData;
     this.tileSize = this.mapData.tileSize;
+
+    // New game: give player a starter usamon
+    if (!this.playerState) {
+      this.playerState = this.createDefaultPlayerState();
+    }
 
     this.drawMap();
     this.drawBuildings();
@@ -581,8 +587,10 @@ export class MapScene extends Phaser.Scene {
 
   private drawMainMenu(): void {
     this.clearMenuElements();
-    const W = this.scale.width;
-    const H = this.scale.height;
+    // Compensate camera zoom for scrollFactor(0) UI
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom;
+    const H = this.scale.height / zoom;
 
     // Dark overlay
     const overlay = this.add.graphics().setScrollFactor(0).setDepth(200);
@@ -591,10 +599,10 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(overlay);
 
     // Panel (right side, Pokemon-style)
-    const pw = 230, pad = 16;
-    const px = W - pw - 20;
-    const ph = MENU_LABELS.length * 48 + pad * 2;
-    const py = 30;
+    const pw = 200, pad = 14;
+    const px = W - pw - 16;
+    const ph = MENU_LABELS.length * 42 + pad * 2;
+    const py = 20;
 
     const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
     panel.fillStyle(0x0a1628, 0.95);
@@ -605,13 +613,13 @@ export class MapScene extends Phaser.Scene {
 
     // Items
     MENU_LABELS.forEach((label, i) => {
-      const iy = py + pad + i * 48;
+      const iy = py + pad + i * 42;
       const bg = this.add.graphics().setScrollFactor(0).setDepth(202);
-      const arrow = this.add.text(px + 14, iy + 18, "▶", {
-        fontSize: "16px", color: "#66aaff", fontFamily: "monospace",
+      const arrow = this.add.text(px + 12, iy + 16, "▶", {
+        fontSize: "14px", color: "#66aaff", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
-      const text = this.add.text(px + 38, iy + 18, label, {
-        fontSize: "20px", color: "#ffffff", fontFamily: "monospace",
+      const text = this.add.text(px + 32, iy + 16, label, {
+        fontSize: "18px", color: "#ffffff", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
       this.menuElements.push(bg, arrow, text);
     });
@@ -620,17 +628,18 @@ export class MapScene extends Phaser.Scene {
   }
 
   private highlightMenuItem(idx: number): void {
-    const pw = 230, px = this.scale.width - pw - 20, pad = 16, py = 30;
+    const zoom = this.cameras.main.zoom;
+    const pw = 200, px = this.scale.width / zoom - pw - 16, pad = 14, py = 20;
     for (let i = 0; i < MENU_LABELS.length; i++) {
-      const base = 2 + i * 3; // overlay(0), panel(1), then per-item: bg, arrow, text
+      const base = 2 + i * 3;
       const bg = this.menuElements[base] as Phaser.GameObjects.Graphics;
       const arrow = this.menuElements[base + 1] as Phaser.GameObjects.Text;
       const text = this.menuElements[base + 2] as Phaser.GameObjects.Text;
-      const iy = py + pad + i * 48;
+      const iy = py + pad + i * 42;
       bg.clear();
       if (i === idx) {
         bg.fillStyle(0x1a3366, 0.9);
-        bg.fillRoundedRect(px + 6, iy + 2, pw - 12, 36, 6);
+        bg.fillRoundedRect(px + 4, iy + 1, pw - 8, 32, 6);
         arrow.setVisible(true);
         text.setColor("#ffffff");
       } else {
@@ -689,7 +698,8 @@ export class MapScene extends Phaser.Scene {
   private showPartyScreen(): void {
     this.menuSubScreen = "party";
     this.clearMenuElements();
-    const W = this.scale.width, H = this.scale.height;
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom, H = this.scale.height / zoom;
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
     const allMoves = this.cache.json.get("moves") as MoveData[];
     const party = this.playerState?.party || [];
@@ -779,7 +789,8 @@ export class MapScene extends Phaser.Scene {
   private showPlayerInfoScreen(): void {
     this.menuSubScreen = "stub";
     this.clearMenuElements();
-    const W = this.scale.width, H = this.scale.height;
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom, H = this.scale.height / zoom;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
     bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
@@ -820,7 +831,8 @@ export class MapScene extends Phaser.Scene {
   private showSaveScreen(): void {
     this.menuSubScreen = "save";
     this.clearMenuElements();
-    const W = this.scale.width, H = this.scale.height;
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom, H = this.scale.height / zoom;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
     bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
@@ -858,7 +870,8 @@ export class MapScene extends Phaser.Scene {
 
     // Show success
     this.clearMenuElements();
-    const W = this.scale.width, H = this.scale.height;
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom, H = this.scale.height / zoom;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
     bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
@@ -880,7 +893,8 @@ export class MapScene extends Phaser.Scene {
   private showStubScreen(title: string): void {
     this.menuSubScreen = "stub";
     this.clearMenuElements();
-    const W = this.scale.width, H = this.scale.height;
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom, H = this.scale.height / zoom;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
     bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
@@ -905,5 +919,32 @@ export class MapScene extends Phaser.Scene {
   private closeSubScreen(): void {
     this.menuSubScreen = "none";
     this.drawMainMenu();
+  }
+
+  // ---- Default starter ----
+  private createDefaultPlayerState(): PlayerState {
+    const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    const usamon = allMonsters.find(m => m.id === "usamon")!;
+    const stats = calculateStats(usamon, 5);
+    const moves = usamon.learnset
+      .filter(e => e.level <= 5)
+      .map(e => e.moveId)
+      .slice(-4);
+    const instance: MonsterInstance = {
+      dataId: "usamon",
+      level: 5,
+      exp: getExpForLevel(5),
+      currentHp: stats.hp,
+      maxHp: stats.hp,
+      stats,
+      moves,
+    };
+    return {
+      party: [instance],
+      box: [],
+      items: [{ id: "moon_capsule", count: 5 }],
+      money: 1000,
+      defeatedTrainers: [],
+    };
   }
 }
