@@ -194,10 +194,27 @@ export class MapScene extends Phaser.Scene {
   }
 
   private setupCamera(): void {
-    const worldWidth = this.mapData.width * this.tileSize;
-    const worldHeight = this.mapData.height * this.tileSize;
-    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    const cam = this.cameras.main;
+    const ts = this.tileSize;
+    const worldW = this.mapData.width * ts;
+    const worldH = this.mapData.height * ts;
+    const canvasW = this.scale.width;
+    const canvasH = this.scale.height;
+
+    // Target: ~12 tiles visible horizontally (Ruby/Sapphire feel)
+    const targetZoom = canvasW / (12 * ts);
+
+    // Minimum zoom: map must fill the entire screen (no empty space)
+    const minZoomX = canvasW / worldW;
+    const minZoomY = canvasH / worldH;
+    const minZoom = Math.max(minZoomX, minZoomY);
+
+    const zoom = Math.max(targetZoom, minZoom);
+    cam.setZoom(zoom);
+
+    // Camera bounds: clamp to map edges
+    cam.setBounds(0, 0, worldW, worldH);
+    cam.startFollow(this.player, true, 0.1, 0.1);
   }
 
   private showMapName(name: string): void {
