@@ -20,7 +20,6 @@ export class SetupScene extends Phaser.Scene {
   private promptText!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
   private uiElements: Phaser.GameObjects.GameObject[] = [];
-  private htmlInput: HTMLInputElement | null = null;
 
   constructor() {
     super({ key: "SetupScene" });
@@ -134,26 +133,13 @@ export class SetupScene extends Phaser.Scene {
       zone.on("pointerdown", () => {
         this.selectedGender = opt.value as "boy" | "girl";
         this.highlightGender();
+        this.time.delayedCall(200, () => this.showSuitStep());
       });
 
       this.uiElements.push(bg, text, zone);
     });
 
     this.highlightGender();
-
-    // Confirm button for touch
-    const gBg = this.add.graphics().setDepth(10);
-    gBg.fillStyle(0x2255aa, 0.9);
-    gBg.fillRoundedRect(w / 2 - 60, 420, 120, 40, 8);
-    gBg.lineStyle(2, 0x66aaff);
-    gBg.strokeRoundedRect(w / 2 - 60, 420, 120, 40, 8);
-    const gTxt = this.add.text(w / 2, 440, "けってい", {
-      fontSize: "16px", color: "#ffffff", fontFamily: "monospace",
-    }).setOrigin(0.5).setDepth(11);
-    const gZone = this.add.zone(w / 2, 440, 120, 40)
-      .setInteractive().setDepth(12).setOrigin(0.5);
-    gZone.on("pointerdown", () => this.showSuitStep());
-    this.uiElements.push(gBg, gTxt, gZone);
   }
 
   private highlightGender(): void {
@@ -285,143 +271,33 @@ export class SetupScene extends Phaser.Scene {
     this.step = "name";
     this.clearUI();
     this.promptText.setText("なまえを いれてね");
-    this.instructionText.setText("タップして入力  けっていで確定");
+    this.instructionText.setText("キーボードで入力  Enter で決定");
     this.playerName = "";
     this.nameText.setVisible(true);
     this.nameText.setText("▌");
 
-    // Create HTML input for mobile keyboard support
-    this.createHtmlInput();
-
-    // Tap on name text area to focus the HTML input
-    const w = 640;
-    const tapZone = this.add.zone(w / 2, 340, 240, 50)
-      .setInteractive().setDepth(12).setOrigin(0.5);
-    tapZone.on("pointerdown", () => {
-      if (this.htmlInput) this.htmlInput.focus();
-    });
-    this.uiElements.push(tapZone);
-
-    // Confirm button
+    // Touch: add a simple "OK" button
     const okBg = this.add.graphics().setDepth(10);
     okBg.fillStyle(0x2255aa, 0.9);
-    okBg.fillRoundedRect(w / 2 - 60, 400, 120, 40, 8);
+    okBg.fillRoundedRect(270, 400, 100, 40, 8);
     okBg.lineStyle(2, 0x66aaff);
-    okBg.strokeRoundedRect(w / 2 - 60, 400, 120, 40, 8);
+    okBg.strokeRoundedRect(270, 400, 100, 40, 8);
 
-    const okText = this.add.text(w / 2, 420, "けってい", {
-      fontSize: "16px",
+    const okText = this.add.text(320, 420, "けってい", {
+      fontSize: "14px",
       color: "#ffffff",
       fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(11);
 
-    const okZone = this.add.zone(w / 2, 420, 120, 40)
+    const okZone = this.add.zone(320, 420, 100, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
     okZone.on("pointerdown", () => {
       if (this.playerName.length > 0) {
-        this.removeHtmlInput();
         this.finishSetup();
       }
     });
 
     this.uiElements.push(okBg, okText, okZone);
-  }
-
-  // ---- HTML Input for mobile keyboard ----
-  private createHtmlInput(): void {
-    this.removeHtmlInput();
-
-    const canvas = this.game.canvas;
-    const parent = canvas.parentElement;
-    if (!parent) return;
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.maxLength = 8;
-    input.placeholder = "なまえ";
-    input.autocomplete = "off";
-    input.autocapitalize = "off";
-    input.setAttribute("enterkeyhint", "done");
-
-    // Position over the name text area in the canvas
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = rect.width / 640;
-    const scaleY = rect.height / 480;
-    const inputW = 220 * scaleX;
-    const inputH = 44 * scaleY;
-    const inputX = rect.left + 320 * scaleX - inputW / 2;
-    const inputY = rect.top + 340 * scaleY - inputH / 2;
-
-    Object.assign(input.style, {
-      position: "fixed",
-      left: `${inputX}px`,
-      top: `${inputY}px`,
-      width: `${inputW}px`,
-      height: `${inputH}px`,
-      fontSize: `${Math.max(16, 20 * scaleY)}px`,
-      textAlign: "center",
-      background: "rgba(34, 51, 68, 0.95)",
-      color: "#ffffff",
-      border: "2px solid #66aaff",
-      borderRadius: "8px",
-      outline: "none",
-      fontFamily: "monospace",
-      zIndex: "1000",
-      caretColor: "#ffffff",
-      padding: "0 8px",
-      boxSizing: "border-box",
-    });
-
-    // Sync input to Phaser text
-    input.addEventListener("input", () => {
-      this.playerName = input.value.slice(0, 8);
-      input.value = this.playerName;
-      this.nameText.setText(this.playerName.length > 0 ? this.playerName : "▌");
-    });
-
-    // Enter key = confirm
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && this.playerName.length > 0) {
-        this.removeHtmlInput();
-        this.finishSetup();
-      }
-    });
-
-    // Reposition on resize
-    const reposition = () => {
-      const r = canvas.getBoundingClientRect();
-      const sx = r.width / 640;
-      const sy = r.height / 480;
-      const w = 220 * sx;
-      const h = 44 * sy;
-      input.style.left = `${r.left + 320 * sx - w / 2}px`;
-      input.style.top = `${r.top + 340 * sy - h / 2}px`;
-      input.style.width = `${w}px`;
-      input.style.height = `${h}px`;
-      input.style.fontSize = `${Math.max(16, 20 * sy)}px`;
-    };
-    window.addEventListener("resize", reposition);
-    (input as unknown as Record<string, unknown>).__resizeHandler = reposition;
-
-    document.body.appendChild(input);
-    this.htmlInput = input;
-
-    // Hide Phaser name text (HTML input replaces it visually)
-    this.nameText.setVisible(false);
-
-    // Auto-focus after a short delay (helps on mobile)
-    setTimeout(() => input.focus(), 150);
-  }
-
-  private removeHtmlInput(): void {
-    if (this.htmlInput) {
-      const handler = (this.htmlInput as unknown as Record<string, unknown>).__resizeHandler;
-      if (typeof handler === "function") {
-        window.removeEventListener("resize", handler as EventListener);
-      }
-      this.htmlInput.remove();
-      this.htmlInput = null;
-    }
   }
 
   // ---- Input ----
@@ -449,14 +325,22 @@ export class SetupScene extends Phaser.Scene {
         this.showNameStep();
       }
     } else if (this.step === "name") {
-      // Name input is handled by the HTML input element
-      // Desktop fallback: Enter key handled in HTML input's keydown listener
+      if (event.key === "Enter") {
+        if (this.playerName.length > 0) {
+          this.finishSetup();
+        }
+      } else if (event.key === "Backspace") {
+        this.playerName = this.playerName.slice(0, -1);
+        this.nameText.setText(this.playerName + "▌");
+      } else if (event.key.length === 1 && this.playerName.length < 8) {
+        this.playerName += event.key;
+        this.nameText.setText(this.playerName + "▌");
+      }
     }
   }
 
   // ---- Finish ----
   private finishSetup(): void {
-    this.removeHtmlInput();
     const setup: PlayerSetup = {
       gender: this.selectedGender,
       suitColor: SUIT_COLORS[this.selectedSuit],
