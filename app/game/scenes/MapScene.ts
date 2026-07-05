@@ -837,12 +837,16 @@ export class MapScene extends Phaser.Scene {
     const leadY = topPad;
     const leadH = usableH;
 
-    // ① Right column: fill remaining height evenly
+    // ① Right column: fill remaining height evenly, cap row height
     const rightX = leadX + leadW + gap;
     const rightW = W - rightX - margin;
     const rightSlotCount = Math.max(party.length - 1, 1);
-    const rightSlotH = Math.floor((usableH - (rightSlotCount - 1) * gap) / rightSlotCount);
-    const rightIconSize = Math.min(rightSlotH - 6, 44);
+    const rawSlotH = Math.floor((usableH - (rightSlotCount - 1) * gap) / rightSlotCount);
+    const rightSlotH = Math.min(rawSlotH, 70);  // cap to keep rows compact
+    // Distribute slots evenly across full height
+    const totalSlotsH = rightSlotCount * rightSlotH + (rightSlotCount - 1) * gap;
+    const rightStartY = topPad + Math.floor((usableH - totalSlotsH) / 2); // center vertically
+    const rightIconSize = Math.min(rightSlotH - 8, 40);
 
     // ===== Slot 0: Lead card (left, compact 1/3) =====
     const lead = party[0];
@@ -933,7 +937,7 @@ export class MapScene extends Phaser.Scene {
       if (!data) continue;
 
       const slotIdx = i - 1;
-      const cy = topPad + slotIdx * (rightSlotH + gap);
+      const cy = rightStartY + slotIdx * (rightSlotH + gap);
       const cx = rightX;
 
       // Row card
@@ -944,11 +948,15 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(cx + 3), this.uiY(cy + 3), this.uiS(rightW - 6), this.uiS(10));
       this.menuElements.push(card);
 
-      // Icon (bigger)
+      // Content area: icon left, text+bar right, vertically centered in card
+      const contentH = 34; // name(14) + gap + HP bar(~12)
+      const contentTop = cy + Math.max(4, Math.floor((rightSlotH - contentH) / 2));
+
+      // Icon (left, vertically centered with content)
       const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
       if (this.textures.exists(iconKey)) {
         const ibx = cx + 4;
-        const iby = cy + (rightSlotH - rightIconSize) / 2;
+        const iby = contentTop + (contentH - rightIconSize) / 2;
         this.menuElements.push(
           this.add.image(this.uiX(ibx + rightIconSize / 2), this.uiY(iby + rightIconSize / 2), iconKey)
             .setScrollFactor(0).setDepth(203)
@@ -956,23 +964,23 @@ export class MapScene extends Phaser.Scene {
         );
       }
 
-      // Text area
+      // Text area (right of icon)
       const tx = cx + rightIconSize + 10;
       this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(cy + 4), `${data.name}`, {
+        this.add.text(this.uiX(tx), this.uiY(contentTop), `${data.name}`, {
           fontSize: "12px", color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
       // Lv (right-aligned)
       this.menuElements.push(
-        this.add.text(this.uiX(cx + rightW - 6), this.uiY(cy + 4), `Lv${mon.level}`, {
+        this.add.text(this.uiX(cx + rightW - 6), this.uiY(contentTop), `Lv${mon.level}`, {
           fontSize: "11px", color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
 
       // HP bar
       const hpRatio = mon.currentHp / mon.maxHp;
-      const hpY = cy + 20;
+      const hpY = contentTop + 18;
       const rBarW = rightW - rightIconSize - 18;
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(hpY), "HP", {
@@ -991,24 +999,12 @@ export class MapScene extends Phaser.Scene {
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
 
-      // EXP bar (thin, below HP)
-      if (rightSlotH >= 42) {
-        const expY2 = hpY + 13;
-        const expLvl = getExpForLevel(mon.level);
-        const expNext = mon.level < 100 ? getExpForLevel(mon.level + 1) : expLvl;
-        const expIn = mon.exp - expLvl;
-        const expNeed = expNext - expLvl;
-        const expR = mon.level >= 100 ? 1 : (expNeed > 0 ? expIn / expNeed : 0);
-        const expG2 = this.add.graphics().setScrollFactor(0).setDepth(203);
-        drawCapsuleBar(expG2, hpBx, expY2, rBarW - 26, 4, expR, EXP_BLUE);
-        this.menuElements.push(expG2);
-      }
     }
 
     // If only 1 mon, show a message in the right area
     if (party.length === 1) {
       this.menuElements.push(
-        this.add.text(this.uiX(rightX + rightW / 2), this.uiY(topPad + usableH / 2), "ほかの なかまは\nまだ いない", {
+        this.add.text(this.uiX(rightX + rightW / 2), this.uiY(rightStartY + usableH / 2), "ほかの なかまは\nまだ いない", {
           fontSize: "12px", color: "#ffffff", fontFamily: F, ...STK2, align: "center",
         }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
       );
