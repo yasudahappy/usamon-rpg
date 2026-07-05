@@ -49,6 +49,19 @@ export class MapScene extends Phaser.Scene {
   private allTrainers: TrainerData[] = [];
   private trainerSprites: Map<string, Phaser.GameObjects.Image> = new Map();
 
+  // Facing direction (for NPC interaction)
+  private facingDirection: Direction = "down";
+
+  // NPC / Dialog
+  private kinoshitaSprite?: Phaser.GameObjects.Image;
+  private kinoshitaNpcX = 11;
+  private kinoshitaNpcY = 6;
+  private dialogActive = false;
+  private dialogMessages: string[] = [];
+  private dialogIndex = 0;
+  private dialogCallback?: () => void;
+  private dialogElements: Phaser.GameObjects.GameObject[] = [];
+
   // Menu system
   private menuOpen = false;
   private menuSubScreen: "none" | "party" | "save" | "stub" = "none";
@@ -98,11 +111,6 @@ export class MapScene extends Phaser.Scene {
     ) as MapData;
     this.tileSize = this.mapData.tileSize;
 
-    // New game: give player a starter usamon
-    if (!this.playerState) {
-      this.playerState = this.createDefaultPlayerState();
-    }
-
     this.drawMap();
     this.drawBuildings();
     this.createPlayer();
@@ -117,6 +125,11 @@ export class MapScene extends Phaser.Scene {
 
     // Show map name overlay
     this.showMapName(this.mapData.name);
+
+    // Place Kinoshita NPC on moonbase
+    if (this.currentMapKey === "moonbase") {
+      this.placeKinoshitaNpc();
+    }
   }
 
   // Sand tile IDs that should animate
@@ -399,6 +412,18 @@ export class MapScene extends Phaser.Scene {
     );
 
     if (warp) {
+      // Block exit if player has no almon
+      if (!this.playerState || this.playerState.party.length === 0) {
+        this.showDialog([
+          "まだ アルモンを もっていないぞ！",
+          "外は 野生のアルモンだらけだ。",
+          "危ないから まずキノシタ博士に\n会っておいで！",
+        ]);
+        // Push player back
+        this.gridY--;
+        this.player.setY(this.gridY * this.tileSize + this.tileSize / 2);
+        return;
+      }
       this.isWarping = true;
       this.moveQueue = null;
 
@@ -408,6 +433,7 @@ export class MapScene extends Phaser.Scene {
           mapKey: warp.targetMap,
           playerX: warp.targetX,
           playerY: warp.targetY,
+          playerState: this.playerState,
         });
       });
     }
@@ -432,10 +458,14 @@ export class MapScene extends Phaser.Scene {
   private isCollision(x: number, y: number): boolean {
     const { width, height, layers } = this.mapData;
     if (x < 0 || x >= width || y < 0 || y >= height) return true;
-    return layers.collision[y][x] === 1;
+    if (layers.collision[y][x] === 1) return true;
+    // NPC collision
+    if (this.kinoshitaSprite && x === this.kinoshitaNpcX && y === this.kinoshitaNpcY) return true;
+    return false;
   }
 
   private tryMove(dir: Direction): void {
+    this.facingDirection = dir;
     if (this.isMoving || this.isWarping) {
       if (!this.isWarping) this.moveQueue = dir;
       return;
@@ -507,12 +537,23 @@ export class MapScene extends Phaser.Scene {
     const kbMenu = this.mKey && Phaser.Input.Keyboard.JustDown(this.mKey);
     const kbEsc = this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey);
 
+    // --- Dialog ---
+    if (this.dialogActive) {
+      if (gpA) this.advanceDialog();
+      return;
+    }
+
     // --- Menu open/close ---
     if (this.menuOpen) {
       this.updateMenu(gpA, gpB || !!kbEsc, gpMenu || !!kbMenu, gp?.dpad || null);
-      return; // freeze game while menu open
+      return;
     }
     if (gpMenu || kbMenu) { this.openMenu(); return; }
+
+    // --- A button: NPC interaction ---
+    if (gpA && !this.isMoving) {
+      this.checkNpcInteraction();
+    }
 
     // B key → battle (test)
     if (
@@ -919,6 +960,160 @@ export class MapScene extends Phaser.Scene {
   private closeSubScreen(): void {
     this.menuSubScreen = "none";
     this.drawMainMenu();
+  }
+
+  // ========== NPC & DIALOG SYSTEM ==========
+
+  private placeKinoshitaNpc(): void {
+    // Generate simple NPC sprite (lab coat scientist)
+    if (!this.textures.exists("npc-kinoshita")) {
+      const c = document.createElement("canvas");
+      c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!;
+      // Lab coat body
+      ctx.fillStyle = "#e8e8f0";
+      ctx.fillRect(8, 12, 16, 16);
+      ctx.fillStyle = "#d0d0e0";
+      ctx.fillRect(8, 12, 16, 3);
+      // Head
+      ctx.fillStyle = "#f0d8b8";
+      ctx.beginPath(); ctx.arc(16, 10, 7, 0, Math.PI * 2); ctx.fill();
+      // Hair (gray, thinning)
+      ctx.fillStyle = "#8888a0";
+      ctx.fillRect(10, 3, 12, 5);
+      // Glasses
+      ctx.strokeStyle = "#444466";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(11, 8, 4, 4);
+      ctx.strokeRect(17, 8, 4, 4);
+      ctx.beginPath(); ctx.moveTo(15, 10); ctx.lineTo(17, 10); ctx.stroke();
+      // Smile
+      ctx.strokeStyle = "#aa7766";
+      ctx.beginPath(); ctx.arc(16, 12, 2, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+      this.textures.addCanvas("npc-kinoshita", c);
+    }
+
+    this.kinoshitaSprite = this.add.image(
+      this.kinoshitaNpcX * this.tileSize + this.tileSize / 2,
+      this.kinoshitaNpcY * this.tileSize + this.tileSize / 2,
+      "npc-kinoshita"
+    ).setDepth(9);
+  }
+
+  private checkNpcInteraction(): void {
+    let fx = this.gridX, fy = this.gridY;
+    switch (this.facingDirection) {
+      case "up": fy--; break;
+      case "down": fy++; break;
+      case "left": fx--; break;
+      case "right": fx++; break;
+    }
+    if (this.kinoshitaSprite && fx === this.kinoshitaNpcX && fy === this.kinoshitaNpcY) {
+      this.triggerKinoshitaEvent();
+    }
+  }
+
+  private triggerKinoshitaEvent(): void {
+    const hasStarter = this.playerState && this.playerState.party.length > 0;
+
+    if (hasStarter) {
+      // Return visit
+      this.showDialog([
+        "おお！ 元気そうだな！",
+        "冒険は順調かい？\n困ったら いつでも戻っておいで！",
+        "アルモンたちも\nきみと一緒で 嬉しそうだな。",
+      ]);
+      return;
+    }
+
+    // First meeting: introduction + give usamon
+    this.showDialog([
+      "やあやあ！ よく来たね！",
+      "ここは月面開発プロジェクトの基地…\nムーンベースだ。",
+      "わしは キノシタ。\nこの基地で アルモンの\n研究をしておるよ。",
+      "アルモンというのはね、\n月に住む 不思議な生き物のことだ。",
+      "きみも アルモンと一緒に\n月面を冒険してみないかね？",
+      "実はこの子だけ\nもらい手がなくてなぁ…",
+      "最後に売れ残ってたやつなんだが…\nどうかね？",
+    ], () => {
+      // Give usamon
+      this.playerState = this.createDefaultPlayerState();
+      this.showDialog([
+        "★ うさもん（Lv.5）を もらった！",
+        "大事にしてやってくれ！\nてもちから いつでも\n様子を 見られるぞ。",
+        "それと…\nムーンカプセルも 5個つけておいた。\n野生のアルモンを 捕まえるのに使うんだ。",
+        "さあ、南の出口から\n外に出てみるといい。\n月面には 色んなアルモンがいるぞ！",
+      ]);
+    });
+  }
+
+  // ---- Dialog System ----
+  private showDialog(messages: string[], onComplete?: () => void): void {
+    this.dialogActive = true;
+    this.dialogMessages = messages;
+    this.dialogIndex = 0;
+    this.dialogCallback = onComplete;
+    this.drawDialogMessage();
+  }
+
+  private drawDialogMessage(): void {
+    this.clearDialogElements();
+    const zoom = this.cameras.main.zoom;
+    const W = this.scale.width / zoom;
+    const H = this.scale.height / zoom;
+    const boxH = 70, boxPad = 10;
+    const boxY = H - boxH - 8;
+
+    // Box background
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(300);
+    bg.fillStyle(0x0a1628, 0.95);
+    bg.fillRoundedRect(8, boxY, W - 16, boxH, 10);
+    bg.lineStyle(2, 0x3366aa);
+    bg.strokeRoundedRect(8, boxY, W - 16, boxH, 10);
+    this.dialogElements.push(bg);
+
+    // Text
+    const msg = this.dialogMessages[this.dialogIndex];
+    const text = this.add.text(20, boxY + 10, msg, {
+      fontSize: "14px", color: "#ffffff", fontFamily: "monospace",
+      wordWrap: { width: W - 52 }, lineSpacing: 4,
+    }).setScrollFactor(0).setDepth(301);
+    this.dialogElements.push(text);
+
+    // Advance indicator
+    if (this.dialogIndex < this.dialogMessages.length - 1 || this.dialogCallback) {
+      const indicator = this.add.text(W - 24, boxY + boxH - 16, "▼", {
+        fontSize: "12px", color: "#66aaff", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(301);
+      this.dialogElements.push(indicator);
+    }
+
+    // Tap to advance
+    const zone = this.add.zone(W / 2, boxY + boxH / 2, W, boxH)
+      .setScrollFactor(0).setDepth(302).setOrigin(0.5).setInteractive();
+    zone.on("pointerdown", () => this.advanceDialog());
+    this.dialogElements.push(zone);
+  }
+
+  private advanceDialog(): void {
+    this.dialogIndex++;
+    if (this.dialogIndex >= this.dialogMessages.length) {
+      const cb = this.dialogCallback;
+      this.dialogCallback = undefined;
+      this.clearDialogElements();
+      if (cb) {
+        cb();
+      } else {
+        this.dialogActive = false;
+      }
+      return;
+    }
+    this.drawDialogMessage();
+  }
+
+  private clearDialogElements(): void {
+    this.dialogElements.forEach(el => el.destroy());
+    this.dialogElements = [];
   }
 
   // ---- Default starter ----
