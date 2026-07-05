@@ -97,11 +97,10 @@ export default function GamePad() {
             touchAction: "manipulation",
             letterSpacing: 2,
           }}
-          onTouchStart={(e) => {
+          onPointerDown={(e) => {
             e.preventDefault();
             pressMenu();
           }}
-          onMouseDown={pressMenu}
         >
           MENU
         </div>
@@ -207,11 +206,10 @@ function ActionBtn({
         boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
         ...style,
       }}
-      onTouchStart={(e) => {
+      onPointerDown={(e) => {
         e.preventDefault();
         onPress();
       }}
-      onMouseDown={onPress}
     >
       {label}
     </div>
