@@ -7,11 +7,20 @@ import { SetupScene } from "./scenes/SetupScene";
 export function createGameConfig(
   parent: string | HTMLElement
 ): Phaser.Types.Core.GameConfig {
+  // Dynamic height: match container aspect ratio so canvas fills 70% area
+  let h = 960; // default portrait
+  if (typeof parent !== "string") {
+    const rect = parent.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      h = Math.round(640 * (rect.height / rect.width));
+    }
+  }
+
   return {
     type: Phaser.AUTO,
     parent,
     width: 640,
-    height: 480,
+    height: h,
     backgroundColor: "#1a2040",
     pixelArt: true,
     scale: {

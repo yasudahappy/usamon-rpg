@@ -88,6 +88,9 @@ export class BattleScene extends Phaser.Scene {
   // Gamepad tracking for edge detection
   private gpPrevDpad: string | null = null;
 
+  // Vertical scale factor (base 480)
+  private sy = 1;
+
   // Return data
   private returnMapKey = "moonbase";
   private returnPlayerX = 0;
@@ -257,6 +260,12 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.sy = this.scale.height / 480;
+
+    // Clear stale gamepad state
+    const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
+    if (gp) { gp.aJust = false; gp.bJust = false; gp.menuJust = false; }
+
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
     this.enemyMon = this.instanceToBattleMonster(this.enemyInstance);
 
@@ -291,9 +300,12 @@ export class BattleScene extends Phaser.Scene {
 
   private drawBackground(): void {
     const g = this.add.graphics();
-    // Sky: dark navy gradient (not black)
-    for (let y = 0; y < 160; y++) {
-      const t = y / 160;
+    const s = this.sy;
+    const H = this.scale.height;
+    const skyH = Math.floor(160 * s);
+    // Sky: dark navy gradient
+    for (let y = 0; y < skyH; y++) {
+      const t = y / skyH;
       const r = Math.floor(20 + t * 30);
       const gv = Math.floor(25 + t * 40);
       const b = Math.floor(60 + t * 50);
@@ -303,15 +315,15 @@ export class BattleScene extends Phaser.Scene {
     // Bright stars
     const rng = new Phaser.Math.RandomDataGenerator(["battlestars"]);
     for (let i = 0; i < 50; i++) {
-      const sx = rng.between(0, 640);
-      const sy = rng.between(0, 140);
+      const sx2 = rng.between(0, 640);
+      const sy2 = rng.between(0, skyH - 10);
       const brightness = rng.between(200, 255);
       g.fillStyle(Phaser.Display.Color.GetColor(brightness, brightness, brightness));
-      g.fillRect(sx, sy, rng.between(1, 2), rng.between(1, 2));
+      g.fillRect(sx2, sy2, rng.between(1, 2), rng.between(1, 2));
     }
-    // Ground: cream-light gray
-    for (let y = 160; y < 240; y++) {
-      const t = (y - 160) / 80;
+    // Ground: cream-light gray (fills rest)
+    for (let y = skyH; y < H; y++) {
+      const t = Math.min(1, (y - skyH) / (80 * s));
       const r = Math.floor(200 + t * 20);
       const gv = Math.floor(195 + t * 15);
       const b = Math.floor(180 + t * 10);
@@ -324,16 +336,16 @@ export class BattleScene extends Phaser.Scene {
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
     const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
     this.playerSprite = this.add
-      .image(100, 180, `monster-${playerData.id}`)
+      .image(100, Math.round(180 * this.sy), `monster-${playerData.id}`)
       .setDepth(5);
     this.enemySprite = this.add
-      .image(480, 80, `monster-${enemyData.id}`)
+      .image(480, Math.round(80 * this.sy), `monster-${enemyData.id}`)
       .setDepth(5);
   }
 
   private drawHpBars(): void {
     this.playerNameText = this.add
-      .text(30, 200, `${this.playerMon.name}  Lv${this.playerMon.level}`, {
+      .text(30, Math.round(200 * this.sy), `${this.playerMon.name}  Lv${this.playerMon.level}`, {
         fontSize: "13px",
         color: "#ffffff",
         fontFamily: "monospace",
@@ -341,7 +353,7 @@ export class BattleScene extends Phaser.Scene {
       .setDepth(10);
 
     this.playerHpText = this.add
-      .text(180, 200, `${this.playerMon.currentHp}/${this.playerMon.maxHp}`, {
+      .text(180, Math.round(200 * this.sy), `${this.playerMon.currentHp}/${this.playerMon.maxHp}`, {
         fontSize: "13px",
         color: "#ffffff",
         fontFamily: "monospace",
@@ -350,10 +362,10 @@ export class BattleScene extends Phaser.Scene {
       .setDepth(10);
 
     this.playerHpBar = this.add.graphics().setDepth(10);
-    this.drawHpBarGraphic(this.playerHpBar, 30, 218, 150, this.playerMon.currentHp / this.playerMon.maxHp);
+    this.drawHpBarGraphic(this.playerHpBar, 30, Math.round(218 * this.sy), 150, this.playerMon.currentHp / this.playerMon.maxHp);
 
     this.enemyNameText = this.add
-      .text(400, 40, `${this.enemyMon.name}  Lv${this.enemyMon.level}`, {
+      .text(400, Math.round(40 * this.sy), `${this.enemyMon.name}  Lv${this.enemyMon.level}`, {
         fontSize: "13px",
         color: "#ffffff",
         fontFamily: "monospace",
@@ -361,7 +373,7 @@ export class BattleScene extends Phaser.Scene {
       .setDepth(10);
 
     this.enemyHpText = this.add
-      .text(600, 40, `${this.enemyMon.currentHp}/${this.enemyMon.maxHp}`, {
+      .text(600, Math.round(40 * this.sy), `${this.enemyMon.currentHp}/${this.enemyMon.maxHp}`, {
         fontSize: "13px",
         color: "#ffffff",
         fontFamily: "monospace",
@@ -370,7 +382,7 @@ export class BattleScene extends Phaser.Scene {
       .setDepth(10);
 
     this.enemyHpBar = this.add.graphics().setDepth(10);
-    this.drawHpBarGraphic(this.enemyHpBar, 400, 58, 200, this.enemyMon.currentHp / this.enemyMon.maxHp);
+    this.drawHpBarGraphic(this.enemyHpBar, 400, Math.round(58 * this.sy), 200, this.enemyMon.currentHp / this.enemyMon.maxHp);
   }
 
   private drawHpBarGraphic(g: Phaser.GameObjects.Graphics, x: number, y: number, width: number, ratio: number): void {
@@ -391,12 +403,14 @@ export class BattleScene extends Phaser.Scene {
   private drawMessageWindow(): void {
     this.msgBg = this.add.graphics().setDepth(20);
     this.msgBg.fillStyle(0x111122, 0.95);
-    this.msgBg.fillRect(0, 240, 640, 100);
+    const msgY = Math.round(240 * this.sy);
+    const msgH = Math.round(100 * this.sy);
+    this.msgBg.fillRect(0, msgY, 640, msgH);
     this.msgBg.lineStyle(2, 0x4488aa);
-    this.msgBg.strokeRect(2, 242, 636, 96);
+    this.msgBg.strokeRect(2, msgY + 2, 636, msgH - 4);
 
     this.msgText = this.add
-      .text(20, 260, "", {
+      .text(20, Math.round(260 * this.sy), "", {
         fontSize: "16px",
         color: "#ffffff",
         fontFamily: "monospace",
@@ -408,10 +422,10 @@ export class BattleScene extends Phaser.Scene {
   private drawCommandWindow(): void {
     const labels = ["たたかう", "どうぐ", "交代", "にげる"];
     const positions = [
-      { x: 160, y: 370 },
-      { x: 480, y: 370 },
-      { x: 160, y: 430 },
-      { x: 480, y: 430 },
+      { x: 160, y: Math.round(370 * this.sy) },
+      { x: 480, y: Math.round(370 * this.sy) },
+      { x: 160, y: Math.round(430 * this.sy) },
+      { x: 480, y: Math.round(430 * this.sy) },
     ];
 
     for (let i = 0; i < 4; i++) {
@@ -504,10 +518,10 @@ export class BattleScene extends Phaser.Scene {
 
     const moves = this.playerMon.moves;
     const positions = [
-      { x: 160, y: 370 },
-      { x: 480, y: 370 },
-      { x: 160, y: 430 },
-      { x: 480, y: 430 },
+      { x: 160, y: Math.round(370 * this.sy) },
+      { x: 480, y: Math.round(370 * this.sy) },
+      { x: 160, y: Math.round(430 * this.sy) },
+      { x: 480, y: Math.round(430 * this.sy) },
     ];
 
     for (let i = 0; i < 4; i++) {
@@ -592,7 +606,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.msgBg.setInteractive(
-      new Phaser.Geom.Rectangle(0, 240, 640, 100),
+      new Phaser.Geom.Rectangle(0, Math.round(240 * this.sy), 640, Math.round(100 * this.sy)),
       Phaser.Geom.Rectangle.Contains
     );
     this.msgBg.on("pointerdown", () => {
@@ -845,7 +859,7 @@ export class BattleScene extends Phaser.Scene {
       this.showMessages(messages, () => {
         // Update HP bar if healed
         if (attacker === this.playerMon) {
-          this.drawHpBarGraphic(this.playerHpBar, 30, 218, 150, attacker.currentHp / attacker.maxHp);
+          this.drawHpBarGraphic(this.playerHpBar, 30, Math.round(218 * this.sy), 150, attacker.currentHp / attacker.maxHp);
           this.playerHpText.setText(`${attacker.currentHp}/${attacker.maxHp}`);
         }
         onComplete();
@@ -936,7 +950,7 @@ export class BattleScene extends Phaser.Scene {
     const hpBar = isPlayer ? this.playerHpBar : this.enemyHpBar;
     const hpText = isPlayer ? this.playerHpText : this.enemyHpText;
     const x = isPlayer ? 30 : 400;
-    const y = isPlayer ? 218 : 58;
+    const y = isPlayer ? Math.round(218 * this.sy) : Math.round(58 * this.sy);
     const width = isPlayer ? 150 : 200;
     const targetRatio = mon.currentHp / mon.maxHp;
 
@@ -1075,7 +1089,7 @@ export class BattleScene extends Phaser.Scene {
       // Update display
       const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
       this.playerNameText.setText(`${playerData.name}  Lv${this.playerInstance.level}`);
-      this.drawHpBarGraphic(this.playerHpBar, 30, 218, 150, this.playerMon.currentHp / this.playerMon.maxHp);
+      this.drawHpBarGraphic(this.playerHpBar, 30, Math.round(218 * this.sy), 150, this.playerMon.currentHp / this.playerMon.maxHp);
       this.playerHpText.setText(`${this.playerMon.currentHp}/${this.playerMon.maxHp}`);
 
       this.showMessages(
@@ -1149,11 +1163,11 @@ export class BattleScene extends Phaser.Scene {
       "覚えない",
     ];
     const positions = [
-      { x: 160, y: 360 },
-      { x: 480, y: 360 },
-      { x: 160, y: 410 },
-      { x: 480, y: 410 },
-      { x: 320, y: 455 },
+      { x: 160, y: Math.round(360 * this.sy) },
+      { x: 480, y: Math.round(360 * this.sy) },
+      { x: 160, y: Math.round(410 * this.sy) },
+      { x: 480, y: Math.round(410 * this.sy) },
+      { x: 320, y: Math.round(455 * this.sy) },
     ];
 
     for (let i = 0; i < labels.length; i++) {
@@ -1342,7 +1356,7 @@ export class BattleScene extends Phaser.Scene {
     // Update battle monster
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
     this.playerNameText.setText(`${newData.name}  Lv${this.playerInstance.level}`);
-    this.drawHpBarGraphic(this.playerHpBar, 30, 218, 150, this.playerMon.currentHp / this.playerMon.maxHp);
+    this.drawHpBarGraphic(this.playerHpBar, 30, Math.round(218 * this.sy), 150, this.playerMon.currentHp / this.playerMon.maxHp);
     this.playerHpText.setText(`${this.playerMon.currentHp}/${this.playerMon.maxHp}`);
 
     this.showMessages(
@@ -1463,9 +1477,9 @@ export class BattleScene extends Phaser.Scene {
     this.commandSlots = [];
 
     const positions = [
-      { x: 160, y: 360 }, { x: 480, y: 360 },
-      { x: 160, y: 410 }, { x: 480, y: 410 },
-      { x: 160, y: 455 }, { x: 480, y: 455 },
+      { x: 160, y: Math.round(360 * this.sy) }, { x: 480, y: Math.round(360 * this.sy) },
+      { x: 160, y: Math.round(410 * this.sy) }, { x: 480, y: Math.round(410 * this.sy) },
+      { x: 160, y: Math.round(455 * this.sy) }, { x: 480, y: Math.round(455 * this.sy) },
     ];
 
     const options = [
@@ -1519,7 +1533,7 @@ export class BattleScene extends Phaser.Scene {
     // Update sprite
     this.playerSprite.setTexture(`monster-${newMon.dataId}`);
     this.playerNameText.setText(`${newData.name}  Lv${newMon.level}`);
-    this.drawHpBarGraphic(this.playerHpBar, 30, 218, 150, this.playerMon.currentHp / this.playerMon.maxHp);
+    this.drawHpBarGraphic(this.playerHpBar, 30, Math.round(218 * this.sy), 150, this.playerMon.currentHp / this.playerMon.maxHp);
     this.playerHpText.setText(`${this.playerMon.currentHp}/${this.playerMon.maxHp}`);
 
     this.showMessages(
@@ -1599,9 +1613,9 @@ export class BattleScene extends Phaser.Scene {
     const enemyData = this.allMonsters.find(m => m.id === next.id)!;
     this.enemySprite.setTexture(`monster-${next.id}`);
     this.enemySprite.setAlpha(1);
-    this.enemySprite.setY(80);
+    this.enemySprite.setY(Math.round(80 * this.sy));
     this.enemyNameText.setText(`${enemyData.name}  Lv${next.level}`);
-    this.drawHpBarGraphic(this.enemyHpBar, 400, 58, 200, 1);
+    this.drawHpBarGraphic(this.enemyHpBar, 400, Math.round(58 * this.sy), 200, 1);
     this.enemyHpText.setText(`${this.enemyMon.currentHp}/${this.enemyMon.maxHp}`);
 
     this.showMessages(

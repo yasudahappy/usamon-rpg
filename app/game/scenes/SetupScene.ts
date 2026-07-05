@@ -27,13 +27,13 @@ export class SetupScene extends Phaser.Scene {
   }
 
   create(): void {
-    const w = 640;
-    const h = 480;
+    const w = this.scale.width;   // 640
+    const H = this.scale.height;  // dynamic
 
     // Background: dark navy with stars
     const bg = this.add.graphics();
-    for (let y = 0; y < h; y++) {
-      const t = y / h;
+    for (let y = 0; y < H; y++) {
+      const t = y / H;
       const r = Math.floor(10 + t * 15);
       const g = Math.floor(12 + t * 20);
       const b = Math.floor(30 + t * 40);
@@ -42,49 +42,49 @@ export class SetupScene extends Phaser.Scene {
     }
     // Stars
     const rng = new Phaser.Math.RandomDataGenerator(["setupstars"]);
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 80; i++) {
       const sx = rng.between(0, w);
-      const sy = rng.between(0, h);
+      const sy = rng.between(0, H);
       const bright = rng.between(180, 255);
       bg.fillStyle(Phaser.Display.Color.GetColor(bright, bright, bright));
       bg.fillRect(sx, sy, rng.between(1, 2), rng.between(1, 2));
     }
 
     // Title
-    this.add.text(w / 2, 40, "うさもんの大冒険", {
+    this.add.text(w / 2, Math.round(H * 0.05), "うさもんの大冒険", {
       fontSize: "28px",
       color: "#ffffff",
       fontFamily: "monospace",
       fontStyle: "bold",
     }).setOrigin(0.5);
 
-    this.add.text(w / 2, 72, "〜月面探索編〜", {
+    this.add.text(w / 2, Math.round(H * 0.085), "〜月面探索編〜", {
       fontSize: "16px",
       color: "#88aacc",
       fontFamily: "monospace",
     }).setOrigin(0.5);
 
     // Prompt text (changes per step)
-    this.promptText = this.add.text(w / 2, 120, "", {
+    this.promptText = this.add.text(w / 2, Math.round(H * 0.14), "", {
       fontSize: "18px",
       color: "#ffffff",
       fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(10);
 
     // Instruction text
-    this.instructionText = this.add.text(w / 2, h - 40, "", {
+    this.instructionText = this.add.text(w / 2, H - 40, "", {
       fontSize: "12px",
       color: "#667788",
       fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(10);
 
     // Character preview (center)
-    this.previewSprite = this.add.image(w / 2, 240, "player-frame-0")
+    this.previewSprite = this.add.image(w / 2, Math.round(H * 0.28), "player-frame-0")
       .setDepth(10)
       .setScale(3);
 
     // Name text (for name step)
-    this.nameText = this.add.text(w / 2, 340, "", {
+    this.nameText = this.add.text(w / 2, Math.round(H * 0.40), "", {
       fontSize: "24px",
       color: "#ffffff",
       fontFamily: "monospace",
@@ -115,21 +115,23 @@ export class SetupScene extends Phaser.Scene {
     this.instructionText.setText("← → で選択  Enter で決定");
     this.nameText.setVisible(false);
 
-    const w = 640;
+    const w = this.scale.width;
+    const H = this.scale.height;
+    const optY = Math.round(H * 0.42);
     const options = [
       { label: "おとこのこ", value: "boy", x: w / 2 - 100 },
       { label: "おんなのこ", value: "girl", x: w / 2 + 100 },
     ];
 
-    options.forEach((opt, i) => {
+    options.forEach((opt) => {
       const bg = this.add.graphics().setDepth(10);
-      const text = this.add.text(opt.x, 350, opt.label, {
+      const text = this.add.text(opt.x, optY, opt.label, {
         fontSize: "18px",
         color: "#ffffff",
         fontFamily: "monospace",
       }).setOrigin(0.5).setDepth(11);
 
-      const zone = this.add.zone(opt.x, 350, 160, 50)
+      const zone = this.add.zone(opt.x, optY, 160, 50)
         .setInteractive().setDepth(12).setOrigin(0.5);
       zone.on("pointerdown", () => {
         this.selectedGender = opt.value as "boy" | "girl";
@@ -141,16 +143,17 @@ export class SetupScene extends Phaser.Scene {
 
     this.highlightGender();
 
-    // Confirm button for touch
+    // Confirm button
+    const confirmY = Math.round(H * 0.53);
     const gBg = this.add.graphics().setDepth(10);
     gBg.fillStyle(0x2255aa, 0.9);
-    gBg.fillRoundedRect(w / 2 - 60, 420, 120, 40, 8);
+    gBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
     gBg.lineStyle(2, 0x66aaff);
-    gBg.strokeRoundedRect(w / 2 - 60, 420, 120, 40, 8);
-    const gTxt = this.add.text(w / 2, 440, "けってい", {
+    gBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
+    const gTxt = this.add.text(w / 2, confirmY, "けってい", {
       fontSize: "16px", color: "#ffffff", fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(11);
-    const gZone = this.add.zone(w / 2, 440, 120, 40)
+    const gZone = this.add.zone(w / 2, confirmY, 120, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
     gZone.on("pointerdown", () => this.showSuitStep());
     this.uiElements.push(gBg, gTxt, gZone);
@@ -158,26 +161,28 @@ export class SetupScene extends Phaser.Scene {
 
   private highlightGender(): void {
     const isLeft = this.selectedGender === "boy";
-    const w = 640;
+    const w = this.scale.width;
+    const H = this.scale.height;
+    const optY = Math.round(H * 0.42);
     const positions = [w / 2 - 100, w / 2 + 100];
 
     let idx = 0;
-    for (let i = 0; i < this.uiElements.length; i += 3) {
+    for (let i = 0; i < this.uiElements.length - 3; i += 3) {
       const bg = this.uiElements[i] as Phaser.GameObjects.Graphics;
       const text = this.uiElements[i + 1] as Phaser.GameObjects.Text;
       const x = positions[idx];
       bg.clear();
       if ((idx === 0 && isLeft) || (idx === 1 && !isLeft)) {
         bg.fillStyle(0x2255aa, 0.9);
-        bg.fillRoundedRect(x - 80, 325, 160, 50, 8);
+        bg.fillRoundedRect(x - 80, optY - 25, 160, 50, 8);
         bg.lineStyle(2, 0x66aaff);
-        bg.strokeRoundedRect(x - 80, 325, 160, 50, 8);
+        bg.strokeRoundedRect(x - 80, optY - 25, 160, 50, 8);
         text.setColor("#ffffff");
       } else {
         bg.fillStyle(0x223344, 0.7);
-        bg.fillRoundedRect(x - 80, 325, 160, 50, 8);
+        bg.fillRoundedRect(x - 80, optY - 25, 160, 50, 8);
         bg.lineStyle(1, 0x445566);
-        bg.strokeRoundedRect(x - 80, 325, 160, 50, 8);
+        bg.strokeRoundedRect(x - 80, optY - 25, 160, 50, 8);
         text.setColor("#888888");
       }
       idx++;
@@ -193,7 +198,10 @@ export class SetupScene extends Phaser.Scene {
     this.nameText.setVisible(false);
     this.updatePreview();
 
-    const w = 640;
+    const w = this.scale.width;
+    const H = this.scale.height;
+    const swatchY = Math.round(H * 0.44);
+    const labelY = swatchY + 30;
     const startX = w / 2 - (SUIT_COLORS.length - 1) * 55 / 2;
 
     SUIT_COLORS.forEach((color, i) => {
@@ -201,18 +209,17 @@ export class SetupScene extends Phaser.Scene {
       const bg = this.add.graphics().setDepth(10);
       const swatch = this.add.graphics().setDepth(11);
 
-      // Color swatch circle
       const hex = Phaser.Display.Color.HexStringToColor(SUIT_HEX[i]).color;
       swatch.fillStyle(hex);
-      swatch.fillCircle(x, 370, 18);
+      swatch.fillCircle(x, swatchY, 18);
 
-      const label = this.add.text(x, 400, SUIT_LABELS[i], {
+      const label = this.add.text(x, labelY, SUIT_LABELS[i], {
         fontSize: "10px",
         color: "#aaaaaa",
         fontFamily: "monospace",
       }).setOrigin(0.5).setDepth(11);
 
-      const zone = this.add.zone(x, 375, 50, 60)
+      const zone = this.add.zone(x, swatchY + 5, 50, 60)
         .setInteractive().setDepth(12).setOrigin(0.5);
       zone.on("pointerdown", () => {
         this.selectedSuit = i;
@@ -225,33 +232,36 @@ export class SetupScene extends Phaser.Scene {
 
     this.highlightSuit();
 
-    // Confirm button for touch
+    // Confirm button
+    const confirmY = Math.round(H * 0.55);
     const scBg = this.add.graphics().setDepth(10);
     scBg.fillStyle(0x2255aa, 0.9);
-    scBg.fillRoundedRect(w / 2 - 60, 430, 120, 40, 8);
+    scBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
     scBg.lineStyle(2, 0x66aaff);
-    scBg.strokeRoundedRect(w / 2 - 60, 430, 120, 40, 8);
-    const scTxt = this.add.text(w / 2, 450, "けってい", {
+    scBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
+    const scTxt = this.add.text(w / 2, confirmY, "けってい", {
       fontSize: "16px", color: "#ffffff", fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(11);
-    const scZone = this.add.zone(w / 2, 450, 120, 40)
+    const scZone = this.add.zone(w / 2, confirmY, 120, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
     scZone.on("pointerdown", () => this.showNameStep());
     this.uiElements.push(scBg, scTxt, scZone);
   }
 
   private highlightSuit(): void {
-    const w = 640;
+    const H = this.scale.height;
+    const swatchY = Math.round(H * 0.44);
+    const w = this.scale.width;
     const startX = w / 2 - (SUIT_COLORS.length - 1) * 55 / 2;
 
     let idx = 0;
-    for (let i = 0; i < this.uiElements.length; i += 4) {
+    for (let i = 0; i < this.uiElements.length - 3; i += 4) {
       const bg = this.uiElements[i] as Phaser.GameObjects.Graphics;
       const x = startX + idx * 55;
       bg.clear();
       if (idx === this.selectedSuit) {
         bg.lineStyle(3, 0x66aaff);
-        bg.strokeCircle(x, 370, 22);
+        bg.strokeCircle(x, swatchY, 22);
       }
       idx++;
     }
@@ -293,9 +303,13 @@ export class SetupScene extends Phaser.Scene {
     // Create HTML input for mobile keyboard support
     this.createHtmlInput();
 
+    const w = this.scale.width;
+    const H = this.scale.height;
+    const nameY = Math.round(H * 0.40);
+    const confirmY = Math.round(H * 0.50);
+
     // Tap on name text area to focus the HTML input
-    const w = 640;
-    const tapZone = this.add.zone(w / 2, 340, 240, 50)
+    const tapZone = this.add.zone(w / 2, nameY, 240, 50)
       .setInteractive().setDepth(12).setOrigin(0.5);
     tapZone.on("pointerdown", () => {
       if (this.htmlInput) this.htmlInput.focus();
@@ -305,17 +319,17 @@ export class SetupScene extends Phaser.Scene {
     // Confirm button
     const okBg = this.add.graphics().setDepth(10);
     okBg.fillStyle(0x2255aa, 0.9);
-    okBg.fillRoundedRect(w / 2 - 60, 400, 120, 40, 8);
+    okBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
     okBg.lineStyle(2, 0x66aaff);
-    okBg.strokeRoundedRect(w / 2 - 60, 400, 120, 40, 8);
+    okBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
 
-    const okText = this.add.text(w / 2, 420, "けってい", {
+    const okText = this.add.text(w / 2, confirmY, "けってい", {
       fontSize: "16px",
       color: "#ffffff",
       fontFamily: "monospace",
     }).setOrigin(0.5).setDepth(11);
 
-    const okZone = this.add.zone(w / 2, 420, 120, 40)
+    const okZone = this.add.zone(w / 2, confirmY, 120, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
     okZone.on("pointerdown", () => {
       if (this.playerName.length > 0) {
@@ -343,14 +357,17 @@ export class SetupScene extends Phaser.Scene {
     input.autocapitalize = "off";
     input.setAttribute("enterkeyhint", "done");
 
+    const H = this.scale.height;
+    const nameYRatio = 0.40; // matches nameText position
+
     // Position over the name text area in the canvas
     const rect = canvas.getBoundingClientRect();
-    const scaleX = rect.width / 640;
-    const scaleY = rect.height / 480;
+    const scaleX = rect.width / this.scale.width;
+    const scaleY = rect.height / H;
     const inputW = 220 * scaleX;
     const inputH = 44 * scaleY;
-    const inputX = rect.left + 320 * scaleX - inputW / 2;
-    const inputY = rect.top + 340 * scaleY - inputH / 2;
+    const inputX = rect.left + (this.scale.width / 2) * scaleX - inputW / 2;
+    const inputY = rect.top + (H * nameYRatio) * scaleY - inputH / 2;
 
     Object.assign(input.style, {
       position: "fixed",
@@ -390,15 +407,15 @@ export class SetupScene extends Phaser.Scene {
     // Reposition on resize
     const reposition = () => {
       const r = canvas.getBoundingClientRect();
-      const sx = r.width / 640;
-      const sy = r.height / 480;
-      const w = 220 * sx;
-      const h = 44 * sy;
-      input.style.left = `${r.left + 320 * sx - w / 2}px`;
-      input.style.top = `${r.top + 340 * sy - h / 2}px`;
-      input.style.width = `${w}px`;
-      input.style.height = `${h}px`;
-      input.style.fontSize = `${Math.max(16, 20 * sy)}px`;
+      const sx = r.width / this.scale.width;
+      const sy2 = r.height / H;
+      const w2 = 220 * sx;
+      const h2 = 44 * sy2;
+      input.style.left = `${r.left + (this.scale.width / 2) * sx - w2 / 2}px`;
+      input.style.top = `${r.top + (H * nameYRatio) * sy2 - h2 / 2}px`;
+      input.style.width = `${w2}px`;
+      input.style.height = `${h2}px`;
+      input.style.fontSize = `${Math.max(16, 20 * sy2)}px`;
     };
     window.addEventListener("resize", reposition);
     (input as unknown as Record<string, unknown>).__resizeHandler = reposition;
@@ -450,7 +467,6 @@ export class SetupScene extends Phaser.Scene {
       }
     } else if (this.step === "name") {
       // Name input is handled by the HTML input element
-      // Desktop fallback: Enter key handled in HTML input's keydown listener
     }
   }
 
