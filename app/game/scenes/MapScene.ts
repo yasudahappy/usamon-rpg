@@ -948,39 +948,37 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(cx + 3), this.uiY(cy + 3), this.uiS(rightW - 6), this.uiS(10));
       this.menuElements.push(card);
 
-      // Content area: icon left, text+bar right, vertically centered in card
-      const contentH = 34; // name(14) + gap + HP bar(~12)
-      const contentTop = cy + Math.max(4, Math.floor((rightSlotH - contentH) / 2));
-
-      // Icon (left, vertically centered with content)
+      // Icon (left, vertically centered in card)
       const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
+      const ibx = cx + 4;
+      const iconCy = cy + rightSlotH / 2; // vertical center of card
       if (this.textures.exists(iconKey)) {
-        const ibx = cx + 4;
-        const iby = contentTop + (contentH - rightIconSize) / 2;
         this.menuElements.push(
-          this.add.image(this.uiX(ibx + rightIconSize / 2), this.uiY(iby + rightIconSize / 2), iconKey)
+          this.add.image(this.uiX(ibx + rightIconSize / 2), this.uiY(iconCy), iconKey)
             .setScrollFactor(0).setDepth(203)
             .setDisplaySize(this.uiS(rightIconSize), this.uiS(rightIconSize))
         );
       }
 
-      // Text area (right of icon)
-      const tx = cx + rightIconSize + 10;
+      // Text area (right of icon, vertically centered in card)
+      const tx = cx + rightIconSize + 12;
+      const textBlockH = 30; // name + hp bar
+      const textTop = cy + Math.max(4, Math.floor((rightSlotH - textBlockH) / 2));
       this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(contentTop), `${data.name}`, {
+        this.add.text(this.uiX(tx), this.uiY(textTop), `${data.name}`, {
           fontSize: "12px", color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
       // Lv (right-aligned)
       this.menuElements.push(
-        this.add.text(this.uiX(cx + rightW - 6), this.uiY(contentTop), `Lv${mon.level}`, {
+        this.add.text(this.uiX(cx + rightW - 6), this.uiY(textTop), `Lv${mon.level}`, {
           fontSize: "11px", color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
 
       // HP bar
       const hpRatio = mon.currentHp / mon.maxHp;
-      const hpY = contentTop + 18;
+      const hpY = textTop + 16;
       const rBarW = rightW - rightIconSize - 18;
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(hpY), "HP", {
