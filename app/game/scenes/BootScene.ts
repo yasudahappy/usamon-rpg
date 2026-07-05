@@ -432,12 +432,89 @@ export class BootScene extends Phaser.Scene {
       canvas.width = PIXEL_SIZE;
       canvas.height = PIXEL_SIZE;
       const ctx = canvas.getContext("2d")!;
-      ctx.imageSmoothingEnabled = false; // nearest-neighbor for pixel art
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(srcImg, 0, 0, PIXEL_SIZE, PIXEL_SIZE);
+
+      // Flood-fill remove white/light background from edges
+      BootScene.removeBackgroundFloodFill(ctx, PIXEL_SIZE, PIXEL_SIZE);
+
       const key = `icon-${id}`;
       if (this.textures.exists(key)) this.textures.remove(key);
       this.textures.addCanvas(key, canvas);
     }
+  }
+
+  /**
+   * Flood-fill from all 4 edges to remove white/light background.
+   * Only removes pixels connected to the border, so character whites are preserved.
+   * Also erodes 1px of semi-transparent fringe at the boundary.
+   */
+  private static removeBackgroundFloodFill(
+    ctx: CanvasRenderingContext2D, w: number, h: number
+  ): void {
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    const visited = new Uint8Array(w * h);
+    const queue: number[] = [];
+
+    // Threshold: pixel is "background" if lightness > 200 and saturation is low
+    const isBg = (idx: number) => {
+      const r = d[idx], g = d[idx + 1], b = d[idx + 2], a = d[idx + 3];
+      if (a < 10) return true; // already transparent
+      const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+      const lightness = (maxC + minC) / 2;
+      const saturation = maxC === minC ? 0 : (maxC - minC) / (255 - Math.abs(maxC + minC - 255));
+      return lightness > 190 && saturation < 0.25;
+    };
+
+    // Seed from all border pixels
+    for (let x = 0; x < w; x++) {
+      queue.push(x); queue.push(x + (h - 1) * w);
+    }
+    for (let y = 0; y < h; y++) {
+      queue.push(y * w); queue.push((w - 1) + y * w);
+    }
+
+    // BFS flood fill
+    while (queue.length > 0) {
+      const pos = queue.pop()!;
+      if (pos < 0 || pos >= w * h || visited[pos]) continue;
+      const idx = pos * 4;
+      if (!isBg(idx)) continue;
+      visited[pos] = 1;
+      d[idx + 3] = 0; // make transparent
+      const x = pos % w, y = Math.floor(pos / w);
+      if (x > 0) queue.push(pos - 1);
+      if (x < w - 1) queue.push(pos + 1);
+      if (y > 0) queue.push(pos - w);
+      if (y < h - 1) queue.push(pos + w);
+    }
+
+    // Erode 1px fringe: any non-transparent pixel adjacent to a removed pixel
+    // gets its alpha reduced to remove white halos
+    const alpha = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) alpha[i] = d[i * 4 + 3];
+    for (let i = 0; i < w * h; i++) {
+      if (alpha[i] === 0) continue; // skip already transparent
+      const x = i % w, y = Math.floor(i / w);
+      let adjTransparent = false;
+      if (x > 0 && visited[i - 1]) adjTransparent = true;
+      if (x < w - 1 && visited[i + 1]) adjTransparent = true;
+      if (y > 0 && visited[i - w]) adjTransparent = true;
+      if (y < h - 1 && visited[i + w]) adjTransparent = true;
+      if (adjTransparent) {
+        // Reduce alpha of fringe pixels
+        const idx = i * 4;
+        const r = d[idx], g = d[idx + 1], b = d[idx + 2];
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        const lightness = (maxC + minC) / 2;
+        if (lightness > 180) {
+          d[idx + 3] = Math.max(0, Math.floor(d[idx + 3] * 0.3));
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
   }
 
   // Spritesheet layout (Ninja Adventure 16x16, 4 cols × 7 rows):

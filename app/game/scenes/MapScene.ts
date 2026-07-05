@@ -897,8 +897,8 @@ export class MapScene extends Phaser.Scene {
       const hpRatio = lead.currentHp / lead.maxHp;
       const hpY = nameY + Math.round(36 * lScale);
       const hpLX = leadX + 6;
-      const hpBarInnerW = leadW - 36;
-      const hpBarH = Math.max(8, Math.round(8 * lScale));
+      const hpBarInnerW = leadW - 16; // wider bar
+      const hpBarH = Math.max(8, Math.round(10 * lScale));
       this.menuElements.push(
         this.add.text(this.uiX(hpLX), this.uiY(hpY), "HP", {
           fontSize: lFs(10), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
@@ -962,24 +962,30 @@ export class MapScene extends Phaser.Scene {
       );
 
       const row2Y = cy + Math.round(22 * s);
-      const rBarW = rightW - rightIconSize - Math.round(16 * s);
       const rBarH = Math.max(6, Math.round(7 * s));
+      // Lv label
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(row2Y), `Lv${mon.level}`, {
           fontSize: fs(10), color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
+      // HP label right after Lv
       const hpLabelX = tx + Math.round(36 * s);
       this.menuElements.push(
         this.add.text(this.uiX(hpLabelX), this.uiY(row2Y), "HP", {
           fontSize: fs(9), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
-      const hpBx = hpLabelX + Math.round(20 * s);
+      // HP bar: stretch from after HP label to before HP numbers
+      const hpBx = hpLabelX + Math.round(22 * s);
+      const hpNumW = Math.round(42 * s); // space reserved for "28/34" text
+      const hpBarEndX = cx + rightW - 6 - hpNumW;
+      const hpBarLen = Math.max(20, hpBarEndX - hpBx);
       const hpRatio = mon.currentHp / mon.maxHp;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawCapsuleBar(hpG, hpBx, row2Y + 2, rBarW - Math.round(80 * s), rBarH, hpRatio, hpColor(hpRatio));
+      drawCapsuleBar(hpG, hpBx, row2Y + 2, hpBarLen, rBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
+      // HP numbers right-aligned
       this.menuElements.push(
         this.add.text(this.uiX(cx + rightW - 6), this.uiY(row2Y - 1), `${mon.currentHp}/${mon.maxHp}`, {
           fontSize: fs(9), color: "#ffffff", fontFamily: F, ...STK2,
