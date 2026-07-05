@@ -837,16 +837,13 @@ export class MapScene extends Phaser.Scene {
     const leadY = topPad;
     const leadH = usableH;
 
-    // ① Right column: fill remaining height evenly, cap row height
+    // ① Right column: fill remaining height evenly (full height)
     const rightX = leadX + leadW + gap;
     const rightW = W - rightX - margin;
     const rightSlotCount = Math.max(party.length - 1, 1);
-    const rawSlotH = Math.floor((usableH - (rightSlotCount - 1) * gap) / rightSlotCount);
-    const rightSlotH = Math.min(rawSlotH, 70);  // cap to keep rows compact
-    // Distribute slots evenly across full height
-    const totalSlotsH = rightSlotCount * rightSlotH + (rightSlotCount - 1) * gap;
-    const rightStartY = topPad + Math.floor((usableH - totalSlotsH) / 2); // center vertically
-    const rightIconSize = Math.min(rightSlotH - 8, 40);
+    const rightSlotH = Math.floor((usableH - (rightSlotCount - 1) * gap) / rightSlotCount);
+    const rightStartY = topPad;
+    const rightIconSize = Math.min(rightSlotH - 8, 42);
 
     // ===== Slot 0: Lead card (left, compact 1/3) =====
     const lead = party[0];
