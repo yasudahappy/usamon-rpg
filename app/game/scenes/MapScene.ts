@@ -762,17 +762,22 @@ export class MapScene extends Phaser.Scene {
     const STK = { stroke: "#000000", strokeThickness: 3 };
     const STK2 = { stroke: "#000000", strokeThickness: 2 };
 
-    // ---- Retro background (teal checkerboard pattern) ----
+    // ---- Background: deep green diagonal stripes ----
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x58a898); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
-    bg.fillStyle(0x4e9e8e, 0.5);
-    const step = 16;
-    for (let gy = 0; gy < H; gy += step) {
-      for (let gx = 0; gx < W; gx += step) {
-        if ((Math.floor(gx / step) + Math.floor(gy / step)) % 2 === 0) {
-          bg.fillRect(this.uiX(gx), this.uiY(gy), this.uiS(step), this.uiS(step));
-        }
-      }
+    bg.fillStyle(0x1a3a2a); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    // Diagonal stripe pattern (lighter green)
+    const stripeW = 12;
+    const stripeGap = 12;
+    const period = stripeW + stripeGap;
+    bg.fillStyle(0x285838, 0.7);
+    for (let offset = -H; offset < W + H; offset += period) {
+      bg.beginPath();
+      bg.moveTo(this.uiX(offset), this.uiY(0));
+      bg.lineTo(this.uiX(offset + stripeW), this.uiY(0));
+      bg.lineTo(this.uiX(offset + stripeW + H), this.uiY(H));
+      bg.lineTo(this.uiX(offset + H), this.uiY(H));
+      bg.closePath();
+      bg.fillPath();
     }
     this.menuElements.push(bg);
 
@@ -820,16 +825,27 @@ export class MapScene extends Phaser.Scene {
     const rightSlotCount = Math.max(party.length - 1, 1);
     const rightSlotH = Math.min(38, Math.floor((leadH - (rightSlotCount - 1) * gap) / rightSlotCount));
 
-    // ---- Helper: draw HP bar (reusable) ----
-    const drawHp = (g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, ratio: number) => {
-      g.lineStyle(1, 0x203050);
-      g.strokeRect(this.uiX(x - 1), this.uiY(y - 1), this.uiS(w + 2), this.uiS(h + 2));
-      g.fillStyle(0x202830);
-      g.fillRect(this.uiX(x), this.uiY(y), this.uiS(w), this.uiS(h));
-      const col = ratio > 0.5 ? 0x58d858 : ratio > 0.2 ? 0xe8d838 : 0xe04040;
-      g.fillStyle(col);
-      g.fillRect(this.uiX(x), this.uiY(y), this.uiS(Math.floor(w * Phaser.Math.Clamp(ratio, 0, 1))), this.uiS(h));
+    // ---- Helper: draw capsule HP bar ----
+    const drawCapsuleBar = (g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, ratio: number, fillColor: number) => {
+      const r = h / 2;
+      // Black capsule bg
+      g.fillStyle(0x101818);
+      g.fillRoundedRect(this.uiX(x - 1), this.uiY(y - 1), this.uiS(w + 2), this.uiS(h + 2), this.uiS(r + 1));
+      // Dark inner track
+      g.fillStyle(0x282828);
+      g.fillRoundedRect(this.uiX(x), this.uiY(y), this.uiS(w), this.uiS(h), this.uiS(r));
+      // Fill
+      const fillW = Math.floor(w * Phaser.Math.Clamp(ratio, 0, 1));
+      if (fillW > 0) {
+        g.fillStyle(fillColor);
+        g.fillRoundedRect(this.uiX(x), this.uiY(y), this.uiS(Math.max(fillW, h)), this.uiS(h), this.uiS(r));
+      }
     };
+    const HP_GREEN = 0x78f868; // bright yellow-green
+    const HP_YELLOW = 0xf0d840;
+    const HP_RED = 0xf05048;
+    const hpColor = (ratio: number) => ratio > 0.5 ? HP_GREEN : ratio > 0.2 ? HP_YELLOW : HP_RED;
+    const EXP_BLUE = 0x58a8e8;
 
     // ===== Slot 0: Lead card (large, left side) =====
     const lead = party[0];
@@ -847,23 +863,16 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(leadX + 3), this.uiY(leadY + 3), this.uiS(leadW - 6), this.uiS(16));
       this.menuElements.push(card);
 
-      // Large icon
+      // Large icon (transparent, no background box)
       const iconSize = 72;
       const iconKey = this.textures.exists(`icon-${leadData.id}`) ? `icon-${leadData.id}` : `monster-${leadData.id}`;
       if (this.textures.exists(iconKey)) {
         const ibx = leadX + (leadW - iconSize) / 2;
         const iby = leadY + 22;
-        const iconBg = this.add.graphics().setScrollFactor(0).setDepth(202);
-        iconBg.fillStyle(0x305080);
-        iconBg.fillRoundedRect(this.uiX(ibx), this.uiY(iby), this.uiS(iconSize), this.uiS(iconSize), this.uiS(4));
-        iconBg.lineStyle(2, 0xf0f4f8);
-        iconBg.strokeRoundedRect(this.uiX(ibx), this.uiY(iby), this.uiS(iconSize), this.uiS(iconSize), this.uiS(4));
-        this.menuElements.push(iconBg);
-
         const icon = this.add.image(
           this.uiX(ibx + iconSize / 2), this.uiY(iby + iconSize / 2), iconKey
         ).setScrollFactor(0).setDepth(203);
-        icon.setDisplaySize(this.uiS(iconSize - 6), this.uiS(iconSize - 6));
+        icon.setDisplaySize(this.uiS(iconSize), this.uiS(iconSize));
         this.menuElements.push(icon);
       }
 
@@ -889,27 +898,27 @@ export class MapScene extends Phaser.Scene {
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
 
-      // HP bar
+      // HP bar (capsule style, orange label, yellow-green fill)
       const hpRatio = lead.currentHp / lead.maxHp;
       const hpY = typeY + 22;
       const hpBarW = leadW - 24;
       const hpLabelX = leadX + 8;
       this.menuElements.push(
         this.add.text(this.uiX(hpLabelX), this.uiY(hpY), "HP", {
-          fontSize: "10px", color: "#f0e860", fontFamily: F, fontStyle: "bold", ...STK2,
+          fontSize: "10px", color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
       const hpBx = hpLabelX + 26;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawHp(hpG, hpBx, hpY + 1, hpBarW - 30, 8, hpRatio);
+      drawCapsuleBar(hpG, hpBx, hpY + 1, hpBarW - 30, 8, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
       this.menuElements.push(
         this.add.text(this.uiX(leadX + leadW - 8), this.uiY(hpY - 1), `${lead.currentHp}/${lead.maxHp}`, {
-          fontSize: "9px", color: "#e8f0ff", fontFamily: F, ...STK2,
+          fontSize: "9px", color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
 
-      // EXP bar
+      // EXP bar (capsule style, thin blue)
       const expY = hpY + 14;
       const currentLevelExp = getExpForLevel(lead.level);
       const nextLevelExp = lead.level < 100 ? getExpForLevel(lead.level + 1) : currentLevelExp;
@@ -924,12 +933,7 @@ export class MapScene extends Phaser.Scene {
         }).setScrollFactor(0).setDepth(204)
       );
       const expG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      expG.lineStyle(1, 0x203050);
-      expG.strokeRect(this.uiX(hpBx - 1), this.uiY(expY - 1), this.uiS(hpBarW - 30 + 2), this.uiS(6 + 2));
-      expG.fillStyle(0x202830);
-      expG.fillRect(this.uiX(hpBx), this.uiY(expY), this.uiS(hpBarW - 30), this.uiS(6));
-      expG.fillStyle(0x3870c0);
-      expG.fillRect(this.uiX(hpBx), this.uiY(expY), this.uiS(Math.floor((hpBarW - 30) * Phaser.Math.Clamp(expRatio, 0, 1))), this.uiS(6));
+      drawCapsuleBar(expG, hpBx, expY, hpBarW - 30, 6, expRatio, EXP_BLUE);
       this.menuElements.push(expG);
       const expText = lead.level >= 100 ? "MAX" : `あと${expRemaining}`;
       this.menuElements.push(
@@ -968,23 +972,16 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(cx + 2), this.uiY(cy + 2), this.uiS(rightW - 4), this.uiS(8));
       this.menuElements.push(card);
 
-      // Small icon
+      // Small icon (transparent, no background box)
       const smallIcon = 30;
       const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
       if (this.textures.exists(iconKey)) {
         const ibx = cx + 3;
         const iby = cy + (rightSlotH - smallIcon) / 2;
-        const iconBg = this.add.graphics().setScrollFactor(0).setDepth(202);
-        iconBg.fillStyle(0x305080);
-        iconBg.fillRect(this.uiX(ibx), this.uiY(iby), this.uiS(smallIcon), this.uiS(smallIcon));
-        iconBg.lineStyle(1, 0xf0f4f8);
-        iconBg.strokeRect(this.uiX(ibx), this.uiY(iby), this.uiS(smallIcon), this.uiS(smallIcon));
-        this.menuElements.push(iconBg);
-
         const icon = this.add.image(
           this.uiX(ibx + smallIcon / 2), this.uiY(iby + smallIcon / 2), iconKey
         ).setScrollFactor(0).setDepth(203);
-        icon.setDisplaySize(this.uiS(smallIcon - 3), this.uiS(smallIcon - 3));
+        icon.setDisplaySize(this.uiS(smallIcon), this.uiS(smallIcon));
         this.menuElements.push(icon);
       }
 
@@ -997,24 +994,24 @@ export class MapScene extends Phaser.Scene {
         }).setScrollFactor(0).setDepth(204)
       );
 
-      // HP bar (compact)
+      // HP bar (capsule, compact)
       const hpRatio = mon.currentHp / mon.maxHp;
       const hpY = cy + 18;
       const barW = rightW - smallIcon - 16;
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(hpY), "HP", {
-          fontSize: "8px", color: "#f0e860", fontFamily: F, fontStyle: "bold", ...STK2,
+          fontSize: "8px", color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
       const hpBx = tx + 20;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawHp(hpG, hpBx, hpY + 1, barW - 24, 6, hpRatio);
+      drawCapsuleBar(hpG, hpBx, hpY + 1, barW - 24, 6, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
 
       // HP numbers (right-aligned)
       this.menuElements.push(
         this.add.text(this.uiX(cx + rightW - 4), this.uiY(hpY - 1), `${mon.currentHp}/${mon.maxHp}`, {
-          fontSize: "8px", color: "#e8f0ff", fontFamily: F, ...STK2,
+          fontSize: "8px", color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
 
