@@ -428,15 +428,24 @@ export class BootScene extends Phaser.Scene {
       const srcKey = `icon-src-${id}`;
       if (!this.textures.exists(srcKey)) continue;
       const srcImg = this.textures.get(srcKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+
+      // Step 1: Draw at full resolution and flood-fill remove background
+      const srcW = (srcImg as HTMLImageElement).naturalWidth || (srcImg as HTMLCanvasElement).width || 128;
+      const srcH = (srcImg as HTMLImageElement).naturalHeight || (srcImg as HTMLCanvasElement).height || 128;
+      const fullCanvas = document.createElement("canvas");
+      fullCanvas.width = srcW;
+      fullCanvas.height = srcH;
+      const fullCtx = fullCanvas.getContext("2d")!;
+      fullCtx.drawImage(srcImg, 0, 0);
+      BootScene.removeBackgroundFloodFill(fullCtx, srcW, srcH);
+
+      // Step 2: Downscale to pixel art size
       const canvas = document.createElement("canvas");
       canvas.width = PIXEL_SIZE;
       canvas.height = PIXEL_SIZE;
       const ctx = canvas.getContext("2d")!;
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(srcImg, 0, 0, PIXEL_SIZE, PIXEL_SIZE);
-
-      // Flood-fill remove white/light background from edges
-      BootScene.removeBackgroundFloodFill(ctx, PIXEL_SIZE, PIXEL_SIZE);
+      ctx.drawImage(fullCanvas, 0, 0, PIXEL_SIZE, PIXEL_SIZE);
 
       const key = `icon-${id}`;
       if (this.textures.exists(key)) this.textures.remove(key);
@@ -457,14 +466,15 @@ export class BootScene extends Phaser.Scene {
     const visited = new Uint8Array(w * h);
     const queue: number[] = [];
 
-    // Threshold: pixel is "background" if lightness > 200 and saturation is low
+    // Threshold: pixel is "background" if light and low saturation
     const isBg = (idx: number) => {
       const r = d[idx], g = d[idx + 1], b = d[idx + 2], a = d[idx + 3];
       if (a < 10) return true; // already transparent
       const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
       const lightness = (maxC + minC) / 2;
-      const saturation = maxC === minC ? 0 : (maxC - minC) / (255 - Math.abs(maxC + minC - 255));
-      return lightness > 190 && saturation < 0.25;
+      const chroma = maxC - minC;
+      // Generous: catch white, light gray, cream, pale lavender
+      return lightness > 170 && chroma < 40;
     };
 
     // Seed from all border pixels
