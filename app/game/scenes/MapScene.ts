@@ -748,7 +748,7 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  // ---- Party Screen ----
+  // ---- Party Screen (GBA / ルビサファ風) ----
   private showPartyScreen(): void {
     this.menuSubScreen = "party";
     this.clearMenuElements();
@@ -757,103 +757,157 @@ export class MapScene extends Phaser.Scene {
     const allMoves = this.cache.json.get("moves") as MoveData[];
     const party = this.playerState?.party || [];
 
-    // Background
+    // ---- Retro background (teal checkerboard pattern) ----
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.97);
-    bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    bg.fillStyle(0x58a898); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    // Subtle grid pattern
+    bg.fillStyle(0x4e9e8e, 0.5);
+    const step = 16;
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        if ((Math.floor(gx / step) + Math.floor(gy / step)) % 2 === 0) {
+          bg.fillRect(this.uiX(gx), this.uiY(gy), this.uiS(step), this.uiS(step));
+        }
+      }
+    }
     this.menuElements.push(bg);
 
-    // Title
-    const title = this.add.text(this.uiX(W / 2), this.uiY(24), "てもち", {
-      fontSize: "22px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
-    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    // ---- Header bar ----
+    const hdr = this.add.graphics().setScrollFactor(0).setDepth(201);
+    hdr.fillStyle(0x3060a0); hdr.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(32));
+    hdr.fillStyle(0x4878b8); hdr.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(3));
+    this.menuElements.push(hdr);
+
+    const titleShadow = this.add.text(this.uiX(W / 2 + 1), this.uiY(17), "てもち", {
+      fontSize: "18px", color: "#1a2040", fontFamily: "monospace", fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(titleShadow);
+    const title = this.add.text(this.uiX(W / 2), this.uiY(16), "てもち", {
+      fontSize: "18px", color: "#ffffff", fontFamily: "monospace", fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(title);
 
-    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 30), "Bボタンでもどる", {
-      fontSize: "13px", color: "#556677", fontFamily: "monospace",
+    // ---- Footer hint ----
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 18), "Bボタンでもどる", {
+      fontSize: "11px", color: "#2a5848", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
 
     if (party.length === 0) {
       const empty = this.add.text(this.uiX(W / 2), this.uiY(H / 2), "なかまが いない", {
-        fontSize: "18px", color: "#667788", fontFamily: "monospace",
+        fontSize: "16px", color: "#2a5848", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
       this.menuElements.push(empty);
       return;
     }
 
-    const iconSize = 44;
-    const contentLeft = 20 + iconSize + 12; // card left + icon + gap
-    const cardH = 110, gap = 6, startY = 55;
+    // ---- Cards ----
+    const iconDispSize = 40; // display size of pixel icon
+    const margin = 14;
+    const cardW = W - margin * 2;
+    const cardH = 72;
+    const gap = 5;
+    const startY = 40;
+    const barW = 110;
+    const barH = 7;
+
     party.forEach((mon, i) => {
       const data = allMonsters.find(m => m.id === mon.dataId);
       if (!data) return;
       const cy = startY + i * (cardH + gap);
+      const cx = margin;
 
-      // Card bg
+      // Card panel (light blue + white border)
       const card = this.add.graphics().setScrollFactor(0).setDepth(201);
-      card.fillStyle(0x152040, 0.9);
-      card.fillRoundedRect(this.uiX(20), this.uiY(cy), this.uiS(W - 40), this.uiS(cardH), this.uiS(8));
-      card.lineStyle(1, 0x334466);
-      card.strokeRoundedRect(this.uiX(20), this.uiY(cy), this.uiS(W - 40), this.uiS(cardH), this.uiS(8));
+      // White outer border
+      card.fillStyle(0xf0f4f8);
+      card.fillRoundedRect(this.uiX(cx - 2), this.uiY(cy - 2), this.uiS(cardW + 4), this.uiS(cardH + 4), this.uiS(6));
+      // Inner blue panel
+      card.fillStyle(0x5898d0);
+      card.fillRoundedRect(this.uiX(cx), this.uiY(cy), this.uiS(cardW), this.uiS(cardH), this.uiS(4));
+      // Inner gradient highlight (top lighter strip)
+      card.fillStyle(0x68a8e0, 0.6);
+      card.fillRect(this.uiX(cx + 2), this.uiY(cy + 2), this.uiS(cardW - 4), this.uiS(14));
       this.menuElements.push(card);
 
-      // Face icon (left side) — prefer illustration icon, fallback to sprite
+      // ---- Pixel art icon (left side) ----
       const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
       if (this.textures.exists(iconKey)) {
-        const icon = this.add.image(
-          this.uiX(20 + 6 + iconSize / 2),
-          this.uiY(cy + cardH / 2),
-          iconKey
-        ).setScrollFactor(0).setDepth(202);
-        icon.setDisplaySize(this.uiS(iconSize), this.uiS(iconSize));
-        this.menuElements.push(icon);
+        // Dark bg square for icon
+        const iconBg = this.add.graphics().setScrollFactor(0).setDepth(202);
+        const ibx = cx + 6, iby = cy + (cardH - iconDispSize) / 2;
+        iconBg.fillStyle(0x305080);
+        iconBg.fillRect(this.uiX(ibx), this.uiY(iby), this.uiS(iconDispSize), this.uiS(iconDispSize));
+        iconBg.lineStyle(1.5, 0xf0f4f8);
+        iconBg.strokeRect(this.uiX(ibx), this.uiY(iby), this.uiS(iconDispSize), this.uiS(iconDispSize));
+        this.menuElements.push(iconBg);
 
-        // Icon border circle
-        const iconBorder = this.add.graphics().setScrollFactor(0).setDepth(202);
-        iconBorder.lineStyle(1.5, 0x445566);
-        iconBorder.strokeCircle(
-          this.uiX(20 + 6 + iconSize / 2),
-          this.uiY(cy + cardH / 2),
-          this.uiS(iconSize / 2 + 1)
-        );
-        this.menuElements.push(iconBorder);
+        const icon = this.add.image(
+          this.uiX(ibx + iconDispSize / 2),
+          this.uiY(iby + iconDispSize / 2),
+          iconKey
+        ).setScrollFactor(0).setDepth(203);
+        icon.setDisplaySize(this.uiS(iconDispSize - 4), this.uiS(iconDispSize - 4));
+        this.menuElements.push(icon);
       }
 
-      // Name + Level + Type
-      const nameStr = `${data.name}  Lv.${mon.level}`;
-      const nameT = this.add.text(this.uiX(contentLeft), this.uiY(cy + 8), nameStr, {
-        fontSize: "17px", color: "#ffffff", fontFamily: "monospace", fontStyle: "bold",
-      }).setScrollFactor(0).setDepth(202);
-      this.menuElements.push(nameT);
+      // ---- Text content area ----
+      const tx = cx + 6 + iconDispSize + 8; // after icon
 
-      const typeT = this.add.text(this.uiX(W - 50), this.uiY(cy + 8), data.type, {
-        fontSize: "13px", color: "#88aacc", fontFamily: "monospace",
-      }).setScrollFactor(0).setDepth(202).setOrigin(1, 0);
+      // Name + Level (with shadow)
+      const nameStr = `${data.name} Lv${mon.level}`;
+      const ns = this.add.text(this.uiX(tx + 1), this.uiY(cy + 7), nameStr, {
+        fontSize: "14px", color: "#1a2840", fontFamily: "monospace", fontStyle: "bold",
+      }).setScrollFactor(0).setDepth(203);
+      this.menuElements.push(ns);
+      const nt = this.add.text(this.uiX(tx), this.uiY(cy + 6), nameStr, {
+        fontSize: "14px", color: "#ffffff", fontFamily: "monospace", fontStyle: "bold",
+      }).setScrollFactor(0).setDepth(204);
+      this.menuElements.push(nt);
+
+      // Type badge (right side)
+      const typeW = 30, typeH = 14;
+      const typeBg = this.add.graphics().setScrollFactor(0).setDepth(203);
+      typeBg.fillStyle(0x304870, 0.8);
+      typeBg.fillRoundedRect(this.uiX(cx + cardW - typeW - 8), this.uiY(cy + 6), this.uiS(typeW), this.uiS(typeH), this.uiS(3));
+      this.menuElements.push(typeBg);
+      const typeT = this.add.text(this.uiX(cx + cardW - typeW / 2 - 8), this.uiY(cy + 6 + typeH / 2), data.type, {
+        fontSize: "10px", color: "#c0d8f0", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(204).setOrigin(0.5);
       this.menuElements.push(typeT);
 
-      // HP bar
+      // ---- HP bar ----
       const hpRatio = mon.currentHp / mon.maxHp;
-      const barW = 150, barH = 8, barX = contentLeft, barY = cy + 30;
-      const hpBar = this.add.graphics().setScrollFactor(0).setDepth(202);
-      hpBar.fillStyle(0x333333); hpBar.fillRect(this.uiX(barX), this.uiY(barY), this.uiS(barW), this.uiS(barH));
-      const hpColor = hpRatio > 0.5 ? 0x22cc44 : hpRatio > 0.2 ? 0xcccc22 : 0xcc2222;
-      hpBar.fillStyle(hpColor); hpBar.fillRect(this.uiX(barX), this.uiY(barY), this.uiS(Math.floor(barW * hpRatio)), this.uiS(barH));
-      this.menuElements.push(hpBar);
+      const hpBarX = tx, hpBarY = cy + 24;
 
       // HP label
-      const hpLabel = this.add.text(this.uiX(barX - 1), this.uiY(barY - 10), "HP", {
-        fontSize: "9px", color: "#55cc77", fontFamily: "monospace", fontStyle: "bold",
-      }).setScrollFactor(0).setDepth(202);
-      this.menuElements.push(hpLabel);
+      const hpL = this.add.text(this.uiX(hpBarX), this.uiY(hpBarY), "HP", {
+        fontSize: "9px", color: "#f0e860", fontFamily: "monospace", fontStyle: "bold",
+      }).setScrollFactor(0).setDepth(204);
+      this.menuElements.push(hpL);
 
-      const hpT = this.add.text(this.uiX(barX + barW + 6), this.uiY(barY - 2), `${mon.currentHp}/${mon.maxHp}`, {
-        fontSize: "11px", color: "#aabbcc", fontFamily: "monospace",
-      }).setScrollFactor(0).setDepth(202);
-      this.menuElements.push(hpT);
+      const hpBx = hpBarX + 22;
+      const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
+      // Bar border
+      hpG.lineStyle(1, 0x203050);
+      hpG.strokeRect(this.uiX(hpBx - 1), this.uiY(hpBarY - 1), this.uiS(barW + 2), this.uiS(barH + 2));
+      // Bar bg
+      hpG.fillStyle(0x202830);
+      hpG.fillRect(this.uiX(hpBx), this.uiY(hpBarY), this.uiS(barW), this.uiS(barH));
+      // Bar fill
+      const hpColor = hpRatio > 0.5 ? 0x58d858 : hpRatio > 0.2 ? 0xe8d838 : 0xe04040;
+      hpG.fillStyle(hpColor);
+      hpG.fillRect(this.uiX(hpBx), this.uiY(hpBarY), this.uiS(Math.floor(barW * hpRatio)), this.uiS(barH));
+      this.menuElements.push(hpG);
 
-      // EXP bar
-      const expBarY = barY + barH + 6;
+      // HP numbers
+      const hpNumT = this.add.text(this.uiX(hpBx + barW + 4), this.uiY(hpBarY - 2), `${mon.currentHp}/${mon.maxHp}`, {
+        fontSize: "9px", color: "#e8f0ff", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(204);
+      this.menuElements.push(hpNumT);
+
+      // ---- EXP bar (thinner, below HP) ----
+      const expBarY = hpBarY + barH + 5;
       const currentLevelExp = getExpForLevel(mon.level);
       const nextLevelExp = mon.level < 100 ? getExpForLevel(mon.level + 1) : currentLevelExp;
       const expInLevel = mon.exp - currentLevelExp;
@@ -861,38 +915,32 @@ export class MapScene extends Phaser.Scene {
       const expRatio = mon.level >= 100 ? 1 : (expNeeded > 0 ? expInLevel / expNeeded : 0);
       const expRemaining = mon.level >= 100 ? 0 : expNeeded - expInLevel;
 
-      const expBar = this.add.graphics().setScrollFactor(0).setDepth(202);
-      expBar.fillStyle(0x222233); expBar.fillRect(this.uiX(barX), this.uiY(expBarY), this.uiS(barW), this.uiS(barH));
-      expBar.fillStyle(0x3366cc); expBar.fillRect(this.uiX(barX), this.uiY(expBarY), this.uiS(Math.floor(barW * Phaser.Math.Clamp(expRatio, 0, 1))), this.uiS(barH));
-      this.menuElements.push(expBar);
+      const expL = this.add.text(this.uiX(hpBarX), this.uiY(expBarY), "EXP", {
+        fontSize: "8px", color: "#80b0e0", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(204);
+      this.menuElements.push(expL);
 
-      // EXP label
-      const expLabel = this.add.text(this.uiX(barX - 1), this.uiY(expBarY - 10), "EXP", {
-        fontSize: "9px", color: "#5588cc", fontFamily: "monospace", fontStyle: "bold",
-      }).setScrollFactor(0).setDepth(202);
-      this.menuElements.push(expLabel);
+      const expG = this.add.graphics().setScrollFactor(0).setDepth(203);
+      expG.lineStyle(1, 0x203050);
+      expG.strokeRect(this.uiX(hpBx - 1), this.uiY(expBarY - 1), this.uiS(barW + 2), this.uiS(5 + 2));
+      expG.fillStyle(0x202830);
+      expG.fillRect(this.uiX(hpBx), this.uiY(expBarY), this.uiS(barW), this.uiS(5));
+      expG.fillStyle(0x3870c0);
+      expG.fillRect(this.uiX(hpBx), this.uiY(expBarY), this.uiS(Math.floor(barW * Phaser.Math.Clamp(expRatio, 0, 1))), this.uiS(5));
+      this.menuElements.push(expG);
 
-      const expRemainingText = mon.level >= 100
-        ? "MAX"
-        : `つぎのLvまで あと${expRemaining}`;
-      const expT = this.add.text(this.uiX(barX + barW + 6), this.uiY(expBarY - 2), expRemainingText, {
-        fontSize: "10px", color: "#7799bb", fontFamily: "monospace",
-      }).setScrollFactor(0).setDepth(202);
-      this.menuElements.push(expT);
+      const expNumText = mon.level >= 100 ? "MAX" : `あと${expRemaining}`;
+      const expNumT = this.add.text(this.uiX(hpBx + barW + 4), this.uiY(expBarY - 2), expNumText, {
+        fontSize: "8px", color: "#80b0e0", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(204);
+      this.menuElements.push(expNumT);
 
-      // Moves
-      const moveNames = mon.moves.map(mid => allMoves.find(m => m.id === mid)?.name || "???").join(" / ");
-      const movT = this.add.text(this.uiX(contentLeft), this.uiY(cy + 62), moveNames, {
-        fontSize: "11px", color: "#7799aa", fontFamily: "monospace",
-      }).setScrollFactor(0).setDepth(202);
+      // ---- Moves (compact, 1 line) ----
+      const moveNames = mon.moves.map(mid => allMoves.find(m => m.id === mid)?.name || "???").join("/");
+      const movT = this.add.text(this.uiX(tx), this.uiY(cy + 52), moveNames, {
+        fontSize: "9px", color: "#d0e0f0", fontFamily: "monospace",
+      }).setScrollFactor(0).setDepth(204);
       this.menuElements.push(movT);
-
-      // Stats
-      const statsStr = `ATK:${mon.stats.attack}  DEF:${mon.stats.defense}  SPD:${mon.stats.speed}`;
-      const statT = this.add.text(this.uiX(contentLeft), this.uiY(cy + 80), statsStr, {
-        fontSize: "11px", color: "#667788", fontFamily: "monospace",
-      }).setScrollFactor(0).setDepth(202);
-      this.menuElements.push(statT);
     });
   }
 

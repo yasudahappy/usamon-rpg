@@ -55,10 +55,10 @@ export class BootScene extends Phaser.Scene {
       });
     });
 
-    // Load monster face icons
+    // Load monster face icons (high-res source for pixel-art downscale)
     const iconMonsters = ["usamon", "mochichi", "sunagani", "rairai", "regonyas"];
     iconMonsters.forEach(id => {
-      this.load.image(`icon-${id}`, `${base}/assets/monsters/icons/${id}.png`);
+      this.load.image(`icon-src-${id}`, `${base}/assets/monsters/icons/${id}.png`);
     });
 
     // Load building sprites
@@ -88,6 +88,7 @@ export class BootScene extends Phaser.Scene {
     this.generateTileset(allTileTypes);
     this.generatePlayerSprite();
     this.generateMonsterSprites();
+    this.generatePixelIcons();
 
     // Check for existing save data
     let hasSave = false;
@@ -413,6 +414,29 @@ export class BootScene extends Phaser.Scene {
 
       this.textures.addCanvas(key, canvas);
     });
+  }
+
+  /**
+   * Generate pixel-art icons from high-res source icons.
+   * Downscale to 36px with nearest-neighbor (no antialiasing) for retro look.
+   */
+  private generatePixelIcons(): void {
+    const PIXEL_SIZE = 36;
+    const iconMonsters = ["usamon", "mochichi", "sunagani", "rairai", "regonyas"];
+    for (const id of iconMonsters) {
+      const srcKey = `icon-src-${id}`;
+      if (!this.textures.exists(srcKey)) continue;
+      const srcImg = this.textures.get(srcKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+      const canvas = document.createElement("canvas");
+      canvas.width = PIXEL_SIZE;
+      canvas.height = PIXEL_SIZE;
+      const ctx = canvas.getContext("2d")!;
+      ctx.imageSmoothingEnabled = false; // nearest-neighbor for pixel art
+      ctx.drawImage(srcImg, 0, 0, PIXEL_SIZE, PIXEL_SIZE);
+      const key = `icon-${id}`;
+      if (this.textures.exists(key)) this.textures.remove(key);
+      this.textures.addCanvas(key, canvas);
+    }
   }
 
   // Spritesheet layout (Ninja Adventure 16x16, 4 cols × 7 rows):
