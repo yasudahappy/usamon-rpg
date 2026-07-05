@@ -55,6 +55,12 @@ export class BootScene extends Phaser.Scene {
       });
     });
 
+    // Load monster face icons
+    const iconMonsters = ["usamon", "mochichi", "sunagani", "rairai", "regonyas"];
+    iconMonsters.forEach(id => {
+      this.load.image(`icon-${id}`, `${base}/assets/monsters/icons/${id}.png`);
+    });
+
     // Load building sprites
     this.load.image("bldg-habitat", `${base}/assets/buildings/sprites/habitat.png`);
     this.load.image("bldg-observatory", `${base}/assets/buildings/sprites/observatory.png`);

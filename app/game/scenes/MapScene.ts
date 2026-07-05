@@ -798,8 +798,8 @@ export class MapScene extends Phaser.Scene {
       card.strokeRoundedRect(this.uiX(20), this.uiY(cy), this.uiS(W - 40), this.uiS(cardH), this.uiS(8));
       this.menuElements.push(card);
 
-      // Face icon (left side)
-      const iconKey = `monster-${data.id}`;
+      // Face icon (left side) — prefer illustration icon, fallback to sprite
+      const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
       if (this.textures.exists(iconKey)) {
         const icon = this.add.image(
           this.uiX(20 + 6 + iconSize / 2),
