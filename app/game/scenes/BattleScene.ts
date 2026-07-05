@@ -348,7 +348,8 @@ export class BattleScene extends Phaser.Scene {
       .text(30, Math.round(200 * this.sy), `${this.playerMon.name}  Lv${this.playerMon.level}`, {
         fontSize: "13px",
         color: "#ffffff",
-        fontFamily: "monospace",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       })
       .setDepth(10);
 
@@ -356,7 +357,8 @@ export class BattleScene extends Phaser.Scene {
       .text(180, Math.round(200 * this.sy), `${this.playerMon.currentHp}/${this.playerMon.maxHp}`, {
         fontSize: "13px",
         color: "#ffffff",
-        fontFamily: "monospace",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       })
       .setOrigin(1, 0)
       .setDepth(10);
@@ -368,7 +370,8 @@ export class BattleScene extends Phaser.Scene {
       .text(400, Math.round(40 * this.sy), `${this.enemyMon.name}  Lv${this.enemyMon.level}`, {
         fontSize: "13px",
         color: "#ffffff",
-        fontFamily: "monospace",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       })
       .setDepth(10);
 
@@ -376,7 +379,8 @@ export class BattleScene extends Phaser.Scene {
       .text(600, Math.round(40 * this.sy), `${this.enemyMon.currentHp}/${this.enemyMon.maxHp}`, {
         fontSize: "13px",
         color: "#ffffff",
-        fontFamily: "monospace",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       })
       .setOrigin(1, 0)
       .setDepth(10);
@@ -413,7 +417,8 @@ export class BattleScene extends Phaser.Scene {
       .text(20, Math.round(260 * this.sy), "", {
         fontSize: "16px",
         color: "#ffffff",
-        fontFamily: "monospace",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
         wordWrap: { width: 600 },
       })
       .setDepth(21);
@@ -436,7 +441,8 @@ export class BattleScene extends Phaser.Scene {
         .text(px, py, labels[i], {
           fontSize: "18px",
           color: "#ffffff",
-          fontFamily: "monospace",
+          fontFamily: "'DotGothic16', monospace",
+          stroke: "#000000", strokeThickness: 3,
         })
         .setOrigin(0.5)
         .setDepth(21)
@@ -535,7 +541,8 @@ export class BattleScene extends Phaser.Scene {
         .text(px, py, label, {
           fontSize: "18px",
           color: move ? "#ffffff" : "#555555",
-          fontFamily: "monospace",
+          fontFamily: "'DotGothic16', monospace",
+          stroke: "#000000", strokeThickness: 3,
         })
         .setOrigin(0.5)
         .setDepth(21);
@@ -1178,7 +1185,8 @@ export class BattleScene extends Phaser.Scene {
         .text(px, py, labels[i], {
           fontSize: "15px",
           color: "#ffffff",
-          fontFamily: "monospace",
+          fontFamily: "'DotGothic16', monospace",
+          stroke: "#000000", strokeThickness: 3,
         })
         .setOrigin(0.5)
         .setDepth(21);
@@ -1498,7 +1506,8 @@ export class BattleScene extends Phaser.Scene {
       const py = positions[i % positions.length].y;
       const bg = this.add.graphics().setDepth(20);
       const text = this.add.text(px, py, options[i], {
-        fontSize: "14px", color: "#ffffff", fontFamily: "monospace",
+        fontSize: "14px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(21);
       const zone = this.add.zone(px, py, 280, 40).setInteractive().setDepth(22).setOrigin(0.5);
       const idx = i;

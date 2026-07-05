@@ -23,8 +23,9 @@ export class BootScene extends Phaser.Scene {
     this.add
       .text(w / 2, h / 2, "Loading...", {
         fontSize: "20px",
-        color: "#aaaaaa",
-        fontFamily: "monospace",
+        color: "#ffffff",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       })
       .setOrigin(0.5);
 

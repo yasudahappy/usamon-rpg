@@ -54,28 +54,32 @@ export class SetupScene extends Phaser.Scene {
     this.add.text(w / 2, Math.round(H * 0.05), "うさもんの大冒険", {
       fontSize: "28px",
       color: "#ffffff",
-      fontFamily: "monospace",
+      fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
       fontStyle: "bold",
-    }).setOrigin(0.5);
+      }).setOrigin(0.5);
 
     this.add.text(w / 2, Math.round(H * 0.085), "〜月面探索編〜", {
       fontSize: "16px",
       color: "#88aacc",
-      fontFamily: "monospace",
+      fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5);
 
     // Prompt text (changes per step)
     this.promptText = this.add.text(w / 2, Math.round(H * 0.14), "", {
       fontSize: "18px",
       color: "#ffffff",
-      fontFamily: "monospace",
+      fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(10);
 
     // Instruction text
     this.instructionText = this.add.text(w / 2, H - 40, "", {
       fontSize: "12px",
-      color: "#667788",
-      fontFamily: "monospace",
+      color: "#ffffff",
+      fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(10);
 
     // Character preview (center)
@@ -87,7 +91,8 @@ export class SetupScene extends Phaser.Scene {
     this.nameText = this.add.text(w / 2, Math.round(H * 0.40), "", {
       fontSize: "24px",
       color: "#ffffff",
-      fontFamily: "monospace",
+      fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
       backgroundColor: "#223344",
       padding: { x: 16, y: 8 },
     }).setOrigin(0.5).setDepth(10).setVisible(false);
@@ -128,7 +133,8 @@ export class SetupScene extends Phaser.Scene {
       const text = this.add.text(opt.x, optY, opt.label, {
         fontSize: "18px",
         color: "#ffffff",
-        fontFamily: "monospace",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(11);
 
       const zone = this.add.zone(opt.x, optY, 160, 50)
@@ -151,7 +157,8 @@ export class SetupScene extends Phaser.Scene {
     gBg.lineStyle(2, 0x66aaff);
     gBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
     const gTxt = this.add.text(w / 2, confirmY, "けってい", {
-      fontSize: "16px", color: "#ffffff", fontFamily: "monospace",
+      fontSize: "16px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(11);
     const gZone = this.add.zone(w / 2, confirmY, 120, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
@@ -215,8 +222,9 @@ export class SetupScene extends Phaser.Scene {
 
       const label = this.add.text(x, labelY, SUIT_LABELS[i], {
         fontSize: "10px",
-        color: "#aaaaaa",
-        fontFamily: "monospace",
+        color: "#ffffff",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(11);
 
       const zone = this.add.zone(x, swatchY + 5, 50, 60)
@@ -240,7 +248,8 @@ export class SetupScene extends Phaser.Scene {
     scBg.lineStyle(2, 0x66aaff);
     scBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
     const scTxt = this.add.text(w / 2, confirmY, "けってい", {
-      fontSize: "16px", color: "#ffffff", fontFamily: "monospace",
+      fontSize: "16px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(11);
     const scZone = this.add.zone(w / 2, confirmY, 120, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
@@ -326,7 +335,8 @@ export class SetupScene extends Phaser.Scene {
     const okText = this.add.text(w / 2, confirmY, "けってい", {
       fontSize: "16px",
       color: "#ffffff",
-      fontFamily: "monospace",
+      fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(11);
 
     const okZone = this.add.zone(w / 2, confirmY, 120, 40)
@@ -382,7 +392,7 @@ export class SetupScene extends Phaser.Scene {
       border: "2px solid #66aaff",
       borderRadius: "8px",
       outline: "none",
-      fontFamily: "monospace",
+      fontFamily: "'DotGothic16', monospace",
       zIndex: "1000",
       caretColor: "#ffffff",
       padding: "0 8px",
