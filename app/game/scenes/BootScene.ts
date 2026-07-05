@@ -477,12 +477,10 @@ export class BootScene extends Phaser.Scene {
       return lightness > 170 && chroma < 40;
     };
 
-    // Seed from all border pixels
-    for (let x = 0; x < w; x++) {
-      queue.push(x); queue.push(x + (h - 1) * w);
-    }
-    for (let y = 0; y < h; y++) {
-      queue.push(y * w); queue.push((w - 1) + y * w);
+    // Seed from ALL already-transparent pixels (outside the circular crop)
+    // This lets the flood enter from every gap around the circle, not just edges
+    for (let i = 0; i < w * h; i++) {
+      if (d[i * 4 + 3] < 10) queue.push(i);
     }
 
     // BFS flood fill
