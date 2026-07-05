@@ -496,16 +496,20 @@ export class SetupScene extends Phaser.Scene {
     });
   }
 
+  private static DIR_FRAMES: Record<string, [number, number]> = {
+    down: [0, 1], up: [4, 5], left: [8, 9], right: [12, 13],
+  };
+
   private generatePlayerFrames(suitColor: string): void {
     const suitKey = `player-${suitColor}`;
     if (!this.textures.exists(suitKey)) return;
 
-    for (let frame = 0; frame < 2; frame++) {
-      const srcFrame = this.textures.getFrame(suitKey, frame);
-      if (srcFrame) {
+    for (const [dir, [f0, f1]] of Object.entries(SetupScene.DIR_FRAMES)) {
+      for (let i = 0; i < 2; i++) {
+        const srcFrame = this.textures.getFrame(suitKey, i === 0 ? f0 : f1);
+        if (!srcFrame) continue;
         const canvas = document.createElement("canvas");
-        canvas.width = 32;
-        canvas.height = 32;
+        canvas.width = 32; canvas.height = 32;
         const ctx = canvas.getContext("2d")!;
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(
@@ -513,10 +517,17 @@ export class SetupScene extends Phaser.Scene {
           srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
           0, 0, 32, 32
         );
-        const key = `player-frame-${frame}`;
+        const key = `player-${dir}-${i}`;
         if (this.textures.exists(key)) this.textures.remove(key);
         this.textures.addCanvas(key, canvas);
       }
+    }
+    // Legacy compat
+    for (let i = 0; i < 2; i++) {
+      const key = `player-frame-${i}`;
+      if (this.textures.exists(key)) this.textures.remove(key);
+      const src = this.textures.get(`player-down-${i}`).getSourceImage() as HTMLCanvasElement;
+      this.textures.addCanvas(key, src);
     }
   }
 }

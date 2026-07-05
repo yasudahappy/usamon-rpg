@@ -564,16 +564,16 @@ export class MapScene extends Phaser.Scene {
       return;
     }
 
-    // Walk animation
+    // Walk animation (direction-aware)
     this.animTimer += delta;
-    if (this.animTimer > 250) {
+    if (this.animTimer > 200) {
       this.animTimer = 0;
       this.animFrame = this.animFrame === 0 ? 1 : 0;
-      if (this.isMoving) {
-        this.player.setTexture(`player-frame-${this.animFrame}`);
-      } else {
-        this.player.setTexture("player-frame-0");
-      }
+    }
+    const faceDir = this.facingDirection;
+    const dirKey = `player-${faceDir}-${this.isMoving ? this.animFrame : 0}`;
+    if (this.textures.exists(dirKey)) {
+      this.player.setTexture(dirKey);
     }
 
     // Tile animation (sand sparkle) - cycle every 800ms
@@ -973,31 +973,47 @@ export class MapScene extends Phaser.Scene {
   // ========== NPC & DIALOG SYSTEM ==========
 
   private placeKinoshitaNpc(): void {
-    // Generate simple NPC sprite (lab coat scientist)
+    // Generate NPC sprite at same scale as player (fills 32x32 canvas)
     if (!this.textures.exists("npc-kinoshita")) {
       const c = document.createElement("canvas");
       c.width = 32; c.height = 32;
       const ctx = c.getContext("2d")!;
-      // Lab coat body
-      ctx.fillStyle = "#e8e8f0";
-      ctx.fillRect(8, 12, 16, 16);
-      ctx.fillStyle = "#d0d0e0";
-      ctx.fillRect(8, 12, 16, 3);
+      ctx.imageSmoothingEnabled = false;
+      // Lab coat body (fills canvas like player sprite)
+      ctx.fillStyle = "#e0e0f0";
+      ctx.fillRect(4, 14, 24, 18);
+      // Coat collar
+      ctx.fillStyle = "#c8c8e0";
+      ctx.fillRect(4, 14, 24, 4);
+      // Coat buttons
+      ctx.fillStyle = "#aaaacc";
+      ctx.fillRect(15, 20, 2, 2);
+      ctx.fillRect(15, 25, 2, 2);
       // Head
       ctx.fillStyle = "#f0d8b8";
-      ctx.beginPath(); ctx.arc(16, 10, 7, 0, Math.PI * 2); ctx.fill();
-      // Hair (gray, thinning)
+      ctx.beginPath(); ctx.arc(16, 11, 9, 0, Math.PI * 2); ctx.fill();
+      // Hair (gray, receding)
       ctx.fillStyle = "#8888a0";
-      ctx.fillRect(10, 3, 12, 5);
+      ctx.fillRect(8, 2, 16, 6);
+      ctx.fillRect(7, 5, 3, 5);
+      ctx.fillRect(22, 5, 3, 5);
       // Glasses
-      ctx.strokeStyle = "#444466";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(11, 8, 4, 4);
-      ctx.strokeRect(17, 8, 4, 4);
-      ctx.beginPath(); ctx.moveTo(15, 10); ctx.lineTo(17, 10); ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(9, 9, 6, 5);
+      ctx.fillRect(17, 9, 6, 5);
+      ctx.strokeStyle = "#334";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(9, 9, 6, 5);
+      ctx.strokeRect(17, 9, 6, 5);
+      ctx.beginPath(); ctx.moveTo(15, 11); ctx.lineTo(17, 11); ctx.stroke();
+      // Eyes behind glasses
+      ctx.fillStyle = "#222";
+      ctx.fillRect(11, 11, 2, 2);
+      ctx.fillRect(20, 11, 2, 2);
       // Smile
       ctx.strokeStyle = "#aa7766";
-      ctx.beginPath(); ctx.arc(16, 12, 2, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(16, 15, 3, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
       this.textures.addCanvas("npc-kinoshita", c);
     }
 

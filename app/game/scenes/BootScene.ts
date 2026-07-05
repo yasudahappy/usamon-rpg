@@ -409,15 +409,24 @@ export class BootScene extends Phaser.Scene {
     });
   }
 
-  private applySuitFrames(suitColor: string): void {
-    const suitKey = `player-${suitColor}`;
+  // Spritesheet layout (Ninja Adventure 16x16, 4 cols × 7 rows):
+  // Row 0: Down, Row 1: Up, Row 2: Left, Row 3: Right
+  // Col 0: idle, Col 1: walk frame
+  private static DIR_FRAMES: Record<string, [number, number]> = {
+    down:  [0, 1],
+    up:    [4, 5],
+    left:  [8, 9],
+    right: [12, 13],
+  };
+
+  private generateDirectionalFrames(suitKey: string): void {
     if (!this.textures.exists(suitKey)) return;
-    for (let frame = 0; frame < 2; frame++) {
-      const srcFrame = this.textures.getFrame(suitKey, frame);
-      if (srcFrame) {
+    for (const [dir, [f0, f1]] of Object.entries(BootScene.DIR_FRAMES)) {
+      for (let i = 0; i < 2; i++) {
+        const srcFrame = this.textures.getFrame(suitKey, i === 0 ? f0 : f1);
+        if (!srcFrame) continue;
         const canvas = document.createElement("canvas");
-        canvas.width = 32;
-        canvas.height = 32;
+        canvas.width = 32; canvas.height = 32;
         const ctx = canvas.getContext("2d")!;
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(
@@ -425,60 +434,28 @@ export class BootScene extends Phaser.Scene {
           srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
           0, 0, 32, 32
         );
-        const key = `player-frame-${frame}`;
+        const key = `player-${dir}-${i}`;
         if (this.textures.exists(key)) this.textures.remove(key);
         this.textures.addCanvas(key, canvas);
       }
     }
+    // Legacy compat: player-frame-0/1 = down-0/1
+    for (let i = 0; i < 2; i++) {
+      const key = `player-frame-${i}`;
+      const srcKey = `player-down-${i}`;
+      if (this.textures.exists(srcKey)) {
+        if (this.textures.exists(key)) this.textures.remove(key);
+        const src = this.textures.get(srcKey).getSourceImage() as HTMLCanvasElement;
+        this.textures.addCanvas(key, src);
+      }
+    }
+  }
+
+  private applySuitFrames(suitColor: string): void {
+    this.generateDirectionalFrames(`player-${suitColor}`);
   }
 
   private generatePlayerSprite(): void {
-    // Use the loaded spritesheet for the default suit (white)
-    // Generate legacy player-frame-0 and player-frame-1 from the spritesheet
-    const suitKey = "player-white";
-    if (this.textures.exists(suitKey)) {
-      const sheet = this.textures.get(suitKey);
-      // Frame 0: first frame of "down" direction (row 0, col 0)
-      // Frame 1: second frame of "down" direction (row 0, col 1)
-      for (let frame = 0; frame < 2; frame++) {
-        const srcFrame = this.textures.getFrame(suitKey, frame);
-        if (srcFrame) {
-          const canvas = document.createElement("canvas");
-          canvas.width = 32;
-          canvas.height = 32;
-          const ctx = canvas.getContext("2d")!;
-          ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(
-            srcFrame.source.image as HTMLImageElement,
-            srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
-            0, 0, 32, 32
-          );
-          this.textures.addCanvas(`player-frame-${frame}`, canvas);
-        }
-      }
-    } else {
-      // Fallback: simple colored rectangles
-      const size = 32;
-      for (let frame = 0; frame < 2; frame++) {
-        const canvas = document.createElement("canvas");
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d")!;
-        ctx.fillStyle = "#d0d0e0";
-        const bodyY = frame === 0 ? 8 : 7;
-        ctx.fillRect(8, bodyY, 16, 18);
-        ctx.fillStyle = "#40d0ff";
-        ctx.fillRect(10, bodyY, 12, 8);
-        ctx.fillStyle = "#b0b0c0";
-        if (frame === 0) {
-          ctx.fillRect(10, 26, 5, 4);
-          ctx.fillRect(17, 26, 5, 4);
-        } else {
-          ctx.fillRect(9, 25, 5, 5);
-          ctx.fillRect(18, 25, 5, 5);
-        }
-        this.textures.addCanvas(`player-frame-${frame}`, canvas);
-      }
-    }
+    this.generateDirectionalFrames("player-white");
   }
 }
