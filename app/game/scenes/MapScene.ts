@@ -250,17 +250,17 @@ export class MapScene extends Phaser.Scene {
   }
 
   private showMapName(name: string): void {
-    const w = this.cameras.main.width;
+    const w = this.scale.width;
 
     // Semi-transparent black bar
     const bar = this.add.graphics().setScrollFactor(0).setDepth(200);
     bar.fillStyle(0x000000, 0.7);
-    bar.fillRect(0, 16, w, 40);
+    bar.fillRect(this.uiX(0), this.uiY(20), this.uiS(w), this.uiS(40));
     bar.setAlpha(0);
 
     // Map name text
     const text = this.add
-      .text(w / 2, 36, name, {
+      .text(this.uiX(w / 2), this.uiY(40), name, {
         fontSize: "18px",
         color: "#ffffff",
         fontFamily: "monospace",
@@ -605,6 +605,22 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
+  // ========== UI COORDINATE HELPERS (zoom-safe) ==========
+  /** Convert screen X → scrollFactor(0) object X */
+  private uiX(sx: number): number {
+    const z = this.cameras.main.zoom;
+    return sx / z + this.scale.width / 2 * (1 - 1 / z);
+  }
+  /** Convert screen Y → scrollFactor(0) object Y */
+  private uiY(sy: number): number {
+    const z = this.cameras.main.zoom;
+    return sy / z + this.scale.height / 2 * (1 - 1 / z);
+  }
+  /** Convert screen size → scrollFactor(0) size */
+  private uiS(s: number): number {
+    return s / this.cameras.main.zoom;
+  }
+
   // ========== MENU SYSTEM ==========
 
   private clearMenuElements(): void {
@@ -628,38 +644,36 @@ export class MapScene extends Phaser.Scene {
 
   private drawMainMenu(): void {
     this.clearMenuElements();
-    // Compensate camera zoom for scrollFactor(0) UI
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom;
-    const H = this.scale.height / zoom;
+    const W = this.scale.width;
+    const H = this.scale.height;
 
     // Dark overlay
     const overlay = this.add.graphics().setScrollFactor(0).setDepth(200);
     overlay.fillStyle(0x000000, 0.4);
-    overlay.fillRect(0, 0, W, H);
+    overlay.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(overlay);
 
     // Panel (right side, Pokemon-style)
     const pw = 200, pad = 14;
-    const px = W - pw - 16;
+    const px = W - pw - 20;
     const ph = MENU_LABELS.length * 42 + pad * 2;
-    const py = 20;
+    const py = 30;
 
     const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
     panel.fillStyle(0x0a1628, 0.95);
-    panel.fillRoundedRect(px, py, pw, ph, 12);
+    panel.fillRoundedRect(this.uiX(px), this.uiY(py), this.uiS(pw), this.uiS(ph), this.uiS(12));
     panel.lineStyle(2, 0x3366aa);
-    panel.strokeRoundedRect(px, py, pw, ph, 12);
+    panel.strokeRoundedRect(this.uiX(px), this.uiY(py), this.uiS(pw), this.uiS(ph), this.uiS(12));
     this.menuElements.push(panel);
 
     // Items
     MENU_LABELS.forEach((label, i) => {
       const iy = py + pad + i * 42;
       const bg = this.add.graphics().setScrollFactor(0).setDepth(202);
-      const arrow = this.add.text(px + 12, iy + 16, "▶", {
+      const arrow = this.add.text(this.uiX(px + 12), this.uiY(iy + 16), "▶", {
         fontSize: "14px", color: "#66aaff", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
-      const text = this.add.text(px + 32, iy + 16, label, {
+      const text = this.add.text(this.uiX(px + 32), this.uiY(iy + 16), label, {
         fontSize: "18px", color: "#ffffff", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
       this.menuElements.push(bg, arrow, text);
@@ -669,8 +683,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private highlightMenuItem(idx: number): void {
-    const zoom = this.cameras.main.zoom;
-    const pw = 200, px = this.scale.width / zoom - pw - 16, pad = 14, py = 20;
+    const pw = 200, px = this.scale.width - pw - 20, pad = 14, py = 30;
     for (let i = 0; i < MENU_LABELS.length; i++) {
       const base = 2 + i * 3;
       const bg = this.menuElements[base] as Phaser.GameObjects.Graphics;
@@ -680,7 +693,7 @@ export class MapScene extends Phaser.Scene {
       bg.clear();
       if (i === idx) {
         bg.fillStyle(0x1a3366, 0.9);
-        bg.fillRoundedRect(px + 4, iy + 1, pw - 8, 32, 6);
+        bg.fillRoundedRect(this.uiX(px + 4), this.uiY(iy + 1), this.uiS(pw - 8), this.uiS(32), this.uiS(6));
         arrow.setVisible(true);
         text.setColor("#ffffff");
       } else {
@@ -739,8 +752,7 @@ export class MapScene extends Phaser.Scene {
   private showPartyScreen(): void {
     this.menuSubScreen = "party";
     this.clearMenuElements();
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom, H = this.scale.height / zoom;
+    const W = this.scale.width, H = this.scale.height;
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
     const allMoves = this.cache.json.get("moves") as MoveData[];
     const party = this.playerState?.party || [];
@@ -748,22 +760,22 @@ export class MapScene extends Phaser.Scene {
     // Background
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
     bg.fillStyle(0x0a1628, 0.97);
-    bg.fillRect(0, 0, W, H);
+    bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
     // Title
-    const title = this.add.text(W / 2, 24, "てもち", {
+    const title = this.add.text(this.uiX(W / 2), this.uiY(24), "てもち", {
       fontSize: "22px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(title);
 
-    const hint = this.add.text(W / 2, H - 30, "Bボタンでもどる", {
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 30), "Bボタンでもどる", {
       fontSize: "13px", color: "#556677", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
 
     if (party.length === 0) {
-      const empty = this.add.text(W / 2, H / 2, "なかまが いない", {
+      const empty = this.add.text(this.uiX(W / 2), this.uiY(H / 2), "なかまが いない", {
         fontSize: "18px", color: "#667788", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
       this.menuElements.push(empty);
@@ -779,19 +791,19 @@ export class MapScene extends Phaser.Scene {
       // Card bg
       const card = this.add.graphics().setScrollFactor(0).setDepth(201);
       card.fillStyle(0x152040, 0.9);
-      card.fillRoundedRect(20, cy, W - 40, cardH, 8);
+      card.fillRoundedRect(this.uiX(20), this.uiY(cy), this.uiS(W - 40), this.uiS(cardH), this.uiS(8));
       card.lineStyle(1, 0x334466);
-      card.strokeRoundedRect(20, cy, W - 40, cardH, 8);
+      card.strokeRoundedRect(this.uiX(20), this.uiY(cy), this.uiS(W - 40), this.uiS(cardH), this.uiS(8));
       this.menuElements.push(card);
 
       // Name + Level + Type
       const nameStr = `${data.name}  Lv.${mon.level}`;
-      const nameT = this.add.text(40, cy + 12, nameStr, {
+      const nameT = this.add.text(this.uiX(40), this.uiY(cy + 12), nameStr, {
         fontSize: "17px", color: "#ffffff", fontFamily: "monospace", fontStyle: "bold",
       }).setScrollFactor(0).setDepth(202);
       this.menuElements.push(nameT);
 
-      const typeT = this.add.text(W - 50, cy + 12, data.type, {
+      const typeT = this.add.text(this.uiX(W - 50), this.uiY(cy + 12), data.type, {
         fontSize: "13px", color: "#88aacc", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(202).setOrigin(1, 0);
       this.menuElements.push(typeT);
@@ -800,26 +812,26 @@ export class MapScene extends Phaser.Scene {
       const hpRatio = mon.currentHp / mon.maxHp;
       const barW = 180, barH = 10, barX = 40, barY = cy + 36;
       const hpBar = this.add.graphics().setScrollFactor(0).setDepth(202);
-      hpBar.fillStyle(0x333333); hpBar.fillRect(barX, barY, barW, barH);
+      hpBar.fillStyle(0x333333); hpBar.fillRect(this.uiX(barX), this.uiY(barY), this.uiS(barW), this.uiS(barH));
       const hpColor = hpRatio > 0.5 ? 0x22cc44 : hpRatio > 0.2 ? 0xcccc22 : 0xcc2222;
-      hpBar.fillStyle(hpColor); hpBar.fillRect(barX, barY, Math.floor(barW * hpRatio), barH);
+      hpBar.fillStyle(hpColor); hpBar.fillRect(this.uiX(barX), this.uiY(barY), this.uiS(Math.floor(barW * hpRatio)), this.uiS(barH));
       this.menuElements.push(hpBar);
 
-      const hpT = this.add.text(barX + barW + 8, barY - 1, `${mon.currentHp}/${mon.maxHp}`, {
+      const hpT = this.add.text(this.uiX(barX + barW + 8), this.uiY(barY - 1), `${mon.currentHp}/${mon.maxHp}`, {
         fontSize: "12px", color: "#aabbcc", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(202);
       this.menuElements.push(hpT);
 
       // Moves
       const moveNames = mon.moves.map(mid => allMoves.find(m => m.id === mid)?.name || "???").join(" / ");
-      const movT = this.add.text(40, cy + 54, moveNames, {
+      const movT = this.add.text(this.uiX(40), this.uiY(cy + 54), moveNames, {
         fontSize: "12px", color: "#7799aa", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(202);
       this.menuElements.push(movT);
 
       // Stats
       const statsStr = `ATK:${mon.stats.attack}  DEF:${mon.stats.defense}  SPD:${mon.stats.speed}`;
-      const statT = this.add.text(40, cy + 74, statsStr, {
+      const statT = this.add.text(this.uiX(40), this.uiY(cy + 74), statsStr, {
         fontSize: "12px", color: "#667788", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(202);
       this.menuElements.push(statT);
@@ -830,11 +842,10 @@ export class MapScene extends Phaser.Scene {
   private showPlayerInfoScreen(): void {
     this.menuSubScreen = "stub";
     this.clearMenuElements();
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom, H = this.scale.height / zoom;
+    const W = this.scale.width, H = this.scale.height;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
     let playerName = "???";
@@ -844,7 +855,7 @@ export class MapScene extends Phaser.Scene {
     const badges = this.playerState?.defeatedTrainers.length || 0;
     const party = this.playerState?.party.length || 0;
 
-    const title = this.add.text(W/2, 30, "プレイヤー情報", {
+    const title = this.add.text(this.uiX(W/2), this.uiY(30), "プレイヤー情報", {
       fontSize: "22px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(title);
@@ -856,13 +867,13 @@ export class MapScene extends Phaser.Scene {
       `たおしたトレーナー: ${badges}人`,
     ];
     lines.forEach((line, i) => {
-      const t = this.add.text(60, 80 + i * 44, line, {
+      const t = this.add.text(this.uiX(60), this.uiY(80 + i * 44), line, {
         fontSize: "18px", color: "#ccddee", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(201);
       this.menuElements.push(t);
     });
 
-    const hint = this.add.text(W/2, H - 30, "Bボタンでもどる", {
+    const hint = this.add.text(this.uiX(W/2), this.uiY(H - 30), "Bボタンでもどる", {
       fontSize: "13px", color: "#556677", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
@@ -872,26 +883,25 @@ export class MapScene extends Phaser.Scene {
   private showSaveScreen(): void {
     this.menuSubScreen = "save";
     this.clearMenuElements();
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom, H = this.scale.height / zoom;
+    const W = this.scale.width, H = this.scale.height;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
     const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
     panel.fillStyle(0x152040, 0.95);
-    panel.fillRoundedRect(W/2 - 200, H/2 - 80, 400, 160, 12);
+    panel.fillRoundedRect(this.uiX(W/2 - 200), this.uiY(H/2 - 80), this.uiS(400), this.uiS(160), this.uiS(12));
     panel.lineStyle(2, 0x3366aa);
-    panel.strokeRoundedRect(W/2 - 200, H/2 - 80, 400, 160, 12);
+    panel.strokeRoundedRect(this.uiX(W/2 - 200), this.uiY(H/2 - 80), this.uiS(400), this.uiS(160), this.uiS(12));
     this.menuElements.push(panel);
 
-    const msg = this.add.text(W/2, H/2 - 30, "レポートに きろくしますか？", {
+    const msg = this.add.text(this.uiX(W/2), this.uiY(H/2 - 30), "レポートに きろくしますか？", {
       fontSize: "20px", color: "#ffffff", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(msg);
 
-    const hint = this.add.text(W/2, H/2 + 30, "Aボタン: はい  /  Bボタン: いいえ", {
+    const hint = this.add.text(this.uiX(W/2), this.uiY(H/2 + 30), "Aボタン: はい  /  Bボタン: いいえ", {
       fontSize: "16px", color: "#88aacc", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(hint);
@@ -911,14 +921,13 @@ export class MapScene extends Phaser.Scene {
 
     // Show success
     this.clearMenuElements();
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom, H = this.scale.height / zoom;
+    const W = this.scale.width, H = this.scale.height;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
-    const msg = this.add.text(W/2, H/2, "レポートに きろくしました！", {
+    const msg = this.add.text(this.uiX(W/2), this.uiY(H/2), "レポートに きろくしました！", {
       fontSize: "22px", color: "#44cc88", fontFamily: "monospace", fontStyle: "bold",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(msg);
@@ -934,24 +943,23 @@ export class MapScene extends Phaser.Scene {
   private showStubScreen(title: string): void {
     this.menuSubScreen = "stub";
     this.clearMenuElements();
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom, H = this.scale.height / zoom;
+    const W = this.scale.width, H = this.scale.height;
 
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
-    const t = this.add.text(W/2, H/2 - 20, title, {
+    const t = this.add.text(this.uiX(W/2), this.uiY(H/2 - 20), title, {
       fontSize: "24px", color: "#66aaff", fontFamily: "monospace", fontStyle: "bold",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(t);
 
-    const sub = this.add.text(W/2, H/2 + 20, "― じゅんびちゅう ―", {
+    const sub = this.add.text(this.uiX(W/2), this.uiY(H/2 + 20), "― じゅんびちゅう ―", {
       fontSize: "16px", color: "#556677", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(sub);
 
-    const hint = this.add.text(W/2, H - 30, "Bボタンでもどる", {
+    const hint = this.add.text(this.uiX(W/2), this.uiY(H - 30), "Bボタンでもどる", {
       fontSize: "13px", color: "#556677", fontFamily: "monospace",
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
@@ -1058,38 +1066,38 @@ export class MapScene extends Phaser.Scene {
 
   private drawDialogMessage(): void {
     this.clearDialogElements();
-    const zoom = this.cameras.main.zoom;
-    const W = this.scale.width / zoom;
-    const H = this.scale.height / zoom;
-    const boxH = 70, boxPad = 10;
-    const boxY = H - boxH - 8;
+    const W = this.scale.width;
+    const H = this.scale.height;
+    const margin = 20;
+    const boxH = 90;
+    const boxY = H - boxH - 16;
 
     // Box background
     const bg = this.add.graphics().setScrollFactor(0).setDepth(300);
     bg.fillStyle(0x0a1628, 0.95);
-    bg.fillRoundedRect(8, boxY, W - 16, boxH, 10);
+    bg.fillRoundedRect(this.uiX(margin), this.uiY(boxY), this.uiS(W - margin*2), this.uiS(boxH), this.uiS(10));
     bg.lineStyle(2, 0x3366aa);
-    bg.strokeRoundedRect(8, boxY, W - 16, boxH, 10);
+    bg.strokeRoundedRect(this.uiX(margin), this.uiY(boxY), this.uiS(W - margin*2), this.uiS(boxH), this.uiS(10));
     this.dialogElements.push(bg);
 
     // Text
     const msg = this.dialogMessages[this.dialogIndex];
-    const text = this.add.text(20, boxY + 10, msg, {
+    const text = this.add.text(this.uiX(margin + 16), this.uiY(boxY + 14), msg, {
       fontSize: "14px", color: "#ffffff", fontFamily: "monospace",
-      wordWrap: { width: W - 52 }, lineSpacing: 4,
+      wordWrap: { width: this.uiS(W - margin*2 - 48) }, lineSpacing: 4,
     }).setScrollFactor(0).setDepth(301);
     this.dialogElements.push(text);
 
     // Advance indicator
     if (this.dialogIndex < this.dialogMessages.length - 1 || this.dialogCallback) {
-      const indicator = this.add.text(W - 24, boxY + boxH - 16, "▼", {
+      const indicator = this.add.text(this.uiX(W - margin - 16), this.uiY(boxY + boxH - 20), "▼", {
         fontSize: "12px", color: "#66aaff", fontFamily: "monospace",
       }).setScrollFactor(0).setDepth(301);
       this.dialogElements.push(indicator);
     }
 
     // Tap to advance
-    const zone = this.add.zone(W / 2, boxY + boxH / 2, W, boxH)
+    const zone = this.add.zone(this.uiX(W/2), this.uiY(boxY + boxH/2), this.uiS(W), this.uiS(boxH))
       .setScrollFactor(0).setDepth(302).setOrigin(0.5).setInteractive();
     zone.on("pointerdown", () => this.advanceDialog());
     this.dialogElements.push(zone);
