@@ -502,7 +502,8 @@ export class MapScene extends Phaser.Scene {
   private tryMove(dir: Direction): void {
     this.facingDirection = dir;
     if (this.isMoving || this.isWarping) {
-      if (!this.isWarping) this.moveQueue = dir;
+      // Do not buffer input while moving: a single tap = a single tile.
+      // Continuous movement on hold is driven by the live-input check below.
       return;
     }
 
@@ -548,11 +549,12 @@ export class MapScene extends Phaser.Scene {
         // Check random encounter
         this.checkRandomEncounter();
 
-        // Process queued move (only if not warping)
-        if (this.moveQueue && !this.isWarping) {
-          const queued = this.moveQueue;
-          this.moveQueue = null;
-          this.tryMove(queued);
+        // Continue moving only while a direction is still held at completion
+        // time: a quick tap moves exactly one tile, a long press keeps moving
+        // (gapless, since the tween chains straight into the next one).
+        if (!this.isWarping && !this.startingBattle) {
+          const held = this.getInputDirection();
+          if (held) this.tryMove(held);
         }
       },
     });
@@ -827,20 +829,20 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(bar);
     this.menuElements.push(
       this.add.text(this.uiX(14), this.uiY(barY + barH / 2), "アルモンを えらんで ください", {
-        fontSize: "13px", color: "#303030", fontFamily: F, ...STK2,
+        fontSize: `${this.uiS(13)}px`, color: "#303030", fontFamily: F, ...STK2,
         stroke: "#ffffff", strokeThickness: 0,
       }).setScrollFactor(0).setDepth(211).setOrigin(0, 0.5)
     );
     this.menuElements.push(
       this.add.text(this.uiX(W - 10), this.uiY(barY + barH / 2), "B:もどる", {
-        fontSize: "10px", color: "#707880", fontFamily: F,
+        fontSize: `${this.uiS(10)}px`, color: "#707880", fontFamily: F,
       }).setScrollFactor(0).setDepth(211).setOrigin(1, 0.5)
     );
 
     if (party.length === 0) {
       this.menuElements.push(
         this.add.text(this.uiX(W / 2), this.uiY(H / 2), "なかまが いない", {
-          fontSize: "16px", color: "#ffffff", fontFamily: F, ...STK,
+          fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F, ...STK,
         }).setScrollFactor(0).setDepth(201).setOrigin(0.5)
       );
       return;
@@ -904,55 +906,57 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(leadX + 3), this.uiY(leadY + 3), this.uiS(leadW - 6), this.uiS(14));
       this.menuElements.push(card);
 
-      // Scale factor (base design was rightSlotH=42)
-      const lScale = rightSlotH / 42;
-      const lFs = (base: number) => `${Math.round(base * lScale)}px`;
+      // Self-contained vertical layout: every part is anchored to a fraction
+      // of leadH so the contents always fit inside the card, for any party size.
+      // Fonts go through uiS() so they render at the intended on-screen size
+      // regardless of the current camera zoom.
+      const cx = leadX + leadW / 2;
+      const pad = Math.max(4, Math.round(leadH * 0.04));
 
-      // Icon
+      // Icon (top, centered)
+      const iconS = Math.min(leadW - pad * 2, Math.round(leadH * 0.40));
+      const iconCY = leadY + pad + iconS / 2;
       const iconKey = this.textures.exists(`icon-${leadData.id}`) ? `icon-${leadData.id}` : `monster-${leadData.id}`;
       if (this.textures.exists(iconKey)) {
-        const ibx = leadX + (leadW - leadIconSize) / 2;
-        const iby = leadY + Math.round(8 * lScale);
         this.menuElements.push(
-          this.add.image(this.uiX(ibx + leadIconSize / 2), this.uiY(iby + leadIconSize / 2), iconKey)
+          this.add.image(this.uiX(cx), this.uiY(iconCY), iconKey)
             .setScrollFactor(0).setDepth(203)
-            .setDisplaySize(this.uiS(leadIconSize), this.uiS(leadIconSize))
+            .setDisplaySize(this.uiS(iconS), this.uiS(iconS))
         );
       }
 
-      // Name
-      const nameY = leadY + leadIconSize + Math.round(14 * lScale);
+      // Name + level
       this.menuElements.push(
-        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(nameY), leadData.name, {
-          fontSize: lFs(14), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.56)), leadData.name, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.06))}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
       this.menuElements.push(
-        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(nameY + Math.round(18 * lScale)), `Lv${lead.level}`, {
-          fontSize: lFs(12), color: "#ffffff", fontFamily: F, ...STK2,
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.68)), `Lv${lead.level}`, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.052))}px`, color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
 
-      // HP bar
+      // HP label + bar
       const hpRatio = lead.currentHp / lead.maxHp;
-      const hpY = nameY + Math.round(36 * lScale);
-      const hpLX = leadX + 6;
-      const hpBarInnerW = leadW - 16; // wider bar
-      const hpBarH = Math.max(8, Math.round(10 * lScale));
+      const hpRowY = leadY + Math.round(leadH * 0.80);
+      const hpBarH = Math.max(6, Math.round(leadH * 0.05));
+      const hpLX = leadX + pad;
+      const hpBx = hpLX + Math.round(leadW * 0.18);
+      const hpBarW = Math.max(20, leadX + leadW - pad - hpBx);
       this.menuElements.push(
-        this.add.text(this.uiX(hpLX), this.uiY(hpY), "HP", {
-          fontSize: lFs(10), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
-        }).setScrollFactor(0).setDepth(204)
+        this.add.text(this.uiX(hpLX), this.uiY(hpRowY), "HP", {
+          fontSize: `${this.uiS(Math.round(leadH * 0.048))}px`, color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
+        }).setScrollFactor(0).setDepth(204).setOrigin(0, 0.5)
       );
-      const hpBx = hpLX + Math.round(24 * lScale);
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawCapsuleBar(hpG, hpBx, hpY + 1, hpBarInnerW, hpBarH, hpRatio, hpColor(hpRatio));
+      drawCapsuleBar(hpG, hpBx, hpRowY - hpBarH / 2, hpBarW, hpBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
 
       // HP number below bar
       this.menuElements.push(
-        this.add.text(this.uiX(leadX + leadW / 2), this.uiY(hpY + hpBarH + Math.round(6 * lScale)), `${lead.currentHp} / ${lead.maxHp}`, {
-          fontSize: lFs(13), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.92)), `${lead.currentHp} / ${lead.maxHp}`, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.06))}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
     }
@@ -975,9 +979,10 @@ export class MapScene extends Phaser.Scene {
       card.fillRect(this.uiX(cx + 3), this.uiY(cy + 3), this.uiS(rightW - 6), this.uiS(8));
       this.menuElements.push(card);
 
-      // Scale factor (base design was rightSlotH=42)
+      // Scale factor (base design was rightSlotH=42); uiS keeps the rendered
+      // size correct under the camera zoom.
       const s = rightSlotH / 42;
-      const fs = (base: number) => `${Math.round(base * s)}px`;
+      const fs = (base: number) => `${this.uiS(base * s)}px`;
 
       // Icon (left, spans full row height)
       const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
@@ -1037,7 +1042,7 @@ export class MapScene extends Phaser.Scene {
     if (party.length === 1) {
       this.menuElements.push(
         this.add.text(this.uiX(rightX + rightW / 2), this.uiY(rightStartY + Math.round(80 * (rightSlotH / 42))), "ほかの なかまは\nまだ いない", {
-          fontSize: `${Math.round(12 * rightSlotH / 42)}px`, color: "#ffffff", fontFamily: F, ...STK2, align: "center",
+          fontSize: `${this.uiS(12 * rightSlotH / 42)}px`, color: "#ffffff", fontFamily: F, ...STK2, align: "center",
         }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
       );
     }
@@ -1442,6 +1447,9 @@ export class MapScene extends Phaser.Scene {
     const H = this.scale.height;
     const F = "'DotGothic16', monospace";
     const STK = { stroke: "#000000", strokeThickness: 3 };
+    // Zoom-safe font size: text is rendered under the camera zoom, so divide by
+    // it here to keep the on-screen size matching the (screen-space) layout.
+    const FS = (n: number) => `${this.uiS(n)}px`;
 
     const allItems = (this.cache.json.get("items") || []) as { id: string; name: string; description: string; price: number }[];
     const inventory = MapScene.SHOP_INVENTORY.map(id => allItems.find(i => i.id === id)!).filter(Boolean);
@@ -1466,7 +1474,7 @@ export class MapScene extends Phaser.Scene {
     // Title
     this.shopElements.push(
       this.add.text(this.uiX(W / 2), this.uiY(py + 18), "★ プラネットショップ", {
-        fontSize: "16px", color: "#ffcc44", fontFamily: F, fontStyle: "bold", ...STK,
+        fontSize: FS(16), color: "#ffcc44", fontFamily: F, fontStyle: "bold", ...STK,
       }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
     );
 
@@ -1490,7 +1498,7 @@ export class MapScene extends Phaser.Scene {
       if (isSelected) {
         this.shopElements.push(
           this.add.text(this.uiX(px + 12), this.uiY(iy + itemH / 2), "▶", {
-            fontSize: "11px", color: "#ffcc44", fontFamily: F, ...STK,
+            fontSize: FS(11), color: "#ffcc44", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
         );
       }
@@ -1498,7 +1506,7 @@ export class MapScene extends Phaser.Scene {
       if (isQuit) {
         this.shopElements.push(
           this.add.text(this.uiX(px + 28), this.uiY(iy + itemH / 2), "やめる", {
-            fontSize: "14px", color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
+            fontSize: FS(14), color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
         );
       } else {
@@ -1506,7 +1514,7 @@ export class MapScene extends Phaser.Scene {
         // Name
         this.shopElements.push(
           this.add.text(this.uiX(px + 28), this.uiY(iy + itemH / 2), item.name, {
-            fontSize: "14px", color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
+            fontSize: FS(14), color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
         );
         // Owned count
@@ -1514,14 +1522,14 @@ export class MapScene extends Phaser.Scene {
         if (owned > 0) {
           this.shopElements.push(
             this.add.text(this.uiX(px + pw - 70), this.uiY(iy + itemH / 2), `×${owned}`, {
-              fontSize: "11px", color: "#88aacc", fontFamily: F, ...STK,
+              fontSize: FS(11), color: "#88aacc", fontFamily: F, ...STK,
             }).setScrollFactor(0).setDepth(203).setOrigin(1, 0.5)
           );
         }
         // Price
         this.shopElements.push(
           this.add.text(this.uiX(px + pw - 12), this.uiY(iy + itemH / 2), `¥${item.price}`, {
-            fontSize: "13px", color: isSelected ? "#aaffaa" : "#668866", fontFamily: F, ...STK,
+            fontSize: FS(13), color: isSelected ? "#aaffaa" : "#668866", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(1, 0.5)
         );
       }
@@ -1541,15 +1549,16 @@ export class MapScene extends Phaser.Scene {
     }
     this.shopElements.push(
       this.add.text(this.uiX(px + 14), this.uiY(descY + 8), descStr, {
-        fontSize: "12px", color: "#ccddee", fontFamily: F, ...STK,
+        fontSize: FS(12), color: "#ccddee", fontFamily: F, ...STK,
+        wordWrap: { width: this.uiS(pw - 28) },
       }).setScrollFactor(0).setDepth(203)
     );
 
     // Money
     const money = this.playerState?.money || 0;
     this.shopElements.push(
-      this.add.text(this.uiX(px + pw - 12), this.uiY(descY + 28), `しょじきん: ${money}円`, {
-        fontSize: "12px", color: "#ffdd88", fontFamily: F, ...STK,
+      this.add.text(this.uiX(px + pw - 12), this.uiY(descY + 46), `しょじきん: ${money}円`, {
+        fontSize: FS(12), color: "#ffdd88", fontFamily: F, ...STK,
       }).setScrollFactor(0).setDepth(203).setOrigin(1, 0)
     );
 
@@ -1557,8 +1566,8 @@ export class MapScene extends Phaser.Scene {
     if (this.shopMessage) {
       const msgColor = this.shopMessage.includes("たりない") ? "#ff8888" : "#88ff88";
       this.shopElements.push(
-        this.add.text(this.uiX(px + 14), this.uiY(descY + 28), this.shopMessage, {
-          fontSize: "12px", color: msgColor, fontFamily: F, ...STK,
+        this.add.text(this.uiX(px + 14), this.uiY(descY + 46), this.shopMessage, {
+          fontSize: FS(12), color: msgColor, fontFamily: F, ...STK,
         }).setScrollFactor(0).setDepth(203)
       );
     }
@@ -1566,7 +1575,7 @@ export class MapScene extends Phaser.Scene {
     // Controls hint
     this.shopElements.push(
       this.add.text(this.uiX(W / 2), this.uiY(py + ph - 10), "A:かう  B:やめる", {
-        fontSize: "10px", color: "#8899aa", fontFamily: F,
+        fontSize: FS(10), color: "#8899aa", fontFamily: F,
       }).setScrollFactor(0).setDepth(203).setOrigin(0.5)
     );
   }
@@ -1670,16 +1679,16 @@ export class MapScene extends Phaser.Scene {
     // Text
     const msg = this.dialogMessages[this.dialogIndex];
     const text = this.add.text(this.uiX(margin + 16), this.uiY(boxY + 14), msg, {
-      fontSize: "14px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
-      wordWrap: { width: this.uiS(W - margin*2 - 48) }, lineSpacing: 4,
+      wordWrap: { width: this.uiS(W - margin*2 - 48) }, lineSpacing: this.uiS(4),
     }).setScrollFactor(0).setDepth(301);
     this.dialogElements.push(text);
 
     // Advance indicator
     if (this.dialogIndex < this.dialogMessages.length - 1 || this.dialogCallback) {
       const indicator = this.add.text(this.uiX(W - margin - 16), this.uiY(boxY + boxH - 20), "▼", {
-        fontSize: "12px", color: "#66aaff", fontFamily: "'DotGothic16', monospace",
+        fontSize: `${this.uiS(12)}px`, color: "#66aaff", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setScrollFactor(0).setDepth(301);
       this.dialogElements.push(indicator);
