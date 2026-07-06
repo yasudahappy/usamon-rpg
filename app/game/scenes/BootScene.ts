@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1"];
+const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1", "recovery_pod"];
 
 export class BootScene extends Phaser.Scene {
   constructor() {

@@ -62,6 +62,11 @@ export class MapScene extends Phaser.Scene {
   private dialogCallback?: () => void;
   private dialogElements: Phaser.GameObjects.GameObject[] = [];
 
+  // Nurse NPC (Recovery Pod)
+  private nurseSprite?: Phaser.GameObjects.Image;
+  private nurseNpcX = 5;
+  private nurseNpcY = 2;
+
   // Menu system
   private menuOpen = false;
   private menuSubScreen: "none" | "party" | "save" | "stub" = "none";
@@ -85,6 +90,8 @@ export class MapScene extends Phaser.Scene {
     this.animFrame = 0;
     this.animTimer = 0;
     this.startingBattle = false;
+    this.kinoshitaSprite = undefined;
+    this.nurseSprite = undefined;
     if (data.playerState) {
       this.playerState = data.playerState;
     } else if (data.playerInstance) {
@@ -129,6 +136,11 @@ export class MapScene extends Phaser.Scene {
     // Place Kinoshita NPC on moonbase
     if (this.currentMapKey === "moonbase") {
       this.placeKinoshitaNpc();
+    }
+
+    // Place Nurse NPC in recovery pod
+    if (this.currentMapKey === "recovery_pod") {
+      this.placeNurseNpc();
     }
   }
 
@@ -462,6 +474,7 @@ export class MapScene extends Phaser.Scene {
     if (layers.collision[y][x] === 1) return true;
     // NPC collision
     if (this.kinoshitaSprite && x === this.kinoshitaNpcX && y === this.kinoshitaNpcY) return true;
+    if (this.nurseSprite && x === this.nurseNpcX && y === this.nurseNpcY) return true;
     return false;
   }
 
@@ -1192,6 +1205,56 @@ export class MapScene extends Phaser.Scene {
     ).setDepth(9);
   }
 
+  private placeNurseNpc(): void {
+    if (!this.textures.exists("npc-nurse")) {
+      const c = document.createElement("canvas");
+      c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!;
+      ctx.imageSmoothingEnabled = false;
+      // White medical suit body
+      ctx.fillStyle = "#e8e8f0";
+      ctx.fillRect(6, 14, 20, 18);
+      // Pink accent collar
+      ctx.fillStyle = "#f0a0b0";
+      ctx.fillRect(6, 14, 20, 3);
+      // Red cross on chest
+      ctx.fillStyle = "#e04060";
+      ctx.fillRect(14, 19, 4, 8);
+      ctx.fillRect(12, 22, 8, 4);
+      // Head
+      ctx.fillStyle = "#f0d8b8";
+      ctx.beginPath(); ctx.arc(16, 11, 8, 0, Math.PI * 2); ctx.fill();
+      // Hair (pink, tied up)
+      ctx.fillStyle = "#e07890";
+      ctx.fillRect(9, 3, 14, 5);
+      ctx.fillRect(8, 5, 3, 6);
+      ctx.fillRect(21, 5, 3, 6);
+      // Hair buns
+      ctx.beginPath(); ctx.arc(8, 6, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(24, 6, 3, 0, Math.PI * 2); ctx.fill();
+      // Eyes
+      ctx.fillStyle = "#222";
+      ctx.fillRect(12, 10, 2, 2);
+      ctx.fillRect(18, 10, 2, 2);
+      // Smile
+      ctx.strokeStyle = "#cc7766";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(16, 14, 3, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+      // Nurse cap
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(10, 2, 12, 4);
+      ctx.fillStyle = "#e04060";
+      ctx.fillRect(14, 2, 4, 3);
+      this.textures.addCanvas("npc-nurse", c);
+    }
+
+    this.nurseSprite = this.add.image(
+      this.nurseNpcX * this.tileSize + this.tileSize / 2,
+      this.nurseNpcY * this.tileSize + this.tileSize / 2,
+      "npc-nurse"
+    ).setDepth(9);
+  }
+
   private checkNpcInteraction(): void {
     let fx = this.gridX, fy = this.gridY;
     switch (this.facingDirection) {
@@ -1202,6 +1265,11 @@ export class MapScene extends Phaser.Scene {
     }
     if (this.kinoshitaSprite && fx === this.kinoshitaNpcX && fy === this.kinoshitaNpcY) {
       this.triggerKinoshitaEvent();
+      return;
+    }
+    if (this.nurseSprite && fx === this.nurseNpcX && fy === this.nurseNpcY) {
+      this.triggerNurseEvent();
+      return;
     }
   }
 
@@ -1237,6 +1305,32 @@ export class MapScene extends Phaser.Scene {
         "さあ、南の出口から\n外に出てみるといい。\n月面には 色んなアルモンがいるぞ！",
       ]);
     });
+  }
+
+  private triggerNurseEvent(): void {
+    this.showDialog([
+      "ようこそ リカバリーポッドへ！",
+      "アルモンを 回復しますね。\nしばらく おまちください…",
+    ], () => {
+      this.healParty();
+      this.showDialog([
+        "おまちどうさま！\nアルモンたちは すっかり\n元気になりましたよ！",
+        "またいつでも いらしてくださいね！",
+      ]);
+    });
+  }
+
+  private healParty(): void {
+    if (!this.playerState) return;
+    const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    for (const mon of this.playerState.party) {
+      const data = allMonsters.find(m => m.id === mon.dataId);
+      if (data) {
+        const stats = calculateStats(data, mon.level);
+        mon.currentHp = stats.hp;
+        mon.maxHp = stats.hp;
+      }
+    }
   }
 
   // ---- Dialog System ----
