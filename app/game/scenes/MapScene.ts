@@ -74,6 +74,11 @@ export class MapScene extends Phaser.Scene {
   private rivalNpcX = 14;
   private rivalNpcY = 12;
 
+  // Mom NPC (player/rival home interiors)
+  private momSprite?: Phaser.GameObjects.Image;
+  private momNpcX = 2;
+  private momNpcY = 3;
+
   // Shopkeeper NPC (Planet Shop) — npc tile is the counter front; the sprite
   // is drawn one tile behind it (RSE-style talking across the counter).
   private shopkeeperSprite?: Phaser.GameObjects.Image;
@@ -120,6 +125,7 @@ export class MapScene extends Phaser.Scene {
     this.nurseSprite = undefined;
     this.shopkeeperSprite = undefined;
     this.rivalSprite = undefined;
+    this.momSprite = undefined;
     this.shopOpen = false;
     if (data.playerState) {
       this.playerState = data.playerState;
@@ -182,6 +188,12 @@ export class MapScene extends Phaser.Scene {
     // Place Rival NPC in moon town
     if (this.currentMapKey === "moon_town") {
       this.placeRivalNpc();
+    }
+
+    // Home interiors (player / rival)
+    if (this.currentMapKey === "player_home" || this.currentMapKey === "rival_home") {
+      this.placeHomeDecor(this.currentMapKey === "player_home");
+      this.placeMomNpc();
     }
   }
 
@@ -585,6 +597,7 @@ export class MapScene extends Phaser.Scene {
     if (this.nurseSprite && x === this.nurseNpcX && y === this.nurseNpcY) return true;
     if (this.shopkeeperSprite && x === this.shopkeeperNpcX && y === this.shopkeeperNpcY) return true;
     if (this.rivalSprite && x === this.rivalNpcX && y === this.rivalNpcY) return true;
+    if (this.momSprite && x === this.momNpcX && y === this.momNpcY) return true;
     return false;
   }
 
@@ -1686,6 +1699,133 @@ export class MapScene extends Phaser.Scene {
     if (this.rivalSprite && fx === this.rivalNpcX && fy === this.rivalNpcY) {
       this.triggerRivalEvent();
       return;
+    }
+    if (this.momSprite && fx === this.momNpcX && fy === this.momNpcY) {
+      this.triggerMomEvent();
+      return;
+    }
+  }
+
+  // ---- Home interiors (player / rival) ----
+  private placeHomeDecor(isPlayer: boolean): void {
+    const ts = this.tileSize;
+    this.genPodTextures();     // reuse plant
+    this.genHomeTextures();
+
+    // Warm wood floor overlay (rows 1-6, cols 1-8) + rug + planks.
+    const fo = this.add.graphics().setDepth(1);
+    fo.fillStyle(0xe0c79a, 1);
+    fo.fillRect(ts, ts, 8 * ts, 6 * ts);
+    fo.fillStyle(0xd6ba86, 1);                 // plank seams
+    for (let y = 1; y < 7; y++) fo.fillRect(ts, y * ts + ts - 2, 8 * ts, 2);
+    // rug (center)
+    fo.fillStyle(isPlayer ? 0x6a8ad0 : 0xd06a6a, 0.85);
+    fo.fillRect(4 * ts + 6, 3 * ts + 6, 3 * ts - 12, 2 * ts - 12);
+    fo.fillStyle(0xffffff, 0.18);
+    fo.fillRect(4 * ts + 12, 3 * ts + 12, 3 * ts - 24, 2 * ts - 24);
+
+    // Furniture: kitchen counter (cols 1-3 row1), TV (cols 4-5 row1),
+    // table+chairs (cols 5-6 rows 3-4), bed (col1 rows 4-5), plant (col8 row1).
+    this.add.image(2 * ts, Math.round(1.6 * ts), "home-kitchen").setDepth(6);
+    this.add.image(Math.round(4.5 * ts), Math.round(1.5 * ts), "home-tv").setDepth(6);
+    this.add.image(Math.round(5.5 * ts), Math.round(3.9 * ts), "home-table").setDepth(6);
+    this.add.image(1 * ts + ts / 2, Math.round(4.9 * ts), "home-bed").setDepth(6);
+    this.add.image(8 * ts + ts / 2, 1 * ts + ts / 2 - 4, "pod-plant").setDepth(6);
+  }
+
+  private genHomeTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false; draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Kitchen counter 96x36
+    mk("home-kitchen", 96, 36, (ctx) => {
+      ctx.fillStyle = "#e6ebf0"; this.roundRect(ctx, 2, 6, 92, 12, 3); ctx.fill();   // countertop
+      ctx.fillStyle = "#c3ccd8"; ctx.fillRect(2, 16, 92, 16);
+      ctx.fillStyle = "#a9b4c4"; ctx.fillRect(2, 28, 92, 4);
+      ctx.fillStyle = "#8b97a8"; ctx.fillRect(28, 18, 2, 12); ctx.fillRect(60, 18, 2, 12); // seams
+      // sink + faucet
+      ctx.fillStyle = "#9fb0c4"; this.roundRect(ctx, 10, 8, 20, 8, 2); ctx.fill();
+      ctx.fillStyle = "#5f6b80"; ctx.fillRect(19, 3, 2, 6); ctx.fillRect(19, 3, 6, 2);
+      // stove burners
+      ctx.fillStyle = "#3a4252"; ctx.beginPath(); ctx.arc(50, 12, 4, 0, Math.PI*2); ctx.arc(64, 12, 4, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#7a8698"; ctx.lineWidth = 2; this.roundRect(ctx, 2, 6, 92, 26, 3); ctx.stroke();
+    });
+    // TV / monitor stand 48x40
+    mk("home-tv", 48, 40, (ctx) => {
+      ctx.fillStyle = "#20242c"; this.roundRect(ctx, 2, 2, 44, 26, 3); ctx.fill();
+      ctx.fillStyle = "#3a6db0"; ctx.fillRect(5, 5, 38, 20);
+      ctx.fillStyle = "#5f93d8"; ctx.fillRect(7, 7, 16, 8);
+      ctx.fillStyle = "#8ef0a0"; ctx.fillRect(7, 18, 10, 3);
+      ctx.strokeStyle = "#0e1220"; ctx.lineWidth = 2; this.roundRect(ctx, 2, 2, 44, 26, 3); ctx.stroke();
+      ctx.fillStyle = "#8a6a44"; ctx.fillRect(10, 28, 28, 10);      // stand
+      ctx.fillStyle = "#6e5030"; ctx.fillRect(10, 34, 28, 4);
+    });
+    // Round table + 2 chairs 64x64
+    mk("home-table", 64, 64, (ctx) => {
+      // chairs
+      ctx.fillStyle = "#b07840"; this.roundRect(ctx, 6, 24, 12, 14, 3); ctx.fill();
+      this.roundRect(ctx, 46, 24, 12, 14, 3); ctx.fill();
+      ctx.fillStyle = "#8a5a28"; ctx.fillRect(6, 34, 12, 4); ctx.fillRect(46, 34, 12, 4);
+      // table top
+      ctx.fillStyle = "#d8b070"; ctx.beginPath(); ctx.ellipse(32, 30, 22, 14, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#eecb8c"; ctx.beginPath(); ctx.ellipse(32, 27, 20, 11, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#a87c40"; ctx.fillRect(30, 40, 4, 16);      // leg
+      ctx.fillStyle = "#8a5a28"; ctx.fillRect(24, 56, 16, 4);
+      ctx.strokeStyle = "#7a5222"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(32, 30, 22, 14, 0, 0, Math.PI*2); ctx.stroke();
+      // cup on table
+      ctx.fillStyle = "#e86a8a"; this.roundRect(ctx, 28, 22, 8, 8, 2); ctx.fill();
+    });
+    // Bed 40x64 (headboard top)
+    mk("home-bed", 40, 64, (ctx) => {
+      ctx.fillStyle = "#8a6a44"; this.roundRect(ctx, 2, 2, 36, 10, 3); ctx.fill();        // headboard
+      ctx.fillStyle = "#e9edf2"; this.roundRect(ctx, 4, 10, 32, 20, 3); ctx.fill();       // pillow area
+      ctx.fillStyle = "#5f8ad0"; this.roundRect(ctx, 4, 24, 32, 36, 4); ctx.fill();       // blanket
+      ctx.fillStyle = "#7aa4e4"; ctx.fillRect(4, 24, 32, 5);                                // fold
+      ctx.fillStyle = "#ffffff"; this.roundRect(ctx, 8, 13, 24, 10, 3); ctx.fill();        // pillow
+      ctx.strokeStyle = "#3a5a90"; ctx.lineWidth = 2; this.roundRect(ctx, 2, 10, 36, 50, 4); ctx.stroke();
+    });
+  }
+
+  private placeMomNpc(): void {
+    if (!this.textures.exists("npc-mom")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      // teal dress
+      ctx.fillStyle = "#3aa088"; ctx.fillRect(6, 14, 20, 18);
+      ctx.fillStyle = "#2e8874"; ctx.fillRect(6, 26, 20, 6);
+      ctx.fillStyle = "#f0e0d0"; ctx.fillRect(13, 16, 6, 4);   // collar
+      // head
+      ctx.fillStyle = "#f0d8b8"; ctx.beginPath(); ctx.arc(16, 11, 8, 0, Math.PI*2); ctx.fill();
+      // brown hair (bun)
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(8, 3, 16, 7); ctx.fillRect(7, 6, 3, 6); ctx.fillRect(22, 6, 3, 6);
+      ctx.beginPath(); ctx.arc(16, 3, 4, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#222"; ctx.fillRect(12, 10, 2, 2); ctx.fillRect(18, 10, 2, 2);
+      ctx.strokeStyle = "#cc7766"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(16, 14, 3, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+      this.textures.addCanvas("npc-mom", c);
+    }
+    this.momSprite = this.add.image(
+      this.momNpcX * this.tileSize + this.tileSize / 2,
+      this.momNpcY * this.tileSize + this.tileSize / 2,
+      "npc-mom"
+    ).setDepth(9);
+  }
+
+  private triggerMomEvent(): void {
+    const isPlayerHome = this.currentMapKey === "player_home";
+    if (isPlayerHome) {
+      this.showDialog([
+        "おかえり！ 元気にしてた？",
+        "アルモンと 一緒なら 安心ね。",
+        "困ったら いつでも 帰ってきなさい。\nゆっくり 休んでいってね！",
+      ]);
+    } else {
+      this.showDialog([
+        "あら、いらっしゃい。",
+        "うちの子なら 出かけちゃったわよ。\nまた 勝負したいって 言ってたわ。",
+      ]);
     }
   }
 
