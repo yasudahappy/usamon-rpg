@@ -434,7 +434,7 @@ export class BattleScene extends Phaser.Scene {
   // Small "HP"/"EXP" label tag drawn on the light panel.
   private drawTag(x: number, y: number, label: string, color: string): Phaser.GameObjects.Text {
     return this.add.text(x, y, label, {
-      fontSize: "11px", color, fontFamily: "'DotGothic16', monospace", fontStyle: "bold",
+      fontSize: "15px", color, fontFamily: "'DotGothic16', monospace", fontStyle: "bold",
     }).setOrigin(0, 0.5).setDepth(11);
   }
 
@@ -446,10 +446,10 @@ export class BattleScene extends Phaser.Scene {
     this.drawStatusPanel(eb);
     this.enemyNameText = this.add
       .text(eb.x + 16, eb.y + Math.round(7 * this.sy), `${this.enemyMon.name}`, {
-        fontSize: "15px", color: NAME, fontFamily: F, fontStyle: "bold",
+        fontSize: "20px", color: NAME, fontFamily: F, fontStyle: "bold",
       }).setDepth(11);
     this.enemyLvText = this.add.text(eb.x + eb.w - 14, eb.y + Math.round(8 * this.sy), `Lv${this.enemyMon.level}`, {
-      fontSize: "13px", color: LV, fontFamily: F, fontStyle: "bold",
+      fontSize: "18px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
     const eg = this.hpGeom(false);
     this.drawTag(eb.x + 16, eg.y, "HP", HPTAG);
@@ -463,10 +463,10 @@ export class BattleScene extends Phaser.Scene {
     this.drawStatusPanel(pb);
     this.playerNameText = this.add
       .text(pb.x + 16, pb.y + Math.round(9 * this.sy), `${this.playerMon.name}`, {
-        fontSize: "15px", color: NAME, fontFamily: F, fontStyle: "bold",
+        fontSize: "20px", color: NAME, fontFamily: F, fontStyle: "bold",
       }).setDepth(11);
     this.playerLvText = this.add.text(pb.x + pb.w - 14, pb.y + Math.round(10 * this.sy), `Lv${this.playerMon.level}`, {
-      fontSize: "13px", color: LV, fontFamily: F, fontStyle: "bold",
+      fontSize: "18px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
     const pg = this.hpGeom(true);
     this.drawTag(pb.x + 16, pg.y, "HP", HPTAG);
@@ -474,7 +474,7 @@ export class BattleScene extends Phaser.Scene {
     this.drawHpBarGraphic(this.playerHpBar, pg.x, pg.y - pg.h / 2, pg.w, pg.h, this.playerMon.currentHp / this.playerMon.maxHp);
     this.playerHpText = this.add
       .text(pb.x + pb.w - 14, pg.y + Math.round(9 * this.sy), `${this.playerMon.currentHp}/${this.playerMon.maxHp}`, {
-        fontSize: "15px", color: NAME, fontFamily: F, fontStyle: "bold",
+        fontSize: "20px", color: NAME, fontFamily: F, fontStyle: "bold",
       }).setOrigin(1, 0).setDepth(11);
     // EXP bar (player only)
     const xg = this.expGeom();
@@ -540,7 +540,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.msgText = this.add
       .text(20, Math.round(260 * this.sy), "", {
-        fontSize: "16px",
+        fontSize: "22px",
         color: "#ffffff",
         fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
@@ -564,7 +564,7 @@ export class BattleScene extends Phaser.Scene {
       const bg = this.add.graphics().setDepth(20).setVisible(false);
       const text = this.add
         .text(px, py, labels[i], {
-          fontSize: "18px",
+          fontSize: "24px",
           color: "#ffffff",
           fontFamily: "'DotGothic16', monospace",
           stroke: "#000000", strokeThickness: 3,
@@ -664,7 +664,7 @@ export class BattleScene extends Phaser.Scene {
       const bg = this.add.graphics().setDepth(20);
       const text = this.add
         .text(px, py, label, {
-          fontSize: "18px",
+          fontSize: "24px",
           color: move ? "#ffffff" : "#555555",
           fontFamily: "'DotGothic16', monospace",
           stroke: "#000000", strokeThickness: 3,
@@ -1304,7 +1304,7 @@ export class BattleScene extends Phaser.Scene {
       const bg = this.add.graphics().setDepth(20);
       const text = this.add
         .text(px, py, labels[i], {
-          fontSize: "15px",
+          fontSize: "20px",
           color: "#ffffff",
           fontFamily: "'DotGothic16', monospace",
           stroke: "#000000", strokeThickness: 3,
@@ -1675,7 +1675,7 @@ export class BattleScene extends Phaser.Scene {
       const py = positions[i % positions.length].y;
       const bg = this.add.graphics().setDepth(20);
       const text = this.add.text(px, py, options[i], {
-        fontSize: "14px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+        fontSize: "19px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(21);
       const zone = this.add.zone(px, py, 280, 40).setInteractive().setDepth(22).setOrigin(0.5);
