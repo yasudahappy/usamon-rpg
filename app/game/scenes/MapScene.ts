@@ -90,6 +90,10 @@ export class MapScene extends Phaser.Scene {
   private menuGpPrevDpad: string | null = null;
   private mKey?: Phaser.Input.Keyboard.Key;
   private escKey?: Phaser.Input.Keyboard.Key;
+  // Party reorder state
+  private partySelIndex = 0;
+  private partyPickIndex = -1;
+  private partyGpPrevDpad: string | null = null;
 
   constructor() {
     super({ key: "MapScene" });
@@ -818,6 +822,7 @@ export class MapScene extends Phaser.Scene {
 
   private updateMenu(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
     if (this.menuSubScreen !== "none") {
+      if (this.menuSubScreen === "party") { this.updatePartyScreen(a, b, menu, dpad); return; }
       if (b || menu) { this.closeSubScreen(); return; }
       // Sub-screen specific: save confirm
       if (this.menuSubScreen === "save" && a) { this.doSave(); return; }
@@ -849,6 +854,46 @@ export class MapScene extends Phaser.Scene {
     if (a) this.selectMenuItem();
   }
 
+  // Party reorder: move a cursor, pick a monster (A), then pick a target (A) to swap.
+  private updatePartyScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    const n = this.playerState?.party.length || 0;
+    if (n === 0) { if (b || menu) this.closeSubScreen(); return; }
+
+    const justUp = (dpad === "up" || dpad === "left") && this.partyGpPrevDpad !== dpad;
+    const justDown = (dpad === "down" || dpad === "right") && this.partyGpPrevDpad !== dpad;
+    this.partyGpPrevDpad = dpad;
+
+    let kbUp = false, kbDown = false, kbEnter = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.left);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down) || Phaser.Input.Keyboard.JustDown(this.cursors.right);
+      kbEnter = Phaser.Input.Keyboard.JustDown(this.input.keyboard.addKey("ENTER"));
+    }
+
+    if (b || menu) {
+      if (this.partyPickIndex >= 0) { this.partyPickIndex = -1; this.drawPartyScreen(); }
+      else this.closeSubScreen();
+      return;
+    }
+    if (justUp || kbUp) { this.partySelIndex = (this.partySelIndex - 1 + n) % n; this.drawPartyScreen(); return; }
+    if (justDown || kbDown) { this.partySelIndex = (this.partySelIndex + 1) % n; this.drawPartyScreen(); return; }
+    if (a || kbEnter) {
+      if (this.partyPickIndex < 0) {
+        this.partyPickIndex = this.partySelIndex;
+      } else {
+        if (this.partyPickIndex !== this.partySelIndex && this.playerState) {
+          const p = this.playerState.party;
+          const tmp = p[this.partyPickIndex];
+          p[this.partyPickIndex] = p[this.partySelIndex];
+          p[this.partySelIndex] = tmp;
+        }
+        this.partyPickIndex = -1;
+      }
+      this.drawPartyScreen();
+      return;
+    }
+  }
+
   private selectMenuItem(): void {
     switch (this.menuSelectedIndex) {
       case 0: this.showStubScreen("ずかん"); break;
@@ -863,6 +908,13 @@ export class MapScene extends Phaser.Scene {
 
   // ---- Party Screen (ポケモン ルビサファ風) ----
   private showPartyScreen(): void {
+    this.partySelIndex = 0;
+    this.partyPickIndex = -1;
+    this.partyGpPrevDpad = null;
+    this.drawPartyScreen();
+  }
+
+  private drawPartyScreen(): void {
     this.menuSubScreen = "party";
     this.clearMenuElements();
     const W = this.scale.width, H = this.scale.height;
@@ -896,14 +948,16 @@ export class MapScene extends Phaser.Scene {
     bar.fillStyle(0xf0f4f8); bar.fillRect(this.uiX(0), this.uiY(barY), this.uiS(W), this.uiS(barH));
     bar.fillStyle(0xd8e0e8); bar.fillRect(this.uiX(0), this.uiY(barY), this.uiS(W), this.uiS(2));
     this.menuElements.push(bar);
+    const picking = this.partyPickIndex >= 0;
     this.menuElements.push(
-      this.add.text(this.uiX(14), this.uiY(barY + barH / 2), "アルモンを えらんで ください", {
+      this.add.text(this.uiX(14), this.uiY(barY + barH / 2),
+        picking ? "いれかえる あいてを えらんで" : "いれかえる アルモンを えらんで", {
         fontSize: `${this.uiS(13)}px`, color: "#303030", fontFamily: F, ...STK2,
         stroke: "#ffffff", strokeThickness: 0,
       }).setScrollFactor(0).setDepth(211).setOrigin(0, 0.5)
     );
     this.menuElements.push(
-      this.add.text(this.uiX(W - 10), this.uiY(barY + barH / 2), "B:もどる", {
+      this.add.text(this.uiX(W - 10), this.uiY(barY + barH / 2), picking ? "B:キャンセル" : "B:もどる", {
         fontSize: `${this.uiS(10)}px`, color: "#707880", fontFamily: F,
       }).setScrollFactor(0).setDepth(211).setOrigin(1, 0.5)
     );
@@ -1151,6 +1205,23 @@ export class MapScene extends Phaser.Scene {
         }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
       );
     }
+
+    // ---- Selection cursor & pick highlight (for reordering) ----
+    const slotRect = (i: number) => i === 0
+      ? { x: leadX, y: leadY, w: leadW, h: leadH }
+      : { x: rightX, y: rightStartY + (i - 1) * (rightSlotH + gap), w: rightW, h: rightSlotH };
+    const hl = this.add.graphics().setScrollFactor(0).setDepth(205);
+    if (this.partyPickIndex >= 0 && this.partyPickIndex < party.length) {
+      const r = slotRect(this.partyPickIndex);
+      hl.lineStyle(5, 0xffd23c);
+      hl.strokeRoundedRect(this.uiX(r.x - 4), this.uiY(r.y - 4), this.uiS(r.w + 8), this.uiS(r.h + 8), this.uiS(10));
+    }
+    if (this.partySelIndex >= 0 && this.partySelIndex < party.length) {
+      const r = slotRect(this.partySelIndex);
+      hl.lineStyle(4, 0x66ddff);
+      hl.strokeRoundedRect(this.uiX(r.x - 2), this.uiY(r.y - 2), this.uiS(r.w + 4), this.uiS(r.h + 4), this.uiS(9));
+    }
+    this.menuElements.push(hl);
   }
 
   // ---- Player Info Screen ----
@@ -1770,7 +1841,7 @@ export class MapScene extends Phaser.Scene {
     const W = this.scale.width;
     const H = this.scale.height;
     const margin = 20;
-    const boxH = 90;
+    const boxH = 112;
     const boxY = H - boxH - 16;
 
     // Box background
@@ -1783,17 +1854,17 @@ export class MapScene extends Phaser.Scene {
 
     // Text
     const msg = this.dialogMessages[this.dialogIndex];
-    const text = this.add.text(this.uiX(margin + 16), this.uiY(boxY + 14), msg, {
-      fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
-      stroke: "#000000", strokeThickness: 3,
-      wordWrap: { width: this.uiS(W - margin*2 - 48) }, lineSpacing: this.uiS(4),
+    const text = this.add.text(this.uiX(margin + 18), this.uiY(boxY + 18), msg, {
+      fontSize: `${this.uiS(21)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 4,
+      wordWrap: { width: this.uiS(W - margin*2 - 52) }, lineSpacing: this.uiS(7),
     }).setScrollFactor(0).setDepth(301);
     this.dialogElements.push(text);
 
     // Advance indicator
     if (this.dialogIndex < this.dialogMessages.length - 1 || this.dialogCallback) {
-      const indicator = this.add.text(this.uiX(W - margin - 16), this.uiY(boxY + boxH - 20), "▼", {
-        fontSize: `${this.uiS(12)}px`, color: "#66aaff", fontFamily: "'DotGothic16', monospace",
+      const indicator = this.add.text(this.uiX(W - margin - 18), this.uiY(boxY + boxH - 22), "▼", {
+        fontSize: `${this.uiS(16)}px`, color: "#66aaff", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setScrollFactor(0).setDepth(301);
       this.dialogElements.push(indicator);
