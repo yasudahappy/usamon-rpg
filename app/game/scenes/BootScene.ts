@@ -12,8 +12,8 @@ const MONSTER_SPRITE_IDS = [
 // Back-facing sprites (the player's own monster in battle). Only the ids that
 // actually have a "<id>_back.png" asset — others fall back to the front sprite.
 const MONSTER_BACK_SPRITE_IDS = [
-  "usamon", "sunagani", "lobsner", "regonyas", "rairai", "mochigori", "gorimocchi",
-  "ikarion", "sharisu", "sharian",
+  "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
+  "rairai", "ikarion", "regonyas", "sharisu", "sharian",
 ];
 
 export class BootScene extends Phaser.Scene {

@@ -366,8 +366,8 @@ export class BattleScene extends Phaser.Scene {
       plat.lineStyle(2, 0xe6d9a2, 0.55);
       plat.strokeEllipse(cx, cy, rx, ry);
     };
-    drawPlat(this.EPLAT_X, this.EPLAT_Y, 112, 28);
-    drawPlat(this.PPLAT_X, this.PPLAT_Y, 126, 32);
+    drawPlat(this.EPLAT_X, this.EPLAT_Y, 152, 38);
+    drawPlat(this.PPLAT_X, this.PPLAT_Y, 176, 46);
   }
 
   // ---- RSE battle layout anchors (640-wide design, Y ×sy) ----
