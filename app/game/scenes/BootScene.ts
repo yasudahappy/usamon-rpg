@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1", "recovery_pod"];
+const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop"];
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -40,6 +40,7 @@ export class BootScene extends Phaser.Scene {
     this.load.json("moves", `${base}/data/moves/moves.json`);
     this.load.json("encounters", `${base}/data/encounters.json`);
     this.load.json("trainers", `${base}/data/trainers.json`);
+    this.load.json("items", `${base}/data/items.json`);
 
     // Load tileset spritesheet
     this.load.spritesheet("moon-tileset", `${base}/assets/tiles/moon_tileset.png`, {

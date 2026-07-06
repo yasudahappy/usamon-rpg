@@ -67,6 +67,19 @@ export class MapScene extends Phaser.Scene {
   private nurseNpcX = 5;
   private nurseNpcY = 2;
 
+  // Shopkeeper NPC (Planet Shop)
+  private shopkeeperSprite?: Phaser.GameObjects.Image;
+  private shopkeeperNpcX = 5;
+  private shopkeeperNpcY = 2;
+
+  // Shop system
+  private shopOpen = false;
+  private shopSelectedIndex = 0;
+  private shopElements: Phaser.GameObjects.GameObject[] = [];
+  private shopGpPrevDpad: string | null = null;
+  private shopMessage = "";
+  private static SHOP_INVENTORY = ["repair_gel", "hi_repair_gel", "moon_capsule", "star_capsule"];
+
   // Menu system
   private menuOpen = false;
   private menuSubScreen: "none" | "party" | "save" | "stub" = "none";
@@ -92,6 +105,8 @@ export class MapScene extends Phaser.Scene {
     this.startingBattle = false;
     this.kinoshitaSprite = undefined;
     this.nurseSprite = undefined;
+    this.shopkeeperSprite = undefined;
+    this.shopOpen = false;
     if (data.playerState) {
       this.playerState = data.playerState;
     } else if (data.playerInstance) {
@@ -141,6 +156,11 @@ export class MapScene extends Phaser.Scene {
     // Place Nurse NPC in recovery pod
     if (this.currentMapKey === "recovery_pod") {
       this.placeNurseNpc();
+    }
+
+    // Place Shopkeeper NPC in planet shop
+    if (this.currentMapKey === "planet_shop") {
+      this.placeShopkeeperNpc();
     }
   }
 
@@ -475,6 +495,7 @@ export class MapScene extends Phaser.Scene {
     // NPC collision
     if (this.kinoshitaSprite && x === this.kinoshitaNpcX && y === this.kinoshitaNpcY) return true;
     if (this.nurseSprite && x === this.nurseNpcX && y === this.nurseNpcY) return true;
+    if (this.shopkeeperSprite && x === this.shopkeeperNpcX && y === this.shopkeeperNpcY) return true;
     return false;
   }
 
@@ -554,6 +575,12 @@ export class MapScene extends Phaser.Scene {
     // --- Dialog ---
     if (this.dialogActive) {
       if (gpA) this.advanceDialog();
+      return;
+    }
+
+    // --- Shop ---
+    if (this.shopOpen) {
+      this.updateShop(gpA, gpB || !!kbEsc, gp?.dpad || null);
       return;
     }
 
@@ -1271,6 +1298,10 @@ export class MapScene extends Phaser.Scene {
       this.triggerNurseEvent();
       return;
     }
+    if (this.shopkeeperSprite && fx === this.shopkeeperNpcX && fy === this.shopkeeperNpcY) {
+      this.triggerShopkeeperEvent();
+      return;
+    }
   }
 
   private triggerKinoshitaEvent(): void {
@@ -1331,6 +1362,284 @@ export class MapScene extends Phaser.Scene {
         mon.maxHp = stats.hp;
       }
     }
+  }
+
+  // ========== SHOP SYSTEM ==========
+
+  private placeShopkeeperNpc(): void {
+    if (!this.textures.exists("npc-shopkeeper")) {
+      const c = document.createElement("canvas");
+      c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!;
+      ctx.imageSmoothingEnabled = false;
+      // Blue apron body
+      ctx.fillStyle = "#4070b0";
+      ctx.fillRect(6, 14, 20, 18);
+      // Apron front
+      ctx.fillStyle = "#5090d0";
+      ctx.fillRect(10, 16, 12, 16);
+      // Apron pocket
+      ctx.fillStyle = "#3868a0";
+      ctx.fillRect(12, 22, 8, 5);
+      // Head
+      ctx.fillStyle = "#f0d8b8";
+      ctx.beginPath(); ctx.arc(16, 11, 8, 0, Math.PI * 2); ctx.fill();
+      // Hair (brown, short)
+      ctx.fillStyle = "#806040";
+      ctx.fillRect(9, 3, 14, 5);
+      ctx.fillRect(8, 5, 2, 4);
+      ctx.fillRect(22, 5, 2, 4);
+      // Eyes
+      ctx.fillStyle = "#222";
+      ctx.fillRect(12, 10, 2, 2);
+      ctx.fillRect(18, 10, 2, 2);
+      // Big smile
+      ctx.strokeStyle = "#aa7766";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(16, 14, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+      this.textures.addCanvas("npc-shopkeeper", c);
+    }
+
+    this.shopkeeperSprite = this.add.image(
+      this.shopkeeperNpcX * this.tileSize + this.tileSize / 2,
+      this.shopkeeperNpcY * this.tileSize + this.tileSize / 2,
+      "npc-shopkeeper"
+    ).setDepth(9);
+  }
+
+  private triggerShopkeeperEvent(): void {
+    this.showDialog([
+      "いらっしゃいませ！\nプラネットショップへ ようこそ！",
+      "なにを おかいもとめですか？",
+    ], () => {
+      this.openShop();
+    });
+  }
+
+  private openShop(): void {
+    this.shopOpen = true;
+    this.shopSelectedIndex = 0;
+    this.shopGpPrevDpad = null;
+    this.shopMessage = "";
+    this.dialogActive = false;
+    this.drawShopUI();
+  }
+
+  private closeShop(): void {
+    this.shopOpen = false;
+    this.clearShopElements();
+    this.shopGpPrevDpad = null;
+  }
+
+  private clearShopElements(): void {
+    this.shopElements.forEach(el => el.destroy());
+    this.shopElements = [];
+  }
+
+  private drawShopUI(): void {
+    this.clearShopElements();
+    const W = this.scale.width;
+    const H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const STK = { stroke: "#000000", strokeThickness: 3 };
+
+    const allItems = (this.cache.json.get("items") || []) as { id: string; name: string; description: string; price: number }[];
+    const inventory = MapScene.SHOP_INVENTORY.map(id => allItems.find(i => i.id === id)!).filter(Boolean);
+    const totalOptions = inventory.length + 1; // +1 for やめる
+
+    // Dark overlay
+    const overlay = this.add.graphics().setScrollFactor(0).setDepth(200);
+    overlay.fillStyle(0x000000, 0.6);
+    overlay.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.shopElements.push(overlay);
+
+    // Panel
+    const px = 20, py = 16;
+    const pw = W - 40, ph = H - 32;
+    const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+    panel.fillStyle(0x0a1628, 0.95);
+    panel.fillRoundedRect(this.uiX(px), this.uiY(py), this.uiS(pw), this.uiS(ph), this.uiS(12));
+    panel.lineStyle(2, 0xcc8833);
+    panel.strokeRoundedRect(this.uiX(px), this.uiY(py), this.uiS(pw), this.uiS(ph), this.uiS(12));
+    this.shopElements.push(panel);
+
+    // Title
+    this.shopElements.push(
+      this.add.text(this.uiX(W / 2), this.uiY(py + 18), "★ プラネットショップ", {
+        fontSize: "16px", color: "#ffcc44", fontFamily: F, fontStyle: "bold", ...STK,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
+    );
+
+    // Items list
+    const itemStartY = py + 42;
+    const itemH = 28;
+    for (let i = 0; i < totalOptions; i++) {
+      const iy = itemStartY + i * itemH;
+      const isSelected = i === this.shopSelectedIndex;
+      const isQuit = i >= inventory.length;
+
+      // Selection highlight
+      if (isSelected) {
+        const bg = this.add.graphics().setScrollFactor(0).setDepth(202);
+        bg.fillStyle(0x1a3366, 0.9);
+        bg.fillRoundedRect(this.uiX(px + 6), this.uiY(iy + 1), this.uiS(pw - 12), this.uiS(itemH - 2), this.uiS(4));
+        this.shopElements.push(bg);
+      }
+
+      // Arrow
+      if (isSelected) {
+        this.shopElements.push(
+          this.add.text(this.uiX(px + 12), this.uiY(iy + itemH / 2), "▶", {
+            fontSize: "11px", color: "#ffcc44", fontFamily: F, ...STK,
+          }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
+        );
+      }
+
+      if (isQuit) {
+        this.shopElements.push(
+          this.add.text(this.uiX(px + 28), this.uiY(iy + itemH / 2), "やめる", {
+            fontSize: "14px", color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
+          }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
+        );
+      } else {
+        const item = inventory[i];
+        // Name
+        this.shopElements.push(
+          this.add.text(this.uiX(px + 28), this.uiY(iy + itemH / 2), item.name, {
+            fontSize: "14px", color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
+          }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
+        );
+        // Owned count
+        const owned = this.playerState?.items.find(it => it.id === item.id)?.count || 0;
+        if (owned > 0) {
+          this.shopElements.push(
+            this.add.text(this.uiX(px + pw - 70), this.uiY(iy + itemH / 2), `×${owned}`, {
+              fontSize: "11px", color: "#88aacc", fontFamily: F, ...STK,
+            }).setScrollFactor(0).setDepth(203).setOrigin(1, 0.5)
+          );
+        }
+        // Price
+        this.shopElements.push(
+          this.add.text(this.uiX(px + pw - 12), this.uiY(iy + itemH / 2), `¥${item.price}`, {
+            fontSize: "13px", color: isSelected ? "#aaffaa" : "#668866", fontFamily: F, ...STK,
+          }).setScrollFactor(0).setDepth(203).setOrigin(1, 0.5)
+        );
+      }
+    }
+
+    // Separator
+    const descY = itemStartY + totalOptions * itemH + 6;
+    const sep = this.add.graphics().setScrollFactor(0).setDepth(202);
+    sep.fillStyle(0xcc8833, 0.4);
+    sep.fillRect(this.uiX(px + 8), this.uiY(descY), this.uiS(pw - 16), this.uiS(1));
+    this.shopElements.push(sep);
+
+    // Description
+    let descStr = "";
+    if (this.shopSelectedIndex < inventory.length) {
+      descStr = inventory[this.shopSelectedIndex].description;
+    }
+    this.shopElements.push(
+      this.add.text(this.uiX(px + 14), this.uiY(descY + 8), descStr, {
+        fontSize: "12px", color: "#ccddee", fontFamily: F, ...STK,
+      }).setScrollFactor(0).setDepth(203)
+    );
+
+    // Money
+    const money = this.playerState?.money || 0;
+    this.shopElements.push(
+      this.add.text(this.uiX(px + pw - 12), this.uiY(descY + 28), `しょじきん: ${money}円`, {
+        fontSize: "12px", color: "#ffdd88", fontFamily: F, ...STK,
+      }).setScrollFactor(0).setDepth(203).setOrigin(1, 0)
+    );
+
+    // Status message (purchase result)
+    if (this.shopMessage) {
+      const msgColor = this.shopMessage.includes("たりない") ? "#ff8888" : "#88ff88";
+      this.shopElements.push(
+        this.add.text(this.uiX(px + 14), this.uiY(descY + 28), this.shopMessage, {
+          fontSize: "12px", color: msgColor, fontFamily: F, ...STK,
+        }).setScrollFactor(0).setDepth(203)
+      );
+    }
+
+    // Controls hint
+    this.shopElements.push(
+      this.add.text(this.uiX(W / 2), this.uiY(py + ph - 10), "A:かう  B:やめる", {
+        fontSize: "10px", color: "#8899aa", fontFamily: F,
+      }).setScrollFactor(0).setDepth(203).setOrigin(0.5)
+    );
+  }
+
+  private updateShop(a: boolean, b: boolean, dpad: string | null): void {
+    const allItems = (this.cache.json.get("items") || []) as { id: string; name: string; description: string; price: number }[];
+    const inventory = MapScene.SHOP_INVENTORY.map(id => allItems.find(i => i.id === id)!).filter(Boolean);
+    const totalOptions = inventory.length + 1;
+
+    // D-pad edge detection
+    const justUp = dpad === "up" && this.shopGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.shopGpPrevDpad !== "down";
+    this.shopGpPrevDpad = dpad;
+
+    // Keyboard
+    let kbUp = false, kbDown = false, kbEnter = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+      kbEnter = Phaser.Input.Keyboard.JustDown(this.input.keyboard.addKey("ENTER"));
+    }
+
+    if (justUp || kbUp) {
+      this.shopSelectedIndex = (this.shopSelectedIndex - 1 + totalOptions) % totalOptions;
+      this.shopMessage = "";
+      this.drawShopUI();
+      return;
+    }
+    if (justDown || kbDown) {
+      this.shopSelectedIndex = (this.shopSelectedIndex + 1) % totalOptions;
+      this.shopMessage = "";
+      this.drawShopUI();
+      return;
+    }
+
+    if (b) {
+      this.closeShop();
+      this.showDialog(["ありがとうございました！\nまた おこしくださいね！"]);
+      return;
+    }
+
+    if (a || kbEnter) {
+      if (this.shopSelectedIndex >= inventory.length) {
+        // やめる
+        this.closeShop();
+        this.showDialog(["ありがとうございました！\nまた おこしくださいね！"]);
+      } else {
+        this.purchaseItem(this.shopSelectedIndex);
+      }
+    }
+  }
+
+  private purchaseItem(idx: number): void {
+    const allItems = (this.cache.json.get("items") || []) as { id: string; name: string; description: string; price: number }[];
+    const inventory = MapScene.SHOP_INVENTORY.map(id => allItems.find(i => i.id === id)!).filter(Boolean);
+    const item = inventory[idx];
+    if (!item || !this.playerState) return;
+
+    if (this.playerState.money < item.price) {
+      this.shopMessage = "おかねが たりない！";
+      this.drawShopUI();
+      return;
+    }
+
+    this.playerState.money -= item.price;
+    const existing = this.playerState.items.find(i => i.id === item.id);
+    if (existing) {
+      existing.count++;
+    } else {
+      this.playerState.items.push({ id: item.id, count: 1 });
+    }
+    this.shopMessage = `${item.name}を かった！`;
+    this.drawShopUI();
   }
 
   // ---- Dialog System ----
