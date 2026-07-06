@@ -69,9 +69,10 @@ export class MapScene extends Phaser.Scene {
   private nurseNpcX = 5;
   private nurseNpcY = 2;
 
-  // Shopkeeper NPC (Planet Shop)
+  // Shopkeeper NPC (Planet Shop) — npc tile is the counter front; the sprite
+  // is drawn one tile behind it (RSE-style talking across the counter).
   private shopkeeperSprite?: Phaser.GameObjects.Image;
-  private shopkeeperNpcX = 5;
+  private shopkeeperNpcX = 2;
   private shopkeeperNpcY = 2;
 
   // Shop system
@@ -168,6 +169,7 @@ export class MapScene extends Phaser.Scene {
 
     // Place Shopkeeper NPC in planet shop
     if (this.currentMapKey === "planet_shop") {
+      this.placePlanetShopDecor();
       this.placeShopkeeperNpc();
     }
   }
@@ -1748,11 +1750,94 @@ export class MapScene extends Phaser.Scene {
       this.textures.addCanvas("npc-shopkeeper", c);
     }
 
+    // Clerk stands one tile behind the counter (talks across it).
     this.shopkeeperSprite = this.add.image(
       this.shopkeeperNpcX * this.tileSize + this.tileSize / 2,
-      this.shopkeeperNpcY * this.tileSize + this.tileSize / 2,
+      (this.shopkeeperNpcY - 1) * this.tileSize + this.tileSize / 2,
       "npc-shopkeeper"
-    ).setDepth(9);
+    ).setDepth(7);
+  }
+
+  // Poke-Mart-style interior decorations for the planet shop.
+  private placePlanetShopDecor(): void {
+    const ts = this.tileSize;
+    this.genPodTextures();      // reuse plant
+    this.genShopTextures();
+
+    // Cool blue-teal floor overlay (rows 1-6, cols 1-8) + checker + door mat.
+    const fo = this.add.graphics().setDepth(1);
+    fo.fillStyle(0xd7e4ea, 1);
+    fo.fillRect(ts, ts, 8 * ts, 6 * ts);
+    fo.fillStyle(0xc4d6df, 0.6);
+    for (let y = ts; y < 7 * ts; y += 16) {
+      for (let x = ts; x < 9 * ts; x += 16) {
+        if (((x / 16) + (y / 16)) % 2 === 0) fo.fillRect(x, y, 16, 16);
+      }
+    }
+    fo.fillStyle(0x9fc2d2, 1);                 // door mat
+    fo.fillRect(4 * ts + 4, 6 * ts + 8, 2 * ts - 8, ts - 12);
+    fo.fillStyle(0xbcd8e4, 1);
+    fo.fillRect(4 * ts + 8, 6 * ts + 12, 2 * ts - 16, ts - 20);
+
+    // Counter (left, cols 1-3 row 2) + goods shelves (cols 5-8, rows 2 & 4) + plants.
+    this.add.image(2.5 * ts, Math.round(2.55 * ts), "shop-counter").setDepth(8);
+    this.add.image(7 * ts, Math.round(2.35 * ts), "shop-shelf").setDepth(6);
+    this.add.image(7 * ts, Math.round(4.35 * ts), "shop-shelf").setDepth(6);
+    this.add.image(1 * ts + ts / 2, 6 * ts + ts / 2 - 6, "pod-plant").setDepth(6);
+    this.add.image(8 * ts + ts / 2, 6 * ts + ts / 2 - 6, "pod-plant").setDepth(6);
+  }
+
+  private genShopTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!;
+      ctx.imageSmoothingEnabled = false;
+      draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Mini moon capsule for shelf goods
+    const cap = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => {
+      ctx.fillStyle = "#e9ebf2"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = "#2c3a6e"; ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#d8ac38"; ctx.fillRect(cx - r, cy - 1, r * 2, 2);
+      ctx.strokeStyle = "#141a2e"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    };
+    // Tech counter: 96x40 (white top, blue front, register)
+    mk("shop-counter", 96, 40, (ctx) => {
+      ctx.fillStyle = "#eef2f6"; this.roundRect(ctx, 3, 4, 90, 13, 6); ctx.fill();
+      ctx.fillStyle = "#fbfdff"; this.roundRect(ctx, 5, 5, 86, 5, 4); ctx.fill();
+      ctx.fillStyle = "#4a78b8"; ctx.fillRect(5, 16, 86, 14);
+      ctx.fillStyle = "#39619a"; ctx.fillRect(5, 25, 86, 5);
+      ctx.fillStyle = "#2a4a78"; ctx.fillRect(5, 30, 86, 6);
+      ctx.fillStyle = "#5f8cc8"; ctx.fillRect(32, 17, 2, 12); ctx.fillRect(62, 17, 2, 12);   // seams
+      // register
+      ctx.fillStyle = "#2a3248"; this.roundRect(ctx, 66, 0, 22, 12, 2); ctx.fill();
+      ctx.fillStyle = "#49d0e0"; ctx.fillRect(69, 2, 16, 5);
+      ctx.strokeStyle = "#24406a"; ctx.lineWidth = 2; this.roundRect(ctx, 3, 4, 90, 32, 6); ctx.stroke();
+    });
+    // Goods shelf: 128x52 (two boards of items incl. moon capsules)
+    mk("shop-shelf", 128, 52, (ctx) => {
+      ctx.fillStyle = "#c8d2dc"; this.roundRect(ctx, 3, 2, 122, 46, 4); ctx.fill();     // frame
+      ctx.fillStyle = "#aab6c4"; ctx.fillRect(3, 44, 122, 6);                             // base
+      ctx.strokeStyle = "#5a6a80"; ctx.lineWidth = 2; this.roundRect(ctx, 3, 2, 122, 46, 4); ctx.stroke();
+      // two shelf boards with shadow
+      for (const by of [20, 40]) {
+        ctx.fillStyle = "#8c98a8"; ctx.fillRect(6, by, 116, 4);
+        ctx.fillStyle = "#6d7888"; ctx.fillRect(6, by + 3, 116, 2);
+      }
+      // goods row 1: bottles (repair gels)
+      const bottle = (x: number, col: string) => {
+        ctx.fillStyle = col; this.roundRect(ctx, x, 8, 8, 12, 2); ctx.fill();
+        ctx.fillStyle = "#f4f7fb"; ctx.fillRect(x + 2, 6, 4, 3);
+        ctx.strokeStyle = "#243040"; ctx.lineWidth = 1; this.roundRect(ctx, x, 8, 8, 12, 2); ctx.stroke();
+      };
+      bottle(12, "#58c0e8"); bottle(26, "#58c0e8"); bottle(40, "#e86a8a"); bottle(54, "#e86a8a");
+      bottle(70, "#8ee08a"); bottle(84, "#8ee08a"); bottle(98, "#f0c04a"); bottle(112, "#f0c04a");
+      // goods row 2: moon capsules
+      for (let i = 0; i < 6; i++) cap(ctx, 16 + i * 19, 33, 6);
+    });
   }
 
   private triggerShopkeeperEvent(): void {
@@ -1804,11 +1889,17 @@ export class MapScene extends Phaser.Scene {
     overlay.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.shopElements.push(overlay);
 
-    // Panel
-    const px = 20, py = 16;
-    const pw = W - 40, ph = H - 32;
+    // Compact panel sized to content (no dead space below the list).
+    const px = 20, py = 24;
+    const pw = W - 40;
+    const itemH = 40;
+    const itemStartY = py + 48;
+    const descY = itemStartY + totalOptions * itemH + 10;
+    const moneyY = descY + 52;
+    const hintY = moneyY + 30;
+    const ph = hintY + 20 - py;
     const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
-    panel.fillStyle(0x0a1628, 0.95);
+    panel.fillStyle(0x0a1628, 0.96);
     panel.fillRoundedRect(this.uiX(px), this.uiY(py), this.uiS(pw), this.uiS(ph), this.uiS(12));
     panel.lineStyle(2, 0xcc8833);
     panel.strokeRoundedRect(this.uiX(px), this.uiY(py), this.uiS(pw), this.uiS(ph), this.uiS(12));
@@ -1816,14 +1907,12 @@ export class MapScene extends Phaser.Scene {
 
     // Title
     this.shopElements.push(
-      this.add.text(this.uiX(W / 2), this.uiY(py + 18), "★ プラネットショップ", {
-        fontSize: FS(16), color: "#ffcc44", fontFamily: F, fontStyle: "bold", ...STK,
+      this.add.text(this.uiX(W / 2), this.uiY(py + 24), "★ プラネットショップ", {
+        fontSize: FS(22), color: "#ffcc44", fontFamily: F, fontStyle: "bold", ...STK,
       }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
     );
 
     // Items list
-    const itemStartY = py + 42;
-    const itemH = 28;
     for (let i = 0; i < totalOptions; i++) {
       const iy = itemStartY + i * itemH;
       const isSelected = i === this.shopSelectedIndex;
@@ -1833,7 +1922,7 @@ export class MapScene extends Phaser.Scene {
       if (isSelected) {
         const bg = this.add.graphics().setScrollFactor(0).setDepth(202);
         bg.fillStyle(0x1a3366, 0.9);
-        bg.fillRoundedRect(this.uiX(px + 6), this.uiY(iy + 1), this.uiS(pw - 12), this.uiS(itemH - 2), this.uiS(4));
+        bg.fillRoundedRect(this.uiX(px + 6), this.uiY(iy + 2), this.uiS(pw - 12), this.uiS(itemH - 4), this.uiS(6));
         this.shopElements.push(bg);
       }
 
@@ -1841,45 +1930,54 @@ export class MapScene extends Phaser.Scene {
       if (isSelected) {
         this.shopElements.push(
           this.add.text(this.uiX(px + 12), this.uiY(iy + itemH / 2), "▶", {
-            fontSize: FS(11), color: "#ffcc44", fontFamily: F, ...STK,
+            fontSize: FS(15), color: "#ffcc44", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
         );
       }
 
       if (isQuit) {
         this.shopElements.push(
-          this.add.text(this.uiX(px + 28), this.uiY(iy + itemH / 2), "やめる", {
-            fontSize: FS(14), color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
+          this.add.text(this.uiX(px + 34), this.uiY(iy + itemH / 2), "やめる", {
+            fontSize: FS(19), color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
         );
       } else {
         const item = inventory[i];
+        // Capsule icon for capsule items
+        let nameX = px + 34;
+        if (item.id.includes("capsule") && this.textures.exists("item-moon-capsule")) {
+          const icon = this.add.image(this.uiX(px + 46), this.uiY(iy + itemH / 2), "item-moon-capsule")
+            .setScrollFactor(0).setDepth(203);
+          icon.setScale(this.uiS(26) / icon.width);
+          if (item.id === "star_capsule") icon.setTint(0xffe28a);   // star variant: gold tint
+          this.shopElements.push(icon);
+          nameX = px + 64;
+        }
         // Name
         this.shopElements.push(
-          this.add.text(this.uiX(px + 28), this.uiY(iy + itemH / 2), item.name, {
-            fontSize: FS(14), color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
+          this.add.text(this.uiX(nameX), this.uiY(iy + itemH / 2), item.name, {
+            fontSize: FS(19), color: isSelected ? "#ffffff" : "#8899aa", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5)
         );
         // Owned count
         const owned = this.playerState?.items.find(it => it.id === item.id)?.count || 0;
         if (owned > 0) {
           this.shopElements.push(
-            this.add.text(this.uiX(px + pw - 70), this.uiY(iy + itemH / 2), `×${owned}`, {
-              fontSize: FS(11), color: "#88aacc", fontFamily: F, ...STK,
+            this.add.text(this.uiX(px + pw - 92), this.uiY(iy + itemH / 2), `×${owned}`, {
+              fontSize: FS(14), color: "#88aacc", fontFamily: F, ...STK,
             }).setScrollFactor(0).setDepth(203).setOrigin(1, 0.5)
           );
         }
         // Price
         this.shopElements.push(
-          this.add.text(this.uiX(px + pw - 12), this.uiY(iy + itemH / 2), `¥${item.price}`, {
-            fontSize: FS(13), color: isSelected ? "#aaffaa" : "#668866", fontFamily: F, ...STK,
+          this.add.text(this.uiX(px + pw - 14), this.uiY(iy + itemH / 2), `¥${item.price}`, {
+            fontSize: FS(17), color: isSelected ? "#aaffaa" : "#668866", fontFamily: F, ...STK,
           }).setScrollFactor(0).setDepth(203).setOrigin(1, 0.5)
         );
       }
     }
 
     // Separator
-    const descY = itemStartY + totalOptions * itemH + 6;
     const sep = this.add.graphics().setScrollFactor(0).setDepth(202);
     sep.fillStyle(0xcc8833, 0.4);
     sep.fillRect(this.uiX(px + 8), this.uiY(descY), this.uiS(pw - 16), this.uiS(1));
@@ -1891,17 +1989,17 @@ export class MapScene extends Phaser.Scene {
       descStr = inventory[this.shopSelectedIndex].description;
     }
     this.shopElements.push(
-      this.add.text(this.uiX(px + 14), this.uiY(descY + 8), descStr, {
-        fontSize: FS(12), color: "#ccddee", fontFamily: F, ...STK,
-        wordWrap: { width: this.uiS(pw - 28) },
+      this.add.text(this.uiX(px + 14), this.uiY(descY + 10), descStr, {
+        fontSize: FS(16), color: "#ccddee", fontFamily: F, ...STK,
+        wordWrap: { width: this.uiS(pw - 28) }, lineSpacing: this.uiS(4),
       }).setScrollFactor(0).setDepth(203)
     );
 
     // Money
     const money = this.playerState?.money || 0;
     this.shopElements.push(
-      this.add.text(this.uiX(px + pw - 12), this.uiY(descY + 46), `しょじきん: ${money}円`, {
-        fontSize: FS(12), color: "#ffdd88", fontFamily: F, ...STK,
+      this.add.text(this.uiX(px + pw - 14), this.uiY(moneyY), `しょじきん: ${money}円`, {
+        fontSize: FS(17), color: "#ffdd88", fontFamily: F, ...STK,
       }).setScrollFactor(0).setDepth(203).setOrigin(1, 0)
     );
 
@@ -1909,16 +2007,16 @@ export class MapScene extends Phaser.Scene {
     if (this.shopMessage) {
       const msgColor = this.shopMessage.includes("たりない") ? "#ff8888" : "#88ff88";
       this.shopElements.push(
-        this.add.text(this.uiX(px + 14), this.uiY(descY + 46), this.shopMessage, {
-          fontSize: FS(12), color: msgColor, fontFamily: F, ...STK,
+        this.add.text(this.uiX(px + 14), this.uiY(moneyY), this.shopMessage, {
+          fontSize: FS(16), color: msgColor, fontFamily: F, ...STK,
         }).setScrollFactor(0).setDepth(203)
       );
     }
 
     // Controls hint
     this.shopElements.push(
-      this.add.text(this.uiX(W / 2), this.uiY(py + ph - 10), "A:かう  B:やめる", {
-        fontSize: FS(10), color: "#8899aa", fontFamily: F,
+      this.add.text(this.uiX(W / 2), this.uiY(hintY), "A:かう  B:やめる", {
+        fontSize: FS(13), color: "#8899aa", fontFamily: F,
       }).setScrollFactor(0).setDepth(203).setOrigin(0.5)
     );
   }

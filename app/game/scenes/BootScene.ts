@@ -91,6 +91,10 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-dome-red", `${base}/assets/buildings/sprites/dome_red.png`);
     this.load.image("bldg-dome-yellow", `${base}/assets/buildings/sprites/dome_yellow.png`);
     this.load.image("bldg-dome-blue", `${base}/assets/buildings/sprites/dome_blue.png`);
+    this.load.image("bldg-planet-shop", `${base}/assets/buildings/sprites/planet_shop.png`);
+
+    // Item icons
+    this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
   }
 
   create(): void {
