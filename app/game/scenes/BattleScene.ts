@@ -102,6 +102,8 @@ export class BattleScene extends Phaser.Scene {
   // Evolution
   private evolutionCancelled = false;
   private pendingEvolution: { evolvesTo: string; newData: MonsterData } | null = null;
+  // Evolutions are deferred and played AFTER the battle ends (EvolutionScene).
+  private pendingEvolutions: { partyIndex: number; fromId: string; toId: string }[] = [];
 
   // Move learning
   private pendingMoveId: string | null = null;
@@ -143,6 +145,7 @@ export class BattleScene extends Phaser.Scene {
     this.moveSlots = [];
     this.evolutionCancelled = false;
     this.pendingEvolution = null;
+    this.pendingEvolutions = [];
     this.pendingMoveId = null;
     this.isWild = data.isWild !== false;
     this.trainerData = data.trainerData || null;
@@ -1167,17 +1170,57 @@ export class BattleScene extends Phaser.Scene {
         }
       });
     } else if (this.playerMon.currentHp <= 0) {
+      // Active monster fainted. Only black out when the WHOLE party is down;
+      // otherwise send out the next healthy party member.
       this.phase = "defeat";
+      this.playerInstance.currentHp = 0;
       this.tweens.add({
         targets: this.playerSprite,
         alpha: 0,
         y: this.playerSprite.y + 30,
         duration: 500,
       });
-      this.showMessages(["めのまえが まっくらになった…"], () => {
-        this.time.delayedCall(1500, () => this.endBattleDefeat());
-      });
+      const faintedData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
+      const hasAlive = this.playerState.party.some((m) => m.currentHp > 0);
+      if (hasAlive) {
+        this.showMessages([`${faintedData.name}は たおれた！`], () => {
+          this.playerSendNext();
+        });
+      } else {
+        this.showMessages(
+          [`${faintedData.name}は たおれた！`, "めのまえが まっくらになった…"],
+          () => {
+            this.time.delayedCall(1500, () => this.endBattleDefeat());
+          }
+        );
+      }
     }
+  }
+
+  // ---- Player: send out next healthy monster after a faint ----
+
+  private playerSendNext(): void {
+    const next = this.playerState.party.find((m) => m.currentHp > 0);
+    if (!next) {
+      this.endBattleDefeat();
+      return;
+    }
+    this.playerInstance = next;
+    this.playerMon = this.instanceToBattleMonster(this.playerInstance);
+
+    const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
+    this.playerSprite.setTexture(this.playerTexKey(playerData.id));
+    this.sizeMonsterSprite(this.playerSprite, 128, 132);
+    this.playerSprite.setAlpha(1);
+    this.playerSprite.setY(Math.round((this.PPLAT_Y + 8) * this.sy));
+    this.playerNameText.setText(`${playerData.name}`);
+    this.playerLvText.setText(`Lv${this.playerMon.level}`);
+    this.refreshPlayerHp();
+
+    this.showMessages([`ゆけっ！ ${this.playerMon.name}！`], () => {
+      this.phase = "command";
+      this.showCommandWindow();
+    });
   }
 
   // ---- Experience & Level Up ----
@@ -1411,11 +1454,21 @@ export class BattleScene extends Phaser.Scene {
   // ---- Evolution ----
 
   private checkEvolutionTrigger(): void {
+    // Record the evolution but DON'T play it here — it runs after the battle
+    // ends, on a clean screen (EvolutionScene). This keeps the battle UI from
+    // overlapping the evolution cutscene.
     const evoResult = checkEvolution(this.playerInstance, this.allMonsters);
     if (evoResult) {
-      this.pendingEvolution = evoResult;
-      this.startEvolution();
-    } else if (this.afterExpCallback) {
+      const idx = this.playerState.party.indexOf(this.playerInstance);
+      if (idx >= 0) {
+        this.pendingEvolutions.push({
+          partyIndex: idx,
+          fromId: this.playerInstance.dataId,
+          toId: evoResult.evolvesTo,
+        });
+      }
+    }
+    if (this.afterExpCallback) {
       const cb = this.afterExpCallback;
       this.afterExpCallback = null;
       this.time.delayedCall(500, () => cb());
@@ -1743,6 +1796,19 @@ export class BattleScene extends Phaser.Scene {
   private endBattle(): void {
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
+      if (this.pendingEvolutions.length > 0) {
+        // Play the deferred evolution(s) on a clean screen, then it returns
+        // to the overworld itself.
+        this.scene.start("EvolutionScene", {
+          evolutions: this.pendingEvolutions,
+          playerState: this.playerState,
+          mapKey: this.returnMapKey,
+          playerX: this.returnPlayerX,
+          playerY: this.returnPlayerY,
+          trainerDefeated: this.trainerData?.id,
+        });
+        return;
+      }
       this.scene.start("MapScene", {
         mapKey: this.returnMapKey,
         playerX: this.returnPlayerX,

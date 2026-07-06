@@ -299,19 +299,22 @@ export class MapScene extends Phaser.Scene {
     const canvasW = this.scale.width;
     const canvasH = this.scale.height;
 
-    // Target: ~17 tiles visible horizontally (original size feel)
-    const targetZoom = canvasW / (17 * ts);
-
-    // Minimum zoom: map must fill the entire screen (no empty space)
-    const minZoomX = canvasW / worldW;
-    const minZoomY = canvasH / worldH;
-    const minZoom = Math.max(minZoomX, minZoomY);
-
-    const zoom = Math.max(targetZoom, minZoom);
+    // Consistent "walking" scale across every map (interiors and outdoors alike)
+    // so the player never appears to change size between a town and a small room.
+    // ~2.5x sits between the old zoomed-out towns and the very zoomed-in interiors.
+    const zoom = 2.5;
     cam.setZoom(zoom);
 
-    // Camera bounds: clamp to map edges
-    cam.setBounds(0, 0, worldW, worldH);
+    // Bounds so the camera never scrolls past the map edges. Maps smaller than
+    // the viewport get extra "padding" bounds so the camera can centre them
+    // (the padded area shows the black background, which the design allows).
+    const viewW = canvasW / zoom;
+    const viewH = canvasH / zoom;
+    const boundX = worldW >= viewW ? 0 : (worldW - viewW) / 2;
+    const boundY = worldH >= viewH ? 0 : (worldH - viewH) / 2;
+    const boundW = Math.max(worldW, viewW);
+    const boundH = Math.max(worldH, viewH);
+    cam.setBounds(boundX, boundY, boundW, boundH);
     cam.startFollow(this.player, true, 0.1, 0.1);
   }
 

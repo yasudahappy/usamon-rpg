@@ -3,6 +3,7 @@ import { BootScene } from "./scenes/BootScene";
 import { MapScene } from "./scenes/MapScene";
 import { BattleScene } from "./scenes/BattleScene";
 import { SetupScene } from "./scenes/SetupScene";
+import { EvolutionScene } from "./scenes/EvolutionScene";
 
 export function createGameConfig(
   parent: string | HTMLElement
@@ -32,6 +33,6 @@ export function createGameConfig(
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, SetupScene, MapScene, BattleScene],
+    scene: [BootScene, SetupScene, MapScene, BattleScene, EvolutionScene],
   };
 }
