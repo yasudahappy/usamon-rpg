@@ -342,9 +342,10 @@ export class BattleScene extends Phaser.Scene {
     this.enemySprite = this.add
       .image(470, Math.round(95 * this.sy), `monster-${enemyData.id}`)
       .setDepth(5);
-    // Full-body sprites are small pixel canvases — scale up (crisp, pixelArt is on).
-    this.sizeMonsterSprite(this.playerSprite, 150);
-    this.sizeMonsterSprite(this.enemySprite, 130);
+    // Full-body sprites are tight-cropped pixel art of varying aspect — fit each
+    // inside a box so wide monsters (e.g. crabs) aren't oversized (crisp: pixelArt).
+    this.sizeMonsterSprite(this.playerSprite, 140, 150);
+    this.sizeMonsterSprite(this.enemySprite, 120, 128);
   }
 
   // The player's own monster shows its back sprite (RSE-style) when available,
@@ -354,10 +355,12 @@ export class BattleScene extends Phaser.Scene {
     return this.textures.exists(back) ? back : `monster-${id}`;
   }
 
-  // Scale a monster sprite to a target on-screen height while preserving aspect.
-  private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, targetH: number): void {
+  // Scale a monster sprite to fit within a target box (design units, ×sy),
+  // preserving aspect so both wide and tall monsters read at a similar size.
+  private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
+    const w = sprite.width || 64;
     const h = sprite.height || 64;
-    const scale = (targetH * this.sy) / h;
+    const scale = Math.min((maxW * this.sy) / w, (maxH * this.sy) / h);
     sprite.setScale(scale);
   }
 
@@ -1375,7 +1378,7 @@ export class BattleScene extends Phaser.Scene {
     this.playerSprite.clearTint();
     this.playerSprite.setAlpha(1);
     this.playerSprite.setTexture(this.playerTexKey(newData.id));
-    this.sizeMonsterSprite(this.playerSprite, 150);
+    this.sizeMonsterSprite(this.playerSprite, 140, 150);
 
     // Update battle monster
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
@@ -1604,7 +1607,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Update sprite
     this.playerSprite.setTexture(this.playerTexKey(newMon.dataId));
-    this.sizeMonsterSprite(this.playerSprite, 150);
+    this.sizeMonsterSprite(this.playerSprite, 140, 150);
     this.playerNameText.setText(`${newData.name}  Lv${newMon.level}`);
     this.drawHpBarGraphic(this.playerHpBar, 30, Math.round(218 * this.sy), 150, this.playerMon.currentHp / this.playerMon.maxHp);
     this.playerHpText.setText(`${this.playerMon.currentHp}/${this.playerMon.maxHp}`);
@@ -1685,7 +1688,7 @@ export class BattleScene extends Phaser.Scene {
 
     const enemyData = this.allMonsters.find(m => m.id === next.id)!;
     this.enemySprite.setTexture(`monster-${next.id}`);
-    this.sizeMonsterSprite(this.enemySprite, 130);
+    this.sizeMonsterSprite(this.enemySprite, 120, 128);
     this.enemySprite.setAlpha(1);
     this.enemySprite.setY(Math.round(80 * this.sy));
     this.enemyNameText.setText(`${enemyData.name}  Lv${next.level}`);

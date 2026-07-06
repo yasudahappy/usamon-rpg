@@ -990,11 +990,11 @@ export class MapScene extends Phaser.Scene {
       const iconCY = leadY + pad + iconS / 2;
       const iconKey = this.textures.exists(`monster-${leadData.id}`) ? `monster-${leadData.id}` : `icon-${leadData.id}`;
       if (this.textures.exists(iconKey)) {
-        this.menuElements.push(
-          this.add.image(this.uiX(cx), this.uiY(iconCY), iconKey)
-            .setScrollFactor(0).setDepth(203)
-            .setDisplaySize(this.uiS(iconS), this.uiS(iconS))
-        );
+        const img = this.add.image(this.uiX(cx), this.uiY(iconCY), iconKey)
+          .setScrollFactor(0).setDepth(203);
+        // Fit within the icon box, preserving aspect (sprites are tight-cropped).
+        img.setScale(Math.min(this.uiS(iconS) / img.width, this.uiS(iconS) / img.height));
+        this.menuElements.push(img);
       }
 
       // Name + level
@@ -1078,14 +1078,14 @@ export class MapScene extends Phaser.Scene {
       // Icon (left, spans full row height)
       const iconKey = this.textures.exists(`monster-${data.id}`) ? `monster-${data.id}` : `icon-${data.id}`;
       if (this.textures.exists(iconKey)) {
-        this.menuElements.push(
-          this.add.image(
-            this.uiX(cx + 4 + rightIconSize / 2),
-            this.uiY(cy + rightSlotH / 2),
-            iconKey
-          ).setScrollFactor(0).setDepth(203)
-            .setDisplaySize(this.uiS(rightIconSize), this.uiS(rightIconSize))
-        );
+        const img = this.add.image(
+          this.uiX(cx + 4 + rightIconSize / 2),
+          this.uiY(cy + rightSlotH / 2),
+          iconKey
+        ).setScrollFactor(0).setDepth(203);
+        // Fit within the icon box, preserving aspect (sprites are tight-cropped).
+        img.setScale(Math.min(this.uiS(rightIconSize) / img.width, this.uiS(rightIconSize) / img.height));
+        this.menuElements.push(img);
       }
 
       // Two-row text: top=name, bottom=Lv+HP bar+HP num
