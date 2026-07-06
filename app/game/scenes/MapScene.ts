@@ -311,7 +311,8 @@ export class MapScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(201)
-      .setAlpha(0);
+      .setAlpha(0)
+      .setResolution(Math.max(1, this.cameras.main.zoom));
 
     // Fade in → hold → fade out
     this.tweens.add({
@@ -739,6 +740,17 @@ export class MapScene extends Phaser.Scene {
   private uiS(s: number): number {
     return s / this.cameras.main.zoom;
   }
+  /**
+   * Render text objects at the camera-zoom resolution. UI text on zoomed
+   * interior maps is otherwise rasterized tiny and scaled up, which makes
+   * the glyphs look thin and blurry.
+   */
+  private applyTextResolution(objs: Phaser.GameObjects.GameObject[]): void {
+    const r = Math.max(1, this.cameras.main.zoom);
+    for (const o of objs) {
+      if (o instanceof Phaser.GameObjects.Text) o.setResolution(r);
+    }
+  }
 
   // ========== MENU SYSTEM ==========
 
@@ -800,6 +812,7 @@ export class MapScene extends Phaser.Scene {
     });
 
     this.highlightMenuItem(this.menuSelectedIndex);
+    this.applyTextResolution(this.menuElements);
   }
 
   private highlightMenuItem(idx: number): void {
@@ -1225,6 +1238,8 @@ export class MapScene extends Phaser.Scene {
       hl.strokeRoundedRect(this.uiX(r.x - 2), this.uiY(r.y - 2), this.uiS(r.w + 4), this.uiS(r.h + 4), this.uiS(9));
     }
     this.menuElements.push(hl);
+
+    this.applyTextResolution(this.menuElements);
   }
 
   // ---- Player Info Screen ----
@@ -1267,6 +1282,7 @@ export class MapScene extends Phaser.Scene {
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
+    this.applyTextResolution(this.menuElements);
   }
 
   // ---- Save Screen ----
@@ -1297,6 +1313,7 @@ export class MapScene extends Phaser.Scene {
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(hint);
+    this.applyTextResolution(this.menuElements);
   }
 
   private doSave(): void {
@@ -1322,6 +1339,7 @@ export class MapScene extends Phaser.Scene {
     const msg = this.add.text(this.uiX(W/2), this.uiY(H/2), "レポートに きろくしました！", {
       fontSize: "22px", color: "#44cc88", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(msg);
+    this.applyTextResolution(this.menuElements);
 
     // Auto-close after 1.2s
     this.menuSubScreen = "stub"; // prevent double-save
@@ -1355,6 +1373,7 @@ export class MapScene extends Phaser.Scene {
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
+    this.applyTextResolution(this.menuElements);
   }
 
   private closeSubScreen(): void {
@@ -2019,6 +2038,8 @@ export class MapScene extends Phaser.Scene {
         fontSize: FS(13), color: "#8899aa", fontFamily: F,
       }).setScrollFactor(0).setDepth(203).setOrigin(0.5)
     );
+
+    this.applyTextResolution(this.shopElements);
   }
 
   private updateShop(a: boolean, b: boolean, dpad: string | null): void {
@@ -2140,6 +2161,8 @@ export class MapScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(302).setOrigin(0.5).setInteractive();
     zone.on("pointerdown", () => this.advanceDialog());
     this.dialogElements.push(zone);
+
+    this.applyTextResolution(this.dialogElements);
   }
 
   private advanceDialog(): void {
