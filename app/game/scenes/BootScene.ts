@@ -4,10 +4,15 @@ import { MonsterData } from "../data/types";
 
 const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop"];
 
-// Full-body pixel-art sprites (cropped & downscaled from the design sheets).
+// Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
   "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
   "rairai", "ikarion", "regonyas", "sharisu", "sharian",
+];
+// Back-facing sprites (the player's own monster in battle). Only the ids that
+// actually have a "<id>_back.png" asset — others fall back to the front sprite.
+const MONSTER_BACK_SPRITE_IDS = [
+  "usamon", "sunagani", "lobsner",
 ];
 
 export class BootScene extends Phaser.Scene {
@@ -72,6 +77,10 @@ export class BootScene extends Phaser.Scene {
     // Load full-body pixel sprites (used as monster-<id> in battle & party).
     MONSTER_SPRITE_IDS.forEach(id => {
       this.load.image(`monster-${id}`, `${base}/assets/monsters/sprites/${id}.png`);
+    });
+    // Load back-facing sprites (monster-<id>-back) for the player's monster.
+    MONSTER_BACK_SPRITE_IDS.forEach(id => {
+      this.load.image(`monster-${id}-back`, `${base}/assets/monsters/sprites/${id}_back.png`);
     });
 
     // Load building sprites
