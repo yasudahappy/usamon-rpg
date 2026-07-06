@@ -83,7 +83,11 @@ export class SetupScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(10);
 
     // Character preview (center)
-    this.previewSprite = this.add.image(w / 2, Math.round(H * 0.28), "player-frame-0")
+    this.previewSprite = this.add.image(
+      w / 2,
+      Math.round(H * 0.28),
+      this.textures.exists("cast-char0-down") ? "cast-char0-down" : "player-frame-0"
+    )
       .setDepth(10)
       .setScale(3);
 
@@ -277,6 +281,12 @@ export class SetupScene extends Phaser.Scene {
   }
 
   private updatePreview(): void {
+    // The protagonist is the hand-drawn astronaut, so the preview shows it
+    // regardless of the (legacy) suit-color selection.
+    if (this.textures.exists("cast-char0-down")) {
+      this.previewSprite.setTexture("cast-char0-down");
+      return;
+    }
     const suitKey = `player-${SUIT_COLORS[this.selectedSuit]}`;
     if (this.textures.exists(suitKey)) {
       const frame = this.textures.getFrame(suitKey, 0);

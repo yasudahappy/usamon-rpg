@@ -153,6 +153,7 @@ export class MapScene extends Phaser.Scene {
     ) as MapData;
     this.tileSize = this.mapData.tileSize;
 
+    this.applyAstronautFrames();
     this.drawMap();
     this.drawBuildings();
     this.createPlayer();
@@ -1406,7 +1407,51 @@ export class MapScene extends Phaser.Scene {
     this.drawMainMenu();
   }
 
+  /**
+   * Override the generated suit sprite with the hand-drawn astronaut protagonist
+   * (cast char0). Runs on every MapScene entry so it wins over BootScene/SetupScene
+   * suit frames regardless of how the scene was reached. Frame 1 (walk) bobs 1px up.
+   */
+  private applyAstronautFrames(): void {
+    const dirs: Record<string, string> = {
+      down: "cast-char0-down",
+      up: "cast-char0-up",
+      left: "cast-char0-left",
+      right: "cast-char0-right",
+    };
+    for (const [dir, key] of Object.entries(dirs)) {
+      if (!this.textures.exists(key)) return; // assets missing → keep suit sprite
+      const src = this.textures.get(key).getSourceImage() as CanvasImageSource;
+      for (let i = 0; i < 2; i++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 32; canvas.height = 32;
+        const ctx = canvas.getContext("2d")!;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(src, 0, i === 1 ? -1 : 0);
+        const tk = `player-${dir}-${i}`;
+        if (this.textures.exists(tk)) this.textures.remove(tk);
+        this.textures.addCanvas(tk, canvas);
+      }
+    }
+    for (let i = 0; i < 2; i++) {
+      const tk = `player-frame-${i}`;
+      const sk = `player-down-${i}`;
+      if (this.textures.exists(sk)) {
+        if (this.textures.exists(tk)) this.textures.remove(tk);
+        this.textures.addCanvas(
+          tk,
+          this.textures.get(sk).getSourceImage() as HTMLCanvasElement
+        );
+      }
+    }
+  }
+
   // ========== NPC & DIALOG SYSTEM ==========
+
+  /** Prefer the hand-drawn cast sprite when it loaded, else the canvas fallback. */
+  private npcTex(cast: string, fallback: string): string {
+    return this.textures.exists(cast) ? cast : fallback;
+  }
 
   private placeKinoshitaNpc(): void {
     // Generate NPC sprite at same scale as player (fills 32x32 canvas)
@@ -1456,7 +1501,7 @@ export class MapScene extends Phaser.Scene {
     this.kinoshitaSprite = this.add.image(
       this.kinoshitaNpcX * this.tileSize + this.tileSize / 2,
       this.kinoshitaNpcY * this.tileSize + this.tileSize / 2,
-      "npc-kinoshita"
+      this.npcTex("cast-char6-down", "npc-kinoshita")
     ).setDepth(9);
   }
 
@@ -1508,7 +1553,7 @@ export class MapScene extends Phaser.Scene {
     this.nurseSprite = this.add.image(
       this.nurseNpcX * this.tileSize + this.tileSize / 2,
       (this.nurseNpcY - 1) * this.tileSize + this.tileSize / 2,
-      "npc-nurse"
+      this.npcTex("cast-char1-down", "npc-nurse")
     ).setDepth(7);
   }
 
@@ -1809,7 +1854,7 @@ export class MapScene extends Phaser.Scene {
     this.momSprite = this.add.image(
       this.momNpcX * this.tileSize + this.tileSize / 2,
       this.momNpcY * this.tileSize + this.tileSize / 2,
-      "npc-mom"
+      this.npcTex("cast-char5-down", "npc-mom")
     ).setDepth(9);
   }
 
@@ -1868,7 +1913,7 @@ export class MapScene extends Phaser.Scene {
     this.rivalSprite = this.add.image(
       this.rivalNpcX * this.tileSize + this.tileSize / 2,
       this.rivalNpcY * this.tileSize + this.tileSize / 2,
-      "npc-rival"
+      this.npcTex("cast-char3-down", "npc-rival")
     ).setDepth(9);
   }
 
@@ -1988,7 +2033,7 @@ export class MapScene extends Phaser.Scene {
     this.shopkeeperSprite = this.add.image(
       this.shopkeeperNpcX * this.tileSize + this.tileSize / 2,
       (this.shopkeeperNpcY - 1) * this.tileSize + this.tileSize / 2,
-      "npc-shopkeeper"
+      this.npcTex("cast-char9-down", "npc-shopkeeper")
     ).setDepth(7);
   }
 

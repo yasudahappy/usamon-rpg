@@ -98,6 +98,14 @@ export class BootScene extends Phaser.Scene {
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
+
+    // Hand-drawn cast: protagonist (char0, all 4 dirs) + NPC portraits (front).
+    ["down", "up", "left", "right"].forEach(dir => {
+      this.load.image(`cast-char0-${dir}`, `${base}/assets/characters/cast/char0_${dir}.png`);
+    });
+    [1, 3, 5, 6, 9].forEach(c => {
+      this.load.image(`cast-char${c}-down`, `${base}/assets/characters/cast/char${c}_down.png`);
+    });
   }
 
   create(): void {
