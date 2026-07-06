@@ -13,6 +13,7 @@ const MONSTER_SPRITE_IDS = [
 // actually have a "<id>_back.png" asset — others fall back to the front sprite.
 const MONSTER_BACK_SPRITE_IDS = [
   "usamon", "sunagani", "lobsner", "regonyas", "rairai", "mochigori", "gorimocchi",
+  "ikarion", "sharisu",
 ];
 
 export class BootScene extends Phaser.Scene {

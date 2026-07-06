@@ -349,7 +349,7 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- RSE battle layout anchors (640-wide design, Y ×sy) ----
   private EPLAT_X = 466; private EPLAT_Y = 150;   // enemy platform (upper-right)
-  private PPLAT_X = 165; private PPLAT_Y = 214;   // player platform (lower-left)
+  private PPLAT_X = 165; private PPLAT_Y = 228;   // player platform (lower-left)
 
   private drawMonsters(): void {
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
@@ -363,8 +363,8 @@ export class BattleScene extends Phaser.Scene {
       .setOrigin(0.5, 1).setDepth(5);
     // Full-body sprites are tight-cropped pixel art of varying aspect — fit each
     // inside a box so wide monsters (e.g. crabs) aren't oversized (crisp: pixelArt).
-    this.sizeMonsterSprite(this.playerSprite, 150, 158);
-    this.sizeMonsterSprite(this.enemySprite, 124, 132);
+    this.sizeMonsterSprite(this.playerSprite, 128, 132);
+    this.sizeMonsterSprite(this.enemySprite, 110, 116);
   }
 
   // The player's own monster shows its back sprite (RSE-style) when available,
@@ -1453,7 +1453,7 @@ export class BattleScene extends Phaser.Scene {
     this.playerSprite.clearTint();
     this.playerSprite.setAlpha(1);
     this.playerSprite.setTexture(this.playerTexKey(newData.id));
-    this.sizeMonsterSprite(this.playerSprite, 140, 150);
+    this.sizeMonsterSprite(this.playerSprite, 128, 132);
 
     // Update battle monster
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
@@ -1682,7 +1682,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Update sprite
     this.playerSprite.setTexture(this.playerTexKey(newMon.dataId));
-    this.sizeMonsterSprite(this.playerSprite, 140, 150);
+    this.sizeMonsterSprite(this.playerSprite, 128, 132);
     this.playerNameText.setText(`${newData.name}`);
     this.playerLvText.setText(`Lv${newMon.level}`);
     this.refreshPlayerHp();
@@ -1763,7 +1763,7 @@ export class BattleScene extends Phaser.Scene {
 
     const enemyData = this.allMonsters.find(m => m.id === next.id)!;
     this.enemySprite.setTexture(`monster-${next.id}`);
-    this.sizeMonsterSprite(this.enemySprite, 120, 128);
+    this.sizeMonsterSprite(this.enemySprite, 110, 116);
     this.enemySprite.setAlpha(1);
     this.enemySprite.setY(Math.round(80 * this.sy));
     this.enemyNameText.setText(`${enemyData.name}`);
