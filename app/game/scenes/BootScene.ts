@@ -389,6 +389,43 @@ export class BootScene extends Phaser.Scene {
         ctx.fillStyle = "#c8c0b0";
         ctx.fillRect(8, 8, 2, 2);
         ctx.fillRect(22, 22, 2, 2);
+      } else if (id === "60") {
+        // Moon regolith ground: speckled greyish soil + tiny craters (seamless)
+        let s = 91;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#a49d8c";
+        for (let i = 0; i < 46; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#c2bcac";
+        for (let i = 0; i < 22; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // two shallow craters
+        for (const [cx, cy, r] of [[9, 22, 3], [24, 9, 2]] as [number, number, number][]) {
+          ctx.strokeStyle = "#8f8877"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = "#c6c0b0"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI * 1.1, Math.PI * 1.7); ctx.stroke();
+        }
+      } else if (id === "61") {
+        // Paved walkway: light stone panels with seams + corner rivets
+        ctx.strokeStyle = "#c2baa8"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        ctx.beginPath(); ctx.moveTo(ts / 2, 1); ctx.lineTo(ts / 2, ts - 1);
+        ctx.moveTo(1, ts / 2); ctx.lineTo(ts - 1, ts / 2); ctx.stroke();
+        ctx.fillStyle = "#e6e0d2";
+        ctx.fillRect(2, 2, ts - 4, 1);
+        ctx.fillStyle = "#cfc8b8";
+        for (const [rx, ry] of [[5, 5], [ts - 6, 5], [5, ts - 6], [ts - 6, ts - 6]] as [number, number][]) {
+          ctx.fillRect(rx, ry, 2, 2);
+        }
+      } else if (id === "62") {
+        // Cultivated turf: soft green ground with grass tufts
+        let s = 137;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#7f9e72";
+        for (let i = 0; i < 40; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 2);
+        ctx.fillStyle = "#a2c091";
+        for (let i = 0; i < 24; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 2);
+        ctx.fillStyle = "#6b8a5f";
+        for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
       }
 
       this.textures.addCanvas(key, canvas);
