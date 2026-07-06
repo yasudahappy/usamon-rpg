@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -92,6 +92,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-dome-yellow", `${base}/assets/buildings/sprites/dome_yellow.png`);
     this.load.image("bldg-dome-blue", `${base}/assets/buildings/sprites/dome_blue.png`);
     this.load.image("bldg-planet-shop", `${base}/assets/buildings/sprites/planet_shop.png`);
+    this.load.image("bldg-recovery-pod", `${base}/assets/buildings/sprites/recovery_pod.png`);
+    this.load.image("bldg-moonbase-lab", `${base}/assets/buildings/sprites/moonbase_lab.png`);
+    this.load.image("bldg-house-dome", `${base}/assets/buildings/sprites/house_dome.png`);
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);

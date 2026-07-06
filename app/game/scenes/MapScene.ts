@@ -69,6 +69,11 @@ export class MapScene extends Phaser.Scene {
   private nurseNpcX = 5;
   private nurseNpcY = 2;
 
+  // Rival NPC (Moon Town)
+  private rivalSprite?: Phaser.GameObjects.Image;
+  private rivalNpcX = 14;
+  private rivalNpcY = 12;
+
   // Shopkeeper NPC (Planet Shop) — npc tile is the counter front; the sprite
   // is drawn one tile behind it (RSE-style talking across the counter).
   private shopkeeperSprite?: Phaser.GameObjects.Image;
@@ -114,6 +119,7 @@ export class MapScene extends Phaser.Scene {
     this.kinoshitaSprite = undefined;
     this.nurseSprite = undefined;
     this.shopkeeperSprite = undefined;
+    this.rivalSprite = undefined;
     this.shopOpen = false;
     if (data.playerState) {
       this.playerState = data.playerState;
@@ -171,6 +177,11 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "planet_shop") {
       this.placePlanetShopDecor();
       this.placeShopkeeperNpc();
+    }
+
+    // Place Rival NPC in moon town
+    if (this.currentMapKey === "moon_town") {
+      this.placeRivalNpc();
     }
   }
 
@@ -573,6 +584,7 @@ export class MapScene extends Phaser.Scene {
     if (this.kinoshitaSprite && x === this.kinoshitaNpcX && y === this.kinoshitaNpcY) return true;
     if (this.nurseSprite && x === this.nurseNpcX && y === this.nurseNpcY) return true;
     if (this.shopkeeperSprite && x === this.shopkeeperNpcX && y === this.shopkeeperNpcY) return true;
+    if (this.rivalSprite && x === this.rivalNpcX && y === this.rivalNpcY) return true;
     return false;
   }
 
@@ -1670,6 +1682,69 @@ export class MapScene extends Phaser.Scene {
     if (this.shopkeeperSprite && fx === this.shopkeeperNpcX && fy === this.shopkeeperNpcY) {
       this.triggerShopkeeperEvent();
       return;
+    }
+    if (this.rivalSprite && fx === this.rivalNpcX && fy === this.rivalNpcY) {
+      this.triggerRivalEvent();
+      return;
+    }
+  }
+
+  // ---- Rival NPC (Moon Town) ----
+  private placeRivalNpc(): void {
+    if (!this.textures.exists("npc-rival")) {
+      const c = document.createElement("canvas");
+      c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!;
+      ctx.imageSmoothingEnabled = false;
+      // Orange jacket body
+      ctx.fillStyle = "#e07030";
+      ctx.fillRect(6, 14, 20, 18);
+      // Jacket zipper + collar
+      ctx.fillStyle = "#f0e8e0";
+      ctx.fillRect(15, 16, 2, 12);
+      ctx.fillStyle = "#c05820";
+      ctx.fillRect(6, 14, 20, 3);
+      // Head
+      ctx.fillStyle = "#f0d8b8";
+      ctx.beginPath(); ctx.arc(16, 11, 8, 0, Math.PI * 2); ctx.fill();
+      // Spiky red hair
+      ctx.fillStyle = "#c83820";
+      ctx.fillRect(8, 2, 16, 6);
+      ctx.beginPath();
+      ctx.moveTo(7, 8); ctx.lineTo(10, 1); ctx.lineTo(13, 6);
+      ctx.lineTo(16, 0); ctx.lineTo(19, 6); ctx.lineTo(22, 1); ctx.lineTo(25, 8);
+      ctx.closePath(); ctx.fill();
+      // Eyes (confident)
+      ctx.fillStyle = "#222";
+      ctx.fillRect(11, 10, 3, 2);
+      ctx.fillRect(18, 10, 3, 2);
+      // Smirk
+      ctx.strokeStyle = "#aa7766";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(13, 15); ctx.lineTo(19, 14); ctx.stroke();
+      this.textures.addCanvas("npc-rival", c);
+    }
+
+    this.rivalSprite = this.add.image(
+      this.rivalNpcX * this.tileSize + this.tileSize / 2,
+      this.rivalNpcY * this.tileSize + this.tileSize / 2,
+      "npc-rival"
+    ).setDepth(9);
+  }
+
+  private triggerRivalEvent(): void {
+    const hasStarter = this.playerState && this.playerState.party.length > 0;
+    if (hasStarter) {
+      this.showDialog([
+        "よう！ もうアルモンを もらったのか。",
+        "オレは 砂場で とっくに\nきたえてるぜ。",
+        "そのうち しょうぶだ！\nまけるなよ！",
+      ]);
+    } else {
+      this.showDialog([
+        "よう！ おまえも キノシタ博士に\n呼ばれたのか？",
+        "ムーンベースの 中に いるぜ。\n早く 行ってみろよ！",
+      ]);
     }
   }
 
