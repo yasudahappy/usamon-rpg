@@ -1471,18 +1471,34 @@ export class MapScene extends Phaser.Scene {
     const ts = this.tileSize;
     this.genPodTextures();
 
-    // Warm cream floor overlay over the interior (rows 1-6, cols 1-8).
+    // Warm cream floor overlay over the interior (rows 1-6, cols 1-8),
+    // with the official-style ring of dot clusters in the room center.
     const fo = this.add.graphics().setDepth(1);
-    fo.fillStyle(0xf1e7cc, 1);
+    fo.fillStyle(0xf3e9cf, 1);
     fo.fillRect(ts, ts, 8 * ts, 6 * ts);
-    fo.fillStyle(0xfaf3e0, 0.9);            // lighter central path
+    fo.fillStyle(0xfbf5e4, 1);              // lighter central walk path
     fo.fillRect(4 * ts, ts, 2 * ts, 6 * ts);
-    fo.fillStyle(0xe4d5b0, 1);              // dotted texture
-    for (let y = 1; y < 7; y++) {
-      for (let x = 1; x < 9; x++) {
-        if ((x + y) % 2 === 0) fo.fillRect(x * ts + ts / 2 - 2, y * ts + ts / 2 - 2, 3, 3);
+    // soft checker shading (subtle 16px tiles)
+    fo.fillStyle(0xe9dcba, 0.5);
+    for (let y = ts; y < 7 * ts; y += 16) {
+      for (let x = ts; x < 9 * ts; x += 16) {
+        if (((x / 16) + (y / 16)) % 2 === 0) fo.fillRect(x, y, 16, 16);
       }
     }
+    // central dotted ring (like the Pokemon Center floor motif)
+    const rcx = 5 * ts, rcy = Math.round(4.4 * ts);
+    const dot = (dx: number, dy: number, r: number, col: number) => {
+      fo.fillStyle(col, 1); fo.fillCircle(rcx + dx, rcy + dy, r);
+    };
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      dot(Math.cos(a) * 42, Math.sin(a) * 30, 4, 0xe6c98e);
+    }
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + 0.4;
+      dot(Math.cos(a) * 22, Math.sin(a) * 15, 3, 0xdeba76);
+    }
+    dot(0, 0, 4, 0xd8ac5e);
 
     // Healing machine (back), reception counter (front), plants, PC, bench.
     this.add.image(5 * ts, Math.round(1.35 * ts), "pod-machine").setDepth(6);
@@ -1503,58 +1519,104 @@ export class MapScene extends Phaser.Scene {
       draw(ctx);
       this.textures.addCanvas(key, c);
     };
-    const ball = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => {
-      ctx.fillStyle = "#e8483c"; ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.fill();
-      ctx.fillStyle = "#f4f4f4"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI); ctx.fill();
-      ctx.strokeStyle = "#20242c"; ctx.lineWidth = 1.5;
+    // Moon capsule: navy top (gold crescent+star), gold band, white bottom.
+    const capsule = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => {
+      ctx.fillStyle = "#e9ebf2"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = "#d0d4e2"; ctx.beginPath(); ctx.arc(cx, cy + r * 0.35, r * 0.8, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = "#2c3a6e"; ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#48588f"; ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 0.42, r * 0.3, 0, Math.PI * 2); ctx.fill();
+      // gold band
+      ctx.fillStyle = "#d8ac38"; ctx.fillRect(cx - r, cy - Math.max(1, r * 0.12), r * 2, Math.max(2, r * 0.24));
+      // gold crescent + star on the navy half
+      ctx.strokeStyle = "#f0c84a"; ctx.lineWidth = Math.max(1, r * 0.18);
+      ctx.beginPath(); ctx.arc(cx - r * 0.05, cy - r * 0.45, r * 0.34, Math.PI * 0.55, Math.PI * 1.85); ctx.stroke();
+      ctx.fillStyle = "#f6d76a"; ctx.fillRect(cx + r * 0.32, cy - r * 0.62, Math.max(1, r * 0.16), Math.max(1, r * 0.16));
+      // outline
+      ctx.strokeStyle = "#141a2e"; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
-      ctx.fillStyle = "#f4f4f4"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.32, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#20242c"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.32, 0, Math.PI * 2); ctx.stroke();
     };
-    // Healing machine: 128x64
+    // Healing machine: 128x64 (chassis + glass star-dome + capsule trays)
     mk("pod-machine", 128, 64, (ctx) => {
-      ctx.fillStyle = "#cfd6e0"; this.roundRect(ctx, 8, 18, 112, 44, 6); ctx.fill();
-      ctx.fillStyle = "#aab3c2"; ctx.fillRect(8, 52, 112, 10);
-      ctx.strokeStyle = "#5a6478"; ctx.lineWidth = 2; this.roundRect(ctx, 8, 18, 112, 44, 6); ctx.stroke();
-      // central screen
-      ctx.fillStyle = "#123244"; this.roundRect(ctx, 46, 26, 36, 22, 3); ctx.fill();
-      ctx.fillStyle = "#49d0e0"; ctx.fillRect(50, 30, 28, 6);
-      ctx.fillStyle = "#8ef0a0"; ctx.fillRect(50, 39, 12, 4);
-      // ball slots on top tray
-      for (let i = 0; i < 3; i++) ball(ctx, 22 + i * 12, 16, 6);
-      for (let i = 0; i < 3; i++) ball(ctx, 106 - i * 12, 16, 6);
-      // side lights
-      ctx.fillStyle = "#f0d040"; ctx.fillRect(16, 30, 6, 6);
-      ctx.fillStyle = "#f05040"; ctx.fillRect(106, 30, 6, 6);
+      // chassis with shading bands
+      ctx.fillStyle = "#e3e8f0"; this.roundRect(ctx, 8, 18, 112, 44, 6); ctx.fill();
+      ctx.fillStyle = "#f4f7fb"; this.roundRect(ctx, 10, 20, 108, 8, 4); ctx.fill();   // top highlight
+      ctx.fillStyle = "#c3cbdb"; ctx.fillRect(8, 46, 112, 8);                            // mid shade
+      ctx.fillStyle = "#98a2b8"; ctx.fillRect(8, 54, 112, 8);                            // base
+      // vertical seams
+      ctx.fillStyle = "#b4bdd0";
+      ctx.fillRect(40, 22, 2, 30); ctx.fillRect(86, 22, 2, 30);
+      // central glass dome: night sky + stars (the "moon" scanner)
+      ctx.fillStyle = "#101a38"; this.roundRect(ctx, 46, 24, 36, 26, 5); ctx.fill();
+      ctx.fillStyle = "#26346a"; this.roundRect(ctx, 48, 26, 32, 10, 4); ctx.fill();
+      ctx.fillStyle = "#f6d76a";
+      ctx.fillRect(53, 30, 2, 2); ctx.fillRect(63, 27, 2, 2); ctx.fillRect(73, 32, 2, 2);
+      ctx.fillRect(58, 40, 2, 2); ctx.fillRect(70, 43, 2, 2);
+      // gold crescent in the dome
+      ctx.strokeStyle = "#f0c84a"; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.arc(64, 38, 6, Math.PI * 0.5, Math.PI * 1.8); ctx.stroke();
+      ctx.strokeStyle = "#3c4a80"; ctx.lineWidth = 1.6;
+      this.roundRect(ctx, 46, 24, 36, 26, 5); ctx.stroke();
+      // indicator lights
+      ctx.fillStyle = "#f0d040"; ctx.fillRect(16, 32, 6, 5);
+      ctx.fillStyle = "#f05040"; ctx.fillRect(16, 40, 6, 5);
+      ctx.fillStyle = "#50d0f0"; ctx.fillRect(106, 32, 6, 5);
+      ctx.fillStyle = "#8ef0a0"; ctx.fillRect(106, 40, 6, 5);
+      // outline
+      ctx.strokeStyle = "#39415c"; ctx.lineWidth = 2; this.roundRect(ctx, 8, 18, 112, 44, 6); ctx.stroke();
+      // capsule trays on top (3 + 3 moon capsules)
+      ctx.fillStyle = "#aab4c8"; this.roundRect(ctx, 12, 8, 42, 12, 4); ctx.fill();
+      this.roundRect(ctx, 74, 8, 42, 12, 4); ctx.fill();
+      ctx.strokeStyle = "#6a7590"; ctx.lineWidth = 1.5;
+      this.roundRect(ctx, 12, 8, 42, 12, 4); ctx.stroke(); this.roundRect(ctx, 74, 8, 42, 12, 4); ctx.stroke();
+      for (let i = 0; i < 3; i++) capsule(ctx, 21 + i * 12, 13, 6);
+      for (let i = 0; i < 3; i++) capsule(ctx, 83 + i * 12, 13, 6);
     });
-    // Reception counter: 128x40
+    // Reception counter: 128x40 (cream top, warm wood front, moon capsules)
     mk("pod-counter", 128, 40, (ctx) => {
-      ctx.fillStyle = "#e8b060"; this.roundRect(ctx, 4, 4, 120, 14, 7); ctx.fill();   // top surface
-      ctx.fillStyle = "#d89440"; ctx.fillRect(6, 16, 116, 20);                         // front panel
-      ctx.fillStyle = "#b87828"; ctx.fillRect(6, 33, 116, 4);                          // base shadow
-      ctx.strokeStyle = "#7a5018"; ctx.lineWidth = 2; this.roundRect(ctx, 4, 4, 120, 32, 7); ctx.stroke();
-      ball(ctx, 20, 11, 6); ball(ctx, 108, 11, 6);
+      ctx.fillStyle = "#f4ecd8"; this.roundRect(ctx, 4, 4, 120, 14, 7); ctx.fill();     // top surface
+      ctx.fillStyle = "#fdf8ec"; this.roundRect(ctx, 6, 5, 116, 5, 4); ctx.fill();      // top sheen
+      ctx.fillStyle = "#e0a850"; ctx.fillRect(6, 16, 116, 14);                            // front panel
+      ctx.fillStyle = "#c98c34"; ctx.fillRect(6, 25, 116, 5);                             // panel shade
+      ctx.fillStyle = "#a06a20"; ctx.fillRect(6, 30, 116, 6);                             // base
+      // panel seams
+      ctx.fillStyle = "#b47c2c"; ctx.fillRect(42, 17, 2, 12); ctx.fillRect(84, 17, 2, 12);
+      ctx.strokeStyle = "#6e4a14"; ctx.lineWidth = 2; this.roundRect(ctx, 4, 4, 120, 32, 7); ctx.stroke();
+      capsule(ctx, 20, 11, 6); capsule(ctx, 108, 11, 6);
     });
-    // Potted plant: 32x48
+    // Potted plant: 32x48 (3-tone leaves + rimmed pot)
     mk("pod-plant", 32, 48, (ctx) => {
-      ctx.fillStyle = "#3a8a3e"; ctx.beginPath(); ctx.arc(16, 18, 13, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#4aa84e"; ctx.beginPath(); ctx.arc(10, 14, 7, 0, Math.PI * 2); ctx.arc(22, 15, 7, 0, Math.PI * 2); ctx.arc(16, 8, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#c87a3a"; ctx.beginPath(); ctx.moveTo(6, 30); ctx.lineTo(26, 30); ctx.lineTo(23, 46); ctx.lineTo(9, 46); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = "#a85f28"; ctx.fillRect(6, 30, 20, 4);
+      ctx.fillStyle = "#2e7032"; ctx.beginPath(); ctx.arc(16, 18, 13, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#3f9444"; ctx.beginPath();
+      ctx.arc(10, 14, 7, 0, Math.PI * 2); ctx.arc(22, 15, 7, 0, Math.PI * 2); ctx.arc(16, 8, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5cb860"; ctx.beginPath();
+      ctx.arc(12, 10, 3.5, 0, Math.PI * 2); ctx.arc(20, 12, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#1d4a20"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(16, 18, 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#c87a3a"; ctx.beginPath();
+      ctx.moveTo(6, 30); ctx.lineTo(26, 30); ctx.lineTo(23, 46); ctx.lineTo(9, 46); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#e09a54"; ctx.fillRect(5, 29, 22, 5);                              // rim
+      ctx.fillStyle = "#96551e"; ctx.fillRect(9, 42, 14, 4);                              // pot base shade
+      ctx.strokeStyle = "#6e3c12"; ctx.lineWidth = 1.5; ctx.strokeRect(5, 29, 22, 5);
     });
-    // Storage PC: 32x48
+    // Storage PC: 32x48 (monitor + keyboard base with vents)
     mk("pod-pc", 32, 48, (ctx) => {
-      ctx.fillStyle = "#3a4256"; ctx.fillRect(6, 30, 20, 16);        // base
-      ctx.fillStyle = "#20242c"; this.roundRect(ctx, 3, 6, 26, 24, 3); ctx.fill();  // monitor
-      ctx.fillStyle = "#49d0e0"; ctx.fillRect(6, 9, 20, 16);        // screen
-      ctx.fillStyle = "#8ef0ff"; ctx.fillRect(8, 12, 8, 3); ctx.fillRect(8, 18, 12, 3);
+      ctx.fillStyle = "#4a5470"; this.roundRect(ctx, 5, 30, 22, 16, 2); ctx.fill();      // base
+      ctx.fillStyle = "#333c54"; ctx.fillRect(7, 40, 18, 4);                               // vent shade
+      ctx.fillStyle = "#5f6b8c"; ctx.fillRect(7, 33, 18, 3);                               // key row
+      ctx.fillStyle = "#1c2234"; this.roundRect(ctx, 3, 4, 26, 26, 3); ctx.fill();        // monitor
+      ctx.fillStyle = "#123258"; ctx.fillRect(6, 7, 20, 18);                               // screen
+      ctx.fillStyle = "#49d0e0"; ctx.fillRect(8, 10, 10, 3); ctx.fillRect(8, 15, 14, 3);   // text lines
+      ctx.fillStyle = "#8ef0a0"; ctx.fillRect(8, 20, 6, 3);
+      ctx.fillStyle = "#f6d76a"; ctx.fillRect(22, 10, 2, 2);                               // blinking cursor
+      ctx.strokeStyle = "#0e1220"; ctx.lineWidth = 1.5; this.roundRect(ctx, 3, 4, 26, 26, 3); ctx.stroke();
     });
-    // Bench: 48x28
+    // Bench: 48x28 (cushion with sheen + shaded legs)
     mk("pod-bench", 48, 28, (ctx) => {
-      ctx.fillStyle = "#d0b48a"; this.roundRect(ctx, 3, 8, 42, 12, 4); ctx.fill();   // cushion
-      ctx.fillStyle = "#a8875a"; ctx.fillRect(6, 20, 6, 6); ctx.fillRect(36, 20, 6, 6); // legs
-      ctx.strokeStyle = "#7a5c34"; ctx.lineWidth = 1.5; this.roundRect(ctx, 3, 8, 42, 12, 4); ctx.stroke();
+      ctx.fillStyle = "#d8bc90"; this.roundRect(ctx, 3, 8, 42, 12, 4); ctx.fill();
+      ctx.fillStyle = "#ecd4ae"; this.roundRect(ctx, 5, 9, 38, 4, 3); ctx.fill();          // sheen
+      ctx.fillStyle = "#b8946a"; ctx.fillRect(5, 16, 38, 4);                                // cushion shade
+      ctx.fillStyle = "#8a6a40"; ctx.fillRect(6, 20, 6, 6); ctx.fillRect(36, 20, 6, 6);     // legs
+      ctx.fillStyle = "#6a4e2c"; ctx.fillRect(6, 24, 6, 2); ctx.fillRect(36, 24, 6, 2);
+      ctx.strokeStyle = "#6e5430"; ctx.lineWidth = 1.5; this.roundRect(ctx, 3, 8, 42, 12, 4); ctx.stroke();
     });
   }
 
