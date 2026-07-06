@@ -4,6 +4,12 @@ import { MonsterData } from "../data/types";
 
 const MAP_KEYS = ["moonbase", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop"];
 
+// Full-body pixel-art sprites (cropped & downscaled from the design sheets).
+const MONSTER_SPRITE_IDS = [
+  "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
+  "rairai", "ikarion", "regonyas", "sharisu", "sharian",
+];
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: "BootScene" });
@@ -61,6 +67,11 @@ export class BootScene extends Phaser.Scene {
     const iconMonsters = ["usamon", "mochichi", "sunagani", "rairai", "regonyas"];
     iconMonsters.forEach(id => {
       this.load.image(`icon-src-${id}`, `${base}/assets/monsters/icons/${id}.png`);
+    });
+
+    // Load full-body pixel sprites (used as monster-<id> in battle & party).
+    MONSTER_SPRITE_IDS.forEach(id => {
+      this.load.image(`monster-${id}`, `${base}/assets/monsters/sprites/${id}.png`);
     });
 
     // Load building sprites
@@ -357,6 +368,31 @@ export class BootScene extends Phaser.Scene {
 
       this.textures.addCanvas(key, canvas);
     });
+
+    // Animation frames (e.g. sand sparkle, tiles 41-56) are referenced by the
+    // MapScene tile animator but are not listed in any map's tileTypes, so they
+    // were never generated and showed up as the magenta/green "missing texture"
+    // placeholder. Generate a tile texture for every remaining spritesheet frame.
+    if (hasSpritesheet) {
+      const frameTotal = this.textures.get("moon-tileset").frameTotal;
+      for (let tileIndex = 0; tileIndex <= 56 && tileIndex < frameTotal; tileIndex++) {
+        const key = `tile-${tileIndex}`;
+        if (this.textures.exists(key)) continue;
+        const frame = this.textures.getFrame("moon-tileset", tileIndex);
+        if (!frame) continue;
+        const canvas = document.createElement("canvas");
+        canvas.width = ts;
+        canvas.height = ts;
+        const ctx = canvas.getContext("2d")!;
+        ctx.imageSmoothingEnabled = false; // pixel art!
+        ctx.drawImage(
+          frame.source.image as HTMLImageElement,
+          frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight,
+          0, 0, ts, ts
+        );
+        this.textures.addCanvas(key, canvas);
+      }
+    }
   }
 
   private generateMonsterSprites(): void {
@@ -364,6 +400,8 @@ export class BootScene extends Phaser.Scene {
 
     monsters.forEach((mon) => {
       const key = `monster-${mon.id}`;
+      // Skip if a real full-body sprite was already loaded for this monster.
+      if (this.textures.exists(key)) return;
       // Evolved forms are slightly larger
       const isEvolved = mon.evolution === null && mon.id !== "usamon" && mon.id !== "mochichi" && mon.id !== "sunagani" && mon.id !== "rairai" && mon.id !== "regonyas";
       const size = isEvolved ? 56 : 48;

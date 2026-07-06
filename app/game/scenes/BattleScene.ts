@@ -110,6 +110,7 @@ export class BattleScene extends Phaser.Scene {
   private isWild = true;
   private trainerData: TrainerData | null = null;
   private trainerPartyIndex = 0;
+  private fleeAttempts = 0;
 
   constructor() {
     super({ key: "BattleScene" });
@@ -336,11 +337,21 @@ export class BattleScene extends Phaser.Scene {
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
     const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
     this.playerSprite = this.add
-      .image(100, Math.round(180 * this.sy), `monster-${playerData.id}`)
+      .image(120, Math.round(175 * this.sy), `monster-${playerData.id}`)
       .setDepth(5);
     this.enemySprite = this.add
-      .image(480, Math.round(80 * this.sy), `monster-${enemyData.id}`)
+      .image(470, Math.round(95 * this.sy), `monster-${enemyData.id}`)
       .setDepth(5);
+    // Full-body sprites are 64px canvases — scale up (crisp, pixelArt is on).
+    this.sizeMonsterSprite(this.playerSprite, 150);
+    this.sizeMonsterSprite(this.enemySprite, 130);
+  }
+
+  // Scale a monster sprite to a target on-screen height while preserving aspect.
+  private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, targetH: number): void {
+    const h = sprite.height || 64;
+    const scale = (targetH * this.sy) / h;
+    sprite.setScale(scale);
   }
 
   private drawHpBars(): void {
@@ -763,10 +774,7 @@ export class BattleScene extends Phaser.Scene {
         this.handleSwitch();
         break;
       case 3:
-        this.hideCommandWindow();
-        this.showMessages(["うまく にげきれた！"], () => {
-          this.endBattle();
-        });
+        this.handleFlee();
         break;
     }
   }
@@ -1380,6 +1388,53 @@ export class BattleScene extends Phaser.Scene {
         }
       }
     );
+  }
+
+  // ---- Flee ----
+
+  private handleFlee(): void {
+    this.hideCommandWindow();
+
+    // Trainer battles: fleeing is never allowed.
+    if (!this.isWild) {
+      this.showMessages(["トレーナーとの しょうぶからは にげられない！"], () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      });
+      return;
+    }
+
+    // Wild battles: speed-based escape (Gen3-style odds that improve with each
+    // attempt). A faster monster always gets away.
+    this.fleeAttempts++;
+    const pSpd = Math.max(1, Math.round(this.playerMon.speed * this.playerMon.speedMod));
+    const eSpd = Math.max(1, Math.round(this.enemyMon.speed * this.enemyMon.speedMod));
+    const odds = Math.floor((pSpd * 128) / eSpd) + 30 * this.fleeAttempts;
+    const success = pSpd >= eSpd || Phaser.Math.Between(0, 255) < odds;
+
+    if (success) {
+      this.showMessages(["うまく にげきれた！"], () => this.endBattle());
+      return;
+    }
+
+    // Failed escape: the enemy gets a free turn.
+    this.phase = "executing";
+    this.showMessages(["だめだ！ にげられなかった！"], () => {
+      const enemyMove = this.enemyMon.moves[
+        Math.floor(Math.random() * this.enemyMon.moves.length)
+      ];
+      this.executeAction(
+        this.enemyMon, enemyMove, this.playerMon, this.playerSprite,
+        () => {
+          if (this.playerMon.currentHp <= 0) {
+            this.checkBattleEnd();
+          } else {
+            this.phase = "command";
+            this.showCommandWindow();
+          }
+        }
+      );
+    });
   }
 
   // ---- Item Use (Capture) ----

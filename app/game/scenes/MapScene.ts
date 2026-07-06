@@ -42,6 +42,8 @@ export class MapScene extends Phaser.Scene {
   // Battle
   private battleKey?: Phaser.Input.Keyboard.Key;
   private startingBattle = false;
+  // Trainer sighted the player and is walking over (player is locked)
+  private trainerApproaching = false;
   // Player state
   private playerState?: PlayerState;
   // Encounter & trainers
@@ -103,6 +105,7 @@ export class MapScene extends Phaser.Scene {
     this.animFrame = 0;
     this.animTimer = 0;
     this.startingBattle = false;
+    this.trainerApproaching = false;
     this.kinoshitaSprite = undefined;
     this.nurseSprite = undefined;
     this.shopkeeperSprite = undefined;
@@ -380,7 +383,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private checkTrainerSight(): void {
-    if (this.startingBattle || this.isWarping) return;
+    if (this.startingBattle || this.isWarping || this.trainerApproaching) return;
     const mapTrainers = this.allTrainers.filter(
       t => t.mapKey === this.currentMapKey
     );
@@ -408,10 +411,76 @@ export class MapScene extends Phaser.Scene {
       }
 
       if (inSight) {
-        this.startBattle(undefined, undefined, trainer);
+        this.beginTrainerApproach(trainer);
         return;
       }
     }
+  }
+
+  // Ruby/Sapphire-style: on being spotted, a "！" pops over the trainer, the
+  // player is frozen, and the trainer walks up to the player before the battle.
+  private beginTrainerApproach(trainer: TrainerData): void {
+    this.trainerApproaching = true;
+    this.moveQueue = null;
+    const sprite = this.trainerSprites.get(trainer.id);
+    if (!sprite) {
+      this.startBattle(undefined, undefined, trainer);
+      return;
+    }
+
+    const bubble = this.add.text(
+      sprite.x,
+      sprite.y - this.tileSize * 0.7,
+      "！",
+      {
+        fontSize: `${Math.round(this.tileSize * 0.85)}px`,
+        color: "#ffdd33",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 4,
+      }
+    ).setOrigin(0.5).setDepth(30).setScale(0);
+
+    this.tweens.add({
+      targets: bubble,
+      scale: 1,
+      duration: 200,
+      ease: "Back.out",
+      onComplete: () => {
+        this.time.delayedCall(350, () => {
+          bubble.destroy();
+          this.walkTrainerToPlayer(trainer, sprite);
+        });
+      },
+    });
+  }
+
+  private walkTrainerToPlayer(
+    trainer: TrainerData,
+    sprite: Phaser.GameObjects.Image
+  ): void {
+    let tx = trainer.x;
+    let ty = trainer.y;
+    const stepX = Math.sign(this.gridX - tx);
+    const stepY = Math.sign(this.gridY - ty);
+
+    const step = () => {
+      const dist = Math.abs(this.gridX - tx) + Math.abs(this.gridY - ty);
+      if (dist <= 1) {
+        this.startBattle(undefined, undefined, trainer);
+        return;
+      }
+      tx += stepX;
+      ty += stepY;
+      this.tweens.add({
+        targets: sprite,
+        x: tx * this.tileSize + this.tileSize / 2,
+        y: ty * this.tileSize + this.tileSize / 2,
+        duration: 150,
+        ease: "Linear",
+        onComplete: step,
+      });
+    };
+    step();
   }
 
   private checkRandomEncounter(): void {
@@ -561,7 +630,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.isWarping || this.startingBattle) return;
+    if (this.isWarping || this.startingBattle || this.trainerApproaching) return;
 
     // --- Gamepad button reads ---
     const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
@@ -911,12 +980,15 @@ export class MapScene extends Phaser.Scene {
       // Fonts go through uiS() so they render at the intended on-screen size
       // regardless of the current camera zoom.
       const cx = leadX + leadW / 2;
-      const pad = Math.max(4, Math.round(leadH * 0.04));
+      const pad = Math.max(4, Math.round(leadH * 0.03));
+      const hpLX = leadX + pad;
+      const barBx = hpLX + Math.round(leadW * 0.20);
+      const barW = Math.max(20, leadX + leadW - pad - barBx);
 
       // Icon (top, centered)
-      const iconS = Math.min(leadW - pad * 2, Math.round(leadH * 0.40));
+      const iconS = Math.min(leadW - pad * 2, Math.round(leadH * 0.34));
       const iconCY = leadY + pad + iconS / 2;
-      const iconKey = this.textures.exists(`icon-${leadData.id}`) ? `icon-${leadData.id}` : `monster-${leadData.id}`;
+      const iconKey = this.textures.exists(`monster-${leadData.id}`) ? `monster-${leadData.id}` : `icon-${leadData.id}`;
       if (this.textures.exists(iconKey)) {
         this.menuElements.push(
           this.add.image(this.uiX(cx), this.uiY(iconCY), iconKey)
@@ -927,36 +999,53 @@ export class MapScene extends Phaser.Scene {
 
       // Name + level
       this.menuElements.push(
-        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.56)), leadData.name, {
-          fontSize: `${this.uiS(Math.round(leadH * 0.06))}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.46)), leadData.name, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.056))}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
       this.menuElements.push(
-        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.68)), `Lv${lead.level}`, {
-          fontSize: `${this.uiS(Math.round(leadH * 0.052))}px`, color: "#ffffff", fontFamily: F, ...STK2,
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.555)), `Lv${lead.level}`, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.048))}px`, color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
 
       // HP label + bar
       const hpRatio = lead.currentHp / lead.maxHp;
-      const hpRowY = leadY + Math.round(leadH * 0.80);
-      const hpBarH = Math.max(6, Math.round(leadH * 0.05));
-      const hpLX = leadX + pad;
-      const hpBx = hpLX + Math.round(leadW * 0.18);
-      const hpBarW = Math.max(20, leadX + leadW - pad - hpBx);
+      const hpRowY = leadY + Math.round(leadH * 0.65);
+      const hpBarH = Math.max(5, Math.round(leadH * 0.042));
       this.menuElements.push(
         this.add.text(this.uiX(hpLX), this.uiY(hpRowY), "HP", {
-          fontSize: `${this.uiS(Math.round(leadH * 0.048))}px`, color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
+          fontSize: `${this.uiS(Math.round(leadH * 0.044))}px`, color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(0, 0.5)
       );
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
-      drawCapsuleBar(hpG, hpBx, hpRowY - hpBarH / 2, hpBarW, hpBarH, hpRatio, hpColor(hpRatio));
+      drawCapsuleBar(hpG, barBx, hpRowY - hpBarH / 2, barW, hpBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
-
       // HP number below bar
       this.menuElements.push(
-        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.92)), `${lead.currentHp} / ${lead.maxHp}`, {
-          fontSize: `${this.uiS(Math.round(leadH * 0.06))}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.725)), `${lead.currentHp} / ${lead.maxHp}`, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.05))}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK,
+        }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
+      );
+
+      // EXP label + bar (progress toward next level)
+      const expCur = getExpForLevel(lead.level);
+      const expNext = getExpForLevel(lead.level + 1);
+      const expRatio = Phaser.Math.Clamp((lead.exp - expCur) / Math.max(1, expNext - expCur), 0, 1);
+      const expToNext = Math.max(0, expNext - lead.exp);
+      const expRowY = leadY + Math.round(leadH * 0.82);
+      const expBarH = Math.max(4, Math.round(leadH * 0.036));
+      this.menuElements.push(
+        this.add.text(this.uiX(hpLX), this.uiY(expRowY), "EXP", {
+          fontSize: `${this.uiS(Math.round(leadH * 0.04))}px`, color: "#58a8e8", fontFamily: F, fontStyle: "bold", ...STK2,
+        }).setScrollFactor(0).setDepth(204).setOrigin(0, 0.5)
+      );
+      const expG = this.add.graphics().setScrollFactor(0).setDepth(203);
+      drawCapsuleBar(expG, barBx, expRowY - expBarH / 2, barW, expBarH, expRatio, EXP_BLUE);
+      this.menuElements.push(expG);
+      this.menuElements.push(
+        this.add.text(this.uiX(cx), this.uiY(leadY + Math.round(leadH * 0.91)), `つぎまで ${expToNext}`, {
+          fontSize: `${this.uiS(Math.round(leadH * 0.04))}px`, color: "#cfe8ff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(0.5)
       );
     }
@@ -980,12 +1069,14 @@ export class MapScene extends Phaser.Scene {
       this.menuElements.push(card);
 
       // Scale factor (base design was rightSlotH=42); uiS keeps the rendered
-      // size correct under the camera zoom.
+      // size correct under the camera zoom. Font scale is capped so text
+      // (esp. names) never overflows these oversized cards horizontally.
       const s = rightSlotH / 42;
-      const fs = (base: number) => `${this.uiS(base * s)}px`;
+      const fsScale = Math.min(s, 2.4);
+      const fs = (base: number) => `${this.uiS(base * fsScale)}px`;
 
       // Icon (left, spans full row height)
-      const iconKey = this.textures.exists(`icon-${data.id}`) ? `icon-${data.id}` : `monster-${data.id}`;
+      const iconKey = this.textures.exists(`monster-${data.id}`) ? `monster-${data.id}` : `icon-${data.id}`;
       if (this.textures.exists(iconKey)) {
         this.menuElements.push(
           this.add.image(
@@ -1036,13 +1127,27 @@ export class MapScene extends Phaser.Scene {
           fontSize: fs(9), color: "#ffffff", fontFamily: F, ...STK2,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
+      // EXP label + bar (third row)
+      const row3Y = cy + Math.round(34 * s);
+      const rExpBarH = Math.max(4, Math.round(5 * s));
+      this.menuElements.push(
+        this.add.text(this.uiX(tx), this.uiY(row3Y), "EXP", {
+          fontSize: fs(8), color: "#58a8e8", fontFamily: F, fontStyle: "bold", ...STK2,
+        }).setScrollFactor(0).setDepth(204)
+      );
+      const eExpCur = getExpForLevel(mon.level);
+      const eExpNext = getExpForLevel(mon.level + 1);
+      const eExpRatio = Phaser.Math.Clamp((mon.exp - eExpCur) / Math.max(1, eExpNext - eExpCur), 0, 1);
+      const expG = this.add.graphics().setScrollFactor(0).setDepth(203);
+      drawCapsuleBar(expG, hpBx, row3Y + 2, hpBarLen, rExpBarH, eExpRatio, EXP_BLUE);
+      this.menuElements.push(expG);
     }
 
     // If only 1 mon
     if (party.length === 1) {
       this.menuElements.push(
         this.add.text(this.uiX(rightX + rightW / 2), this.uiY(rightStartY + Math.round(80 * (rightSlotH / 42))), "ほかの なかまは\nまだ いない", {
-          fontSize: `${this.uiS(12 * rightSlotH / 42)}px`, color: "#ffffff", fontFamily: F, ...STK2, align: "center",
+          fontSize: `${this.uiS(12 * Math.min(rightSlotH / 42, 2.4))}px`, color: "#ffffff", fontFamily: F, ...STK2, align: "center",
         }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
       );
     }
