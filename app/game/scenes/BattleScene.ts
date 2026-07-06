@@ -335,16 +335,39 @@ export class BattleScene extends Phaser.Scene {
       g.fillRect(0, y, 640, 1);
     }
 
-    // Elliptical platforms (RSE-style): enemy upper-right, player lower-left.
+    // Elliptical SANDY platforms (RSE desert-style): enemy upper-right, player lower-left.
     const plat = this.add.graphics().setDepth(1);
-    const drawPlat = (cx: number, cy: number, rx: number, ry: number) => {
-      plat.fillStyle(0x9aa0a0, 0.35);
-      plat.fillEllipse(cx, Math.round(cy * s), rx, ry);
-      plat.fillStyle(0xb8beb8, 0.35);
-      plat.fillEllipse(cx, Math.round(cy * s) - 3, rx - 8, ry - 6);
+    const prng = new Phaser.Math.RandomDataGenerator(["sandplatform"]);
+    const drawPlat = (cx: number, cyDesign: number, rx: number, ry: number) => {
+      const cy = Math.round(cyDesign * s);
+      // soft drop shadow
+      plat.fillStyle(0x1a1c22, 0.25);
+      plat.fillEllipse(cx, cy + 5, rx + 6, ry + 4);
+      // sand base
+      plat.fillStyle(0xbcab6c, 1);
+      plat.fillEllipse(cx, cy, rx, ry);
+      // darker lower band
+      plat.fillStyle(0x9f8b4c, 1);
+      plat.fillEllipse(cx, cy + ry * 0.38, rx * 0.94, ry * 0.6);
+      // lit top
+      plat.fillStyle(0xd9c98a, 0.95);
+      plat.fillEllipse(cx, cy - ry * 0.32, rx * 0.8, ry * 0.5);
+      // speckles (sand grain / small rocks)
+      plat.fillStyle(0x7c6836, 0.85);
+      for (let i = 0; i < 26; i++) {
+        const ang = prng.frac() * Math.PI * 2;
+        const rr = Math.sqrt(prng.frac());
+        const px = cx + Math.cos(ang) * rx * 0.86 * rr;
+        const py = cy + Math.sin(ang) * ry * 0.86 * rr;
+        const sz = prng.between(1, 3);
+        plat.fillRect(px, py, sz, sz);
+      }
+      // rim highlight
+      plat.lineStyle(2, 0xe6d9a2, 0.55);
+      plat.strokeEllipse(cx, cy, rx, ry);
     };
-    drawPlat(this.EPLAT_X, this.EPLAT_Y, 108, 26);
-    drawPlat(this.PPLAT_X, this.PPLAT_Y, 122, 30);
+    drawPlat(this.EPLAT_X, this.EPLAT_Y, 112, 28);
+    drawPlat(this.PPLAT_X, this.PPLAT_Y, 126, 32);
   }
 
   // ---- RSE battle layout anchors (640-wide design, Y ×sy) ----
@@ -395,32 +418,41 @@ export class BattleScene extends Phaser.Scene {
   }
   private expGeom() { const s = this.sy; return { x: 340, y: Math.round(220 * s), w: 270, h: Math.max(4, Math.round(6 * s)) }; }
 
+  // RSE-style light status panel with a small pointed tab.
   private drawStatusPanel(r: { x: number; y: number; w: number; h: number }): void {
     const g = this.add.graphics().setDepth(9);
-    g.fillStyle(0x1a2438, 0.92);
-    g.fillRoundedRect(r.x, r.y, r.w, r.h, 8);
-    g.lineStyle(3, 0xf0f0e0, 0.95);
-    g.strokeRoundedRect(r.x, r.y, r.w, r.h, 8);
-    g.lineStyle(1, 0x5a6a88, 0.8);
-    g.strokeRoundedRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4, 6);
+    g.fillStyle(0x101018, 0.30);
+    g.fillRoundedRect(r.x + 3, r.y + 4, r.w, r.h, 11);      // drop shadow
+    g.fillStyle(0xf3efe0, 0.98);
+    g.fillRoundedRect(r.x, r.y, r.w, r.h, 11);              // light panel
+    g.lineStyle(3, 0x46688f, 1);
+    g.strokeRoundedRect(r.x, r.y, r.w, r.h, 11);            // blue frame
+    g.lineStyle(1, 0xd6d0bc, 1);
+    g.strokeRoundedRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6, 8); // inner line
+  }
+
+  // Small "HP"/"EXP" label tag drawn on the light panel.
+  private drawTag(x: number, y: number, label: string, color: string): Phaser.GameObjects.Text {
+    return this.add.text(x, y, label, {
+      fontSize: "11px", color, fontFamily: "'DotGothic16', monospace", fontStyle: "bold",
+    }).setOrigin(0, 0.5).setDepth(11);
   }
 
   private drawHpBars(): void {
     const F = "'DotGothic16', monospace";
+    const NAME = "#2b3346", LV = "#3a4256", HPTAG = "#c24a30", EXPTAG = "#2f6ab0";
     // ===== Enemy status panel (upper-left) =====
     const eb = this.enemyBoxRect();
     this.drawStatusPanel(eb);
     this.enemyNameText = this.add
-      .text(eb.x + 14, eb.y + Math.round(6 * this.sy), `${this.enemyMon.name}`, {
-        fontSize: "15px", color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      .text(eb.x + 16, eb.y + Math.round(7 * this.sy), `${this.enemyMon.name}`, {
+        fontSize: "15px", color: NAME, fontFamily: F, fontStyle: "bold",
       }).setDepth(11);
-    this.enemyLvText = this.add.text(eb.x + eb.w - 12, eb.y + Math.round(6 * this.sy), `Lv${this.enemyMon.level}`, {
-      fontSize: "14px", color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    this.enemyLvText = this.add.text(eb.x + eb.w - 14, eb.y + Math.round(8 * this.sy), `Lv${this.enemyMon.level}`, {
+      fontSize: "13px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
     const eg = this.hpGeom(false);
-    this.add.text(eb.x + 14, eg.y - Math.round(1 * this.sy), "HP", {
-      fontSize: "11px", color: "#f8c838", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-    }).setOrigin(0, 0.5).setDepth(11);
+    this.drawTag(eb.x + 16, eg.y, "HP", HPTAG);
     this.enemyHpBar = this.add.graphics().setDepth(11);
     this.drawHpBarGraphic(this.enemyHpBar, eg.x, eg.y - eg.h / 2, eg.w, eg.h, this.enemyMon.currentHp / this.enemyMon.maxHp);
     // enemy HP numbers are hidden (RSE-style); keep the object to avoid null refs
@@ -430,41 +462,37 @@ export class BattleScene extends Phaser.Scene {
     const pb = this.playerBoxRect();
     this.drawStatusPanel(pb);
     this.playerNameText = this.add
-      .text(pb.x + 14, pb.y + Math.round(8 * this.sy), `${this.playerMon.name}`, {
-        fontSize: "15px", color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      .text(pb.x + 16, pb.y + Math.round(9 * this.sy), `${this.playerMon.name}`, {
+        fontSize: "15px", color: NAME, fontFamily: F, fontStyle: "bold",
       }).setDepth(11);
-    this.playerLvText = this.add.text(pb.x + pb.w - 12, pb.y + Math.round(8 * this.sy), `Lv${this.playerMon.level}`, {
-      fontSize: "14px", color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    this.playerLvText = this.add.text(pb.x + pb.w - 14, pb.y + Math.round(10 * this.sy), `Lv${this.playerMon.level}`, {
+      fontSize: "13px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
     const pg = this.hpGeom(true);
-    this.add.text(pb.x + 14, pg.y - Math.round(1 * this.sy), "HP", {
-      fontSize: "11px", color: "#f8c838", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-    }).setOrigin(0, 0.5).setDepth(11);
+    this.drawTag(pb.x + 16, pg.y, "HP", HPTAG);
     this.playerHpBar = this.add.graphics().setDepth(11);
     this.drawHpBarGraphic(this.playerHpBar, pg.x, pg.y - pg.h / 2, pg.w, pg.h, this.playerMon.currentHp / this.playerMon.maxHp);
     this.playerHpText = this.add
-      .text(pb.x + pb.w - 12, pg.y + Math.round(8 * this.sy), `${this.playerMon.currentHp}/${this.playerMon.maxHp}`, {
-        fontSize: "13px", color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      .text(pb.x + pb.w - 14, pg.y + Math.round(9 * this.sy), `${this.playerMon.currentHp}/${this.playerMon.maxHp}`, {
+        fontSize: "15px", color: NAME, fontFamily: F, fontStyle: "bold",
       }).setOrigin(1, 0).setDepth(11);
     // EXP bar (player only)
     const xg = this.expGeom();
-    this.add.text(pb.x + 14, xg.y, "EXP", {
-      fontSize: "10px", color: "#58a8e8", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-    }).setOrigin(0, 0.5).setDepth(11);
+    this.drawTag(pb.x + 16, xg.y, "EXP", EXPTAG);
     this.playerExpBar = this.add.graphics().setDepth(11);
     this.refreshPlayerExp();
   }
 
-  // Draw a capsule HP bar with dark track and colored fill.
+  // Draw a capsule HP bar: outer dark border, light track, colored fill.
   private drawHpBarGraphic(g: Phaser.GameObjects.Graphics, x: number, y: number, width: number, height: number, ratio: number): void {
     g.clear();
     const r = height / 2;
-    g.fillStyle(0x0c1420);
+    g.fillStyle(0x30363f);
     g.fillRoundedRect(x - 2, y - 2, width + 4, height + 4, r + 1);
-    g.fillStyle(0x2a3242);
+    g.fillStyle(0xdfe3e0);
     g.fillRoundedRect(x, y, width, height, r);
     const cr = Phaser.Math.Clamp(ratio, 0, 1);
-    const color = cr > 0.5 ? 0x48d048 : cr > 0.2 ? 0xf0c838 : 0xf04838;
+    const color = cr > 0.5 ? 0x40c850 : cr > 0.2 ? 0xf0c020 : 0xe84030;
     const fw = Math.floor(width * cr);
     if (fw > 0) {
       g.fillStyle(color);
@@ -490,13 +518,13 @@ export class BattleScene extends Phaser.Scene {
     const ratio = Phaser.Math.Clamp((this.playerInstance.exp - cur) / Math.max(1, next - cur), 0, 1);
     this.playerExpBar.clear();
     const r = xg.h / 2;
-    this.playerExpBar.fillStyle(0x0c1420);
+    this.playerExpBar.fillStyle(0x30363f);
     this.playerExpBar.fillRoundedRect(xg.x - 2, xg.y - xg.h / 2 - 2, xg.w + 4, xg.h + 4, r + 1);
-    this.playerExpBar.fillStyle(0x2a3242);
+    this.playerExpBar.fillStyle(0xdfe3e0);
     this.playerExpBar.fillRoundedRect(xg.x, xg.y - xg.h / 2, xg.w, xg.h, r);
     const fw = Math.floor(xg.w * ratio);
     if (fw > 0) {
-      this.playerExpBar.fillStyle(0x58a8e8);
+      this.playerExpBar.fillStyle(0x3a9be0);
       this.playerExpBar.fillRoundedRect(xg.x, xg.y - xg.h / 2, Math.max(fw, xg.h), xg.h, r);
     }
   }
