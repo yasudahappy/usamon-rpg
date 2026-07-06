@@ -95,6 +95,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-recovery-pod", `${base}/assets/buildings/sprites/recovery_pod.png`);
     this.load.image("bldg-moonbase-lab", `${base}/assets/buildings/sprites/moonbase_lab.png`);
     this.load.image("bldg-house-dome", `${base}/assets/buildings/sprites/house_dome.png`);
+    this.load.image("bldg-gym", `${base}/assets/buildings/sprites/gym.png`);
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
