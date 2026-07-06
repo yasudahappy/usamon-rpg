@@ -162,6 +162,7 @@ export class MapScene extends Phaser.Scene {
 
     // Place Nurse NPC in recovery pod
     if (this.currentMapKey === "recovery_pod") {
+      this.placeRecoveryPodDecor();
       this.placeNurseNpc();
     }
 
@@ -1456,11 +1457,115 @@ export class MapScene extends Phaser.Scene {
       this.textures.addCanvas("npc-nurse", c);
     }
 
+    // Nurse stands one tile behind the reception counter; her interaction tile
+    // (nurseNpcX/Y) is the counter front, so the player talks across it.
     this.nurseSprite = this.add.image(
       this.nurseNpcX * this.tileSize + this.tileSize / 2,
-      this.nurseNpcY * this.tileSize + this.tileSize / 2,
+      (this.nurseNpcY - 1) * this.tileSize + this.tileSize / 2,
       "npc-nurse"
-    ).setDepth(9);
+    ).setDepth(7);
+  }
+
+  // Pokemon-Center-style interior decorations for the recovery pod.
+  private placeRecoveryPodDecor(): void {
+    const ts = this.tileSize;
+    this.genPodTextures();
+
+    // Warm cream floor overlay over the interior (rows 1-6, cols 1-8).
+    const fo = this.add.graphics().setDepth(1);
+    fo.fillStyle(0xf1e7cc, 1);
+    fo.fillRect(ts, ts, 8 * ts, 6 * ts);
+    fo.fillStyle(0xfaf3e0, 0.9);            // lighter central path
+    fo.fillRect(4 * ts, ts, 2 * ts, 6 * ts);
+    fo.fillStyle(0xe4d5b0, 1);              // dotted texture
+    for (let y = 1; y < 7; y++) {
+      for (let x = 1; x < 9; x++) {
+        if ((x + y) % 2 === 0) fo.fillRect(x * ts + ts / 2 - 2, y * ts + ts / 2 - 2, 3, 3);
+      }
+    }
+
+    // Healing machine (back), reception counter (front), plants, PC, bench.
+    this.add.image(5 * ts, Math.round(1.35 * ts), "pod-machine").setDepth(6);
+    this.add.image(5 * ts, Math.round(2.55 * ts), "pod-counter").setDepth(8);
+    this.add.image(1 * ts + ts / 2, Math.round(1.35 * ts), "pod-plant").setDepth(6);
+    this.add.image(8 * ts + ts / 2, Math.round(1.35 * ts), "pod-plant").setDepth(6);
+    this.add.image(8 * ts + ts / 2, Math.round(5.9 * ts), "pod-pc").setDepth(6);
+    this.add.image(1 * ts + ts / 2, 6 * ts + ts / 2, "pod-bench").setDepth(6);
+  }
+
+  private genPodTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!;
+      ctx.imageSmoothingEnabled = false;
+      draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    const ball = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => {
+      ctx.fillStyle = "#e8483c"; ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#f4f4f4"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI); ctx.fill();
+      ctx.strokeStyle = "#20242c"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
+      ctx.fillStyle = "#f4f4f4"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.32, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#20242c"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.32, 0, Math.PI * 2); ctx.stroke();
+    };
+    // Healing machine: 128x64
+    mk("pod-machine", 128, 64, (ctx) => {
+      ctx.fillStyle = "#cfd6e0"; this.roundRect(ctx, 8, 18, 112, 44, 6); ctx.fill();
+      ctx.fillStyle = "#aab3c2"; ctx.fillRect(8, 52, 112, 10);
+      ctx.strokeStyle = "#5a6478"; ctx.lineWidth = 2; this.roundRect(ctx, 8, 18, 112, 44, 6); ctx.stroke();
+      // central screen
+      ctx.fillStyle = "#123244"; this.roundRect(ctx, 46, 26, 36, 22, 3); ctx.fill();
+      ctx.fillStyle = "#49d0e0"; ctx.fillRect(50, 30, 28, 6);
+      ctx.fillStyle = "#8ef0a0"; ctx.fillRect(50, 39, 12, 4);
+      // ball slots on top tray
+      for (let i = 0; i < 3; i++) ball(ctx, 22 + i * 12, 16, 6);
+      for (let i = 0; i < 3; i++) ball(ctx, 106 - i * 12, 16, 6);
+      // side lights
+      ctx.fillStyle = "#f0d040"; ctx.fillRect(16, 30, 6, 6);
+      ctx.fillStyle = "#f05040"; ctx.fillRect(106, 30, 6, 6);
+    });
+    // Reception counter: 128x40
+    mk("pod-counter", 128, 40, (ctx) => {
+      ctx.fillStyle = "#e8b060"; this.roundRect(ctx, 4, 4, 120, 14, 7); ctx.fill();   // top surface
+      ctx.fillStyle = "#d89440"; ctx.fillRect(6, 16, 116, 20);                         // front panel
+      ctx.fillStyle = "#b87828"; ctx.fillRect(6, 33, 116, 4);                          // base shadow
+      ctx.strokeStyle = "#7a5018"; ctx.lineWidth = 2; this.roundRect(ctx, 4, 4, 120, 32, 7); ctx.stroke();
+      ball(ctx, 20, 11, 6); ball(ctx, 108, 11, 6);
+    });
+    // Potted plant: 32x48
+    mk("pod-plant", 32, 48, (ctx) => {
+      ctx.fillStyle = "#3a8a3e"; ctx.beginPath(); ctx.arc(16, 18, 13, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#4aa84e"; ctx.beginPath(); ctx.arc(10, 14, 7, 0, Math.PI * 2); ctx.arc(22, 15, 7, 0, Math.PI * 2); ctx.arc(16, 8, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#c87a3a"; ctx.beginPath(); ctx.moveTo(6, 30); ctx.lineTo(26, 30); ctx.lineTo(23, 46); ctx.lineTo(9, 46); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#a85f28"; ctx.fillRect(6, 30, 20, 4);
+    });
+    // Storage PC: 32x48
+    mk("pod-pc", 32, 48, (ctx) => {
+      ctx.fillStyle = "#3a4256"; ctx.fillRect(6, 30, 20, 16);        // base
+      ctx.fillStyle = "#20242c"; this.roundRect(ctx, 3, 6, 26, 24, 3); ctx.fill();  // monitor
+      ctx.fillStyle = "#49d0e0"; ctx.fillRect(6, 9, 20, 16);        // screen
+      ctx.fillStyle = "#8ef0ff"; ctx.fillRect(8, 12, 8, 3); ctx.fillRect(8, 18, 12, 3);
+    });
+    // Bench: 48x28
+    mk("pod-bench", 48, 28, (ctx) => {
+      ctx.fillStyle = "#d0b48a"; this.roundRect(ctx, 3, 8, 42, 12, 4); ctx.fill();   // cushion
+      ctx.fillStyle = "#a8875a"; ctx.fillRect(6, 20, 6, 6); ctx.fillRect(36, 20, 6, 6); // legs
+      ctx.strokeStyle = "#7a5c34"; ctx.lineWidth = 1.5; this.roundRect(ctx, 3, 8, 42, 12, 4); ctx.stroke();
+    });
+  }
+
+  private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
   }
 
   private checkNpcInteraction(): void {
@@ -1841,7 +1946,7 @@ export class MapScene extends Phaser.Scene {
     const W = this.scale.width;
     const H = this.scale.height;
     const margin = 20;
-    const boxH = 112;
+    const boxH = 130;
     const boxY = H - boxH - 16;
 
     // Box background
@@ -1854,10 +1959,10 @@ export class MapScene extends Phaser.Scene {
 
     // Text
     const msg = this.dialogMessages[this.dialogIndex];
-    const text = this.add.text(this.uiX(margin + 18), this.uiY(boxY + 18), msg, {
-      fontSize: `${this.uiS(21)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+    const text = this.add.text(this.uiX(margin + 18), this.uiY(boxY + 20), msg, {
+      fontSize: `${this.uiS(24)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 4,
-      wordWrap: { width: this.uiS(W - margin*2 - 52) }, lineSpacing: this.uiS(7),
+      wordWrap: { width: this.uiS(W - margin*2 - 52) }, lineSpacing: this.uiS(8),
     }).setScrollFactor(0).setDepth(301);
     this.dialogElements.push(text);
 
