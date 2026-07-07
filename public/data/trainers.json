@@ -18,7 +18,7 @@
       }
     ],
     "battleSprite": "trainer-girl",
-    "overworldSprite": "char9"
+    "overworldSprite": "char7"
   },
   {
     "id": "yamaoka",
@@ -64,7 +64,7 @@
       }
     ],
     "battleSprite": "trainer-redcap",
-    "overworldSprite": "char7"
+    "overworldSprite": "char8"
   },
   {
     "id": "kagen",
@@ -85,7 +85,7 @@
       }
     ],
     "battleSprite": "trainer-hoodie",
-    "overworldSprite": "char4"
+    "overworldSprite": "char3"
   },
   {
     "id": "ryuma",
@@ -114,6 +114,6 @@
       }
     ],
     "battleSprite": "trainer-armor",
-    "overworldSprite": "char8"
+    "overworldSprite": "char4"
   }
 ]
