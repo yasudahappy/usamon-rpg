@@ -519,17 +519,23 @@ export class BattleScene extends Phaser.Scene {
     if (!bp) { this.playerSprite.setVisible(true); onDone(); return; }
     this.genCapsuleTexture();
     const sy = this.sy;
+    // Capsule launches from the hero's hand (captured before the recoil) and
+    // flies FORWARD (toward the platform where the almon appears)...
     const startX = bp.x + 16 * sy;
     const startY = bp.y - bp.displayHeight * 0.5;
     const endX = this.PPLAT_X;
     const endY = Math.round((this.PPLAT_Y + 6) * sy);
+    // ...while the hero steps BACKWARD (down-left) as they throw.
+    this.tweens.add({
+      targets: bp, x: bp.x - 72 * sy, y: bp.y + 20 * sy, duration: 430, ease: "Sine.out",
+    });
     const cap = this.add.image(startX, startY, "capsule-moon").setDepth(8).setScale(sy * 1.1);
     const o = { t: 0 };
     this.tweens.add({
       targets: o, t: 1, duration: 460, ease: "Sine.in",
       onUpdate: () => {
         cap.x = startX + (endX - startX) * o.t;
-        cap.y = (startY + (endY - startY) * o.t) - Math.sin(o.t * Math.PI) * 60 * sy;
+        cap.y = (startY + (endY - startY) * o.t) - Math.sin(o.t * Math.PI) * 70 * sy;
         cap.rotation += 0.35;
       },
       onComplete: () => {
@@ -537,7 +543,8 @@ export class BattleScene extends Phaser.Scene {
         const flash = this.add.circle(endX, endY, 8 * sy, 0xffffff).setDepth(7);
         this.tweens.add({ targets: flash, scale: 6, alpha: 0, duration: 300, ease: "Cubic.out",
           onComplete: () => flash.destroy() });
-        this.tweens.add({ targets: bp, x: bp.x - 130 * sy, alpha: 0, duration: 300, ease: "Cubic.in",
+        // Hero has already stepped back; now fade the back-view out.
+        this.tweens.add({ targets: bp, alpha: 0, duration: 260, ease: "Cubic.in",
           onComplete: () => bp.setVisible(false) });
         this.playerInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
         const s = this.playerSprite.scaleX;

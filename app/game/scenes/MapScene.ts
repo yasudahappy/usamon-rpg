@@ -885,11 +885,11 @@ export class MapScene extends Phaser.Scene {
       const iy = py + pad + i * 42;
       const bg = this.add.graphics().setScrollFactor(0).setDepth(202);
       const arrow = this.add.text(this.uiX(px + 12), this.uiY(iy + 16), "▶", {
-        fontSize: "14px", color: "#66aaff", fontFamily: "'DotGothic16', monospace",
-        stroke: "#000000", strokeThickness: 3,
+        fontSize: `${this.uiS(12)}px`, color: "#66aaff", fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 2,
       }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
       const text = this.add.text(this.uiX(px + 32), this.uiY(iy + 16), label, {
-        fontSize: "18px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+        fontSize: `${this.uiS(15)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       }).setScrollFactor(0).setDepth(203).setOrigin(0, 0.5);
       this.menuElements.push(bg, arrow, text);
     });
@@ -1241,46 +1241,38 @@ export class MapScene extends Phaser.Scene {
         this.menuElements.push(img);
       }
 
-      // Two-row text: top=name, bottom=Lv+HP bar+HP num
+      // Row 1: name + Lv (left) and HP numbers (right). Rows 2/3: long HP / EXP
+      // bars that span almost the full card width (RSE party-screen style).
       const tx = cx + rightIconSize + Math.round(10 * s);
       const row1Y = cy + Math.round(4 * s);
       this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(row1Y), data.name, {
+        this.add.text(this.uiX(tx), this.uiY(row1Y), `${data.name}  Lv${mon.level}`, {
           fontSize: fs(12), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
+      );
+      // HP numbers right-aligned on the name row (above the long bar)
+      this.menuElements.push(
+        this.add.text(this.uiX(cx + rightW - 6), this.uiY(row1Y), `${mon.currentHp}/${mon.maxHp}`, {
+          fontSize: fs(10), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
+        }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
       );
 
       const row2Y = cy + Math.round(22 * s);
       const rBarH = Math.max(6, Math.round(7 * s));
-      // Lv label
+      // "HP" label at the left, long bar filling the rest of the row
       this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(row2Y), `Lv${mon.level}`, {
-          fontSize: fs(10), color: "#ffffff", fontFamily: F, ...STK2,
-        }).setScrollFactor(0).setDepth(204)
-      );
-      // HP label right after Lv
-      const hpLabelX = tx + Math.round(36 * s);
-      this.menuElements.push(
-        this.add.text(this.uiX(hpLabelX), this.uiY(row2Y), "HP", {
+        this.add.text(this.uiX(tx), this.uiY(row2Y), "HP", {
           fontSize: fs(9), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
-      // HP bar: stretch from after HP label to before HP numbers
-      const hpBx = hpLabelX + Math.round(22 * s);
-      const hpNumW = Math.round(42 * s); // space reserved for "28/34" text
-      const hpBarEndX = cx + rightW - 6 - hpNumW;
+      const hpBx = tx + Math.round(26 * s);
+      const hpBarEndX = cx + rightW - 6;
       const hpBarLen = Math.max(20, hpBarEndX - hpBx);
       const hpRatio = mon.currentHp / mon.maxHp;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
       drawCapsuleBar(hpG, hpBx, row2Y + 2, hpBarLen, rBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
-      // HP numbers right-aligned
-      this.menuElements.push(
-        this.add.text(this.uiX(cx + rightW - 6), this.uiY(row2Y - 1), `${mon.currentHp}/${mon.maxHp}`, {
-          fontSize: fs(9), color: "#ffffff", fontFamily: F, ...STK2,
-        }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
-      );
-      // EXP label + bar (third row)
+      // EXP label + bar (third row), same long span
       const row3Y = cy + Math.round(34 * s);
       const rExpBarH = Math.max(4, Math.round(5 * s));
       this.menuElements.push(
