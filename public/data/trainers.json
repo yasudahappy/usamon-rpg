@@ -17,7 +17,8 @@
         "level": 4
       }
     ],
-    "battleSprite": "trainer-girl"
+    "battleSprite": "trainer-girl",
+    "overworldSprite": "char9"
   },
   {
     "id": "yamaoka",
@@ -41,7 +42,8 @@
         "level": 5
       }
     ],
-    "battleSprite": "trainer-worker"
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "char2"
   },
   {
     "id": "genki",
@@ -61,7 +63,8 @@
         "level": 6
       }
     ],
-    "battleSprite": "trainer-redcap"
+    "battleSprite": "trainer-redcap",
+    "overworldSprite": "char7"
   },
   {
     "id": "kagen",
@@ -81,7 +84,8 @@
         "level": 6
       }
     ],
-    "battleSprite": "trainer-hoodie"
+    "battleSprite": "trainer-hoodie",
+    "overworldSprite": "char4"
   },
   {
     "id": "ryuma",
@@ -109,6 +113,7 @@
         "level": 10
       }
     ],
-    "battleSprite": "trainer-armor"
+    "battleSprite": "trainer-armor",
+    "overworldSprite": "char8"
   }
 ]

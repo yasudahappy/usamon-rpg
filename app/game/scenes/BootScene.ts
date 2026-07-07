@@ -118,7 +118,9 @@ export class BootScene extends Phaser.Scene {
       this.load.image(`cast-char0-${dir}`, `${base}/assets/characters/cast/char0_${dir}.png`);
     });
     [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(c => {
-      this.load.image(`cast-char${c}-down`, `${base}/assets/characters/cast/char${c}_down.png`);
+      ["down", "up", "left", "right"].forEach(dir => {
+        this.load.image(`cast-char${c}-${dir}`, `${base}/assets/characters/cast/char${c}_${dir}.png`);
+      });
     });
   }
 

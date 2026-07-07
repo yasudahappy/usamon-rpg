@@ -468,11 +468,18 @@ export class MapScene extends Phaser.Scene {
       // Skip defeated trainers
       if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
 
+      // Use the trainer's hand-drawn NPC sprite (facing their set direction);
+      // fall back to the old red-tinted marker only if that texture is missing.
+      const owKey = (trainer as TrainerData & { overworldSprite?: string }).overworldSprite;
+      const dir = trainer.direction || "down";
+      const castKey = owKey ? `cast-${owKey}-${dir}` : "";
+      const useCast = !!castKey && this.textures.exists(castKey);
       const sprite = this.add.image(
         trainer.x * this.tileSize + this.tileSize / 2,
         trainer.y * this.tileSize + this.tileSize / 2,
-        "player-frame-0"
-      ).setDepth(9).setTint(0xff6644);
+        useCast ? castKey : "player-frame-0"
+      ).setDepth(9);
+      if (!useCast) sprite.setTint(0xff6644);
       this.trainerSprites.set(trainer.id, sprite);
     }
   }
