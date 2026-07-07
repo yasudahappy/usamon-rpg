@@ -99,6 +99,11 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-medical", `${base}/assets/buildings/sprites/medical_center.png`);
     this.load.image("bldg-farm", `${base}/assets/buildings/sprites/farm_dome.png`);
 
+    // Trainer battle portraits (hand-drawn, background removed)
+    ["suit", "casual", "peace", "hoodie"].forEach(t => {
+      this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
+    });
+
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
 
