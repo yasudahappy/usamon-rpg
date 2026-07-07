@@ -2854,5 +2854,70 @@
       "targetX": 28,
       "targetY": 13
     }
+  ],
+  "buildings": [
+    {
+      "sprite": "bldg-gym",
+      "x": 15,
+      "y": 5,
+      "width": 7,
+      "height": 5
+    },
+    {
+      "sprite": "bldg-medical",
+      "x": 24,
+      "y": 6,
+      "width": 7,
+      "height": 4
+    },
+    {
+      "sprite": "bldg-planet-shop",
+      "x": 5,
+      "y": 22,
+      "width": 5,
+      "height": 4
+    },
+    {
+      "sprite": "bldg-recovery-pod",
+      "x": 5,
+      "y": 13,
+      "width": 5,
+      "height": 4
+    },
+    {
+      "sprite": "bldg-house-dome",
+      "x": 10,
+      "y": 28,
+      "width": 3,
+      "height": 3
+    },
+    {
+      "sprite": "bldg-house-dome",
+      "x": 15,
+      "y": 29,
+      "width": 3,
+      "height": 3
+    },
+    {
+      "sprite": "bldg-house-dome",
+      "x": 20,
+      "y": 28,
+      "width": 3,
+      "height": 3
+    },
+    {
+      "sprite": "bldg-house-dome",
+      "x": 25,
+      "y": 29,
+      "width": 3,
+      "height": 3
+    },
+    {
+      "sprite": "bldg-farm",
+      "x": 26,
+      "y": 13,
+      "width": 7,
+      "height": 4
+    }
   ]
 }
