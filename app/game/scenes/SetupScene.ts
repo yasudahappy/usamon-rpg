@@ -512,8 +512,8 @@ export class SetupScene extends Phaser.Scene {
     // Transition to game
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
-      // Story starts in the player's own home (序章).
-      this.scene.start("MapScene", { mapKey: "player_home" });
+      // Story starts in the player's own home with the wake-up cutscene (序章).
+      this.scene.start("MapScene", { mapKey: "player_home", intro: true });
     });
   }
 

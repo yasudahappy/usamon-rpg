@@ -15,6 +15,7 @@ interface SceneData {
   playerState?: PlayerState;
   playerInstance?: MonsterInstance; // legacy
   trainerDefeated?: string;
+  intro?: boolean; // play the wake-up prologue cutscene
 }
 
 export class MapScene extends Phaser.Scene {
@@ -23,6 +24,8 @@ export class MapScene extends Phaser.Scene {
   private tileSize!: number;
   private isMoving = false;
   private isWarping = false;
+  private inCutscene = false;
+  private introCutscene = false;
   private moveQueue: Direction | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -142,6 +145,8 @@ export class MapScene extends Phaser.Scene {
     this.animTimer = 0;
     this.startingBattle = false;
     this.trainerApproaching = false;
+    this.inCutscene = false;
+    this.introCutscene = !!data.intro;
     this.kinoshitaSprite = undefined;
     this.nurseSprite = undefined;
     this.shopkeeperSprite = undefined;
@@ -229,6 +234,11 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey.startsWith("house_")) {
       this.placeHomeDecor(false);
       this.placeResidentNpc();
+    }
+
+    // Prologue: wake-up cutscene in the player's home
+    if (this.introCutscene && this.currentMapKey === "player_home") {
+      this.playIntroCutscene();
     }
   }
 
@@ -583,8 +593,10 @@ export class MapScene extends Phaser.Scene {
     );
 
     if (warp) {
-      // Block exit if player has no almon
-      if (!this.playerState || this.playerState.party.length === 0) {
+      // Block ONLY entering a wild route with no almon (town/home/base transitions are fine).
+      const WILD_MAPS = ["sand_route_1"];
+      if (WILD_MAPS.includes(warp.targetMap) &&
+          (!this.playerState || this.playerState.party.length === 0)) {
         this.showDialog([
           "まだ アルモンを もっていないぞ！",
           "外は 野生のアルモンだらけだ。",
@@ -724,6 +736,9 @@ export class MapScene extends Phaser.Scene {
       if (gpA) this.advanceDialog();
       return;
     }
+
+    // --- Cutscene: block player control (movement is scripted); dialog above still advances ---
+    if (this.inCutscene) return;
 
     // --- Shop ---
     if (this.shopOpen) {
@@ -1963,6 +1978,83 @@ export class MapScene extends Phaser.Scene {
       "わたしは 月面の アルモンの 生態を\n調べているの。",
       "しんかする アルモンも いるのよ。\n育てるのが 楽しみね！",
     ]);
+  }
+
+  // ========== PROLOGUE CUTSCENE (wake up at home) ==========
+  private setPlayerFacing(dir: Direction): void {
+    this.facingDirection = dir;
+    const pk = `player-${dir}-0`;
+    const ck = `cast-char0-${dir}`;
+    if (this.textures.exists(pk)) this.player.setTexture(pk);
+    else if (this.textures.exists(ck)) this.player.setTexture(ck);
+  }
+
+  /** Floating "!" / "Zzz" emote above the player's head. Returns objects to destroy. */
+  private showEmote(kind: "!" | "zzz"): Phaser.GameObjects.GameObject[] {
+    const ts = this.tileSize;
+    const x = this.gridX * ts + ts / 2;
+    const y = this.gridY * ts - 2;
+    const label = kind === "!" ? "！" : "Ｚｚｚ";
+    const color = kind === "!" ? "#ec4a3a" : "#9fd0ff";
+    const t = this.add.text(x, y, label, {
+      fontSize: kind === "!" ? "22px" : "18px", color, fontFamily: "'DotGothic16', monospace",
+      fontStyle: "bold", stroke: "#ffffff", strokeThickness: 4,
+    }).setOrigin(0.5, 1).setDepth(21).setResolution(Math.max(1, this.cameras.main.zoom));
+    this.tweens.add({ targets: t, y: y - 5, duration: 420, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    return [t];
+  }
+
+  /** Move the player through a fixed tile path (no collision checks), then callback. */
+  private scriptedWalk(path: [number, number][], onDone: () => void): void {
+    const ts = this.tileSize;
+    const step = (i: number) => {
+      if (i >= path.length) { onDone(); return; }
+      const [tx, ty] = path[i];
+      const dir: Direction = tx > this.gridX ? "right" : tx < this.gridX ? "left"
+        : ty > this.gridY ? "down" : "up";
+      this.setPlayerFacing(dir);
+      this.gridX = tx; this.gridY = ty;
+      this.isMoving = true;
+      this.tweens.add({
+        targets: this.player, x: tx * ts + ts / 2, y: ty * ts + ts / 2,
+        duration: 210, ease: "Linear",
+        onComplete: () => { this.isMoving = false; step(i + 1); },
+      });
+    };
+    step(0);
+  }
+
+  private playIntroCutscene(): void {
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    // Start the player in bed (top-left) fast asleep.
+    this.gridX = 1; this.gridY = 4;
+    this.player.setPosition(1 * ts + ts / 2, 4 * ts + ts / 2);
+    this.setPlayerFacing("down");
+    let emote = this.showEmote("zzz");
+
+    this.time.delayedCall(1300, () => {
+      this.showDialog([
+        "「……ん……ぐぅ……」",
+        "ちょっと！ まだ 寝てるの！？ 起きなさい！",
+        "今日から 月面探査が 始まるんでしょ？\n遅刻しないで 行きなさいね！",
+      ], () => {
+        emote.forEach(o => o.destroy());
+        emote = this.showEmote("!");           // startled
+        this.time.delayedCall(650, () => {
+          this.showDialog([
+            "（しまった…！ もう 集合時間を\nすぎているじゃないか！）",
+            "「いけない、行ってきます！」",
+          ], () => {
+            emote.forEach(o => o.destroy());
+            // auto-walk out of the house
+            this.scriptedWalk([[2, 4], [2, 5], [2, 6], [3, 6], [4, 6], [4, 7]], () => {
+              this.checkWarp();   // (4,7) is the door → warp to クレセントタウン
+            });
+          });
+        });
+      });
+    });
   }
 
   // ---- Resident NPC (house interiors) — talk only ----
