@@ -1383,7 +1383,7 @@ export class MapScene extends Phaser.Scene {
     const party = this.playerState?.party.length || 0;
 
     const title = this.add.text(this.uiX(W/2), this.uiY(30), "プレイヤー情報", {
-      fontSize: "22px", color: "#66aaff", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(title);
 
     const lines = [
@@ -1394,14 +1394,14 @@ export class MapScene extends Phaser.Scene {
     ];
     lines.forEach((line, i) => {
       const t = this.add.text(this.uiX(60), this.uiY(80 + i * 44), line, {
-        fontSize: "18px", color: "#ccddee", fontFamily: "'DotGothic16', monospace",
+        fontSize: `${this.uiS(15)}px`, color: "#ccddee", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setScrollFactor(0).setDepth(201);
       this.menuElements.push(t);
     });
 
     const hint = this.add.text(this.uiX(W/2), this.uiY(H - 30), "Bボタンでもどる", {
-      fontSize: "13px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
@@ -1426,13 +1426,13 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(panel);
 
     const msg = this.add.text(this.uiX(W/2), this.uiY(H/2 - 30), "レポートに きろくしますか？", {
-      fontSize: "20px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      fontSize: `${this.uiS(17)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(msg);
 
     const hint = this.add.text(this.uiX(W/2), this.uiY(H/2 + 30), "Aボタン: はい  /  Bボタン: いいえ", {
-      fontSize: "16px", color: "#88aacc", fontFamily: "'DotGothic16', monospace",
+      fontSize: `${this.uiS(13)}px`, color: "#88aacc", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(hint);
@@ -1460,7 +1460,7 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(bg);
 
     const msg = this.add.text(this.uiX(W/2), this.uiY(H/2), "レポートに きろくしました！", {
-      fontSize: "22px", color: "#44cc88", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      fontSize: `${this.uiS(18)}px`, color: "#44cc88", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(msg);
     this.applyTextResolution(this.menuElements);
 
@@ -1482,17 +1482,17 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(bg);
 
     const t = this.add.text(this.uiX(W/2), this.uiY(H/2 - 20), title, {
-      fontSize: "24px", color: "#66aaff", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: "'DotGothic16', monospace", fontStyle: "bold", stroke: "#000000", strokeThickness: 3 }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(t);
 
     const sub = this.add.text(this.uiX(W/2), this.uiY(H/2 + 20), "― じゅんびちゅう ―", {
-      fontSize: "16px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(sub);
 
     const hint = this.add.text(this.uiX(W/2), this.uiY(H - 30), "Bボタンでもどる", {
-      fontSize: "13px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
