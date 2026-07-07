@@ -184,6 +184,14 @@ export class MapScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Clear any transient touch/gamepad state that could linger across a scene
+    // transition (e.g. a D-pad press that never received its touchend during
+    // the intro→town warp), which would otherwise block/steal fresh input.
+    if (typeof window !== "undefined" && (window as unknown as { __gamepad?: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad) {
+      const gp = (window as unknown as { __gamepad: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
+      gp.dpad = null; gp.aJust = false; gp.bJust = false; gp.menuJust = false;
+    }
+
     this.mapData = this.cache.json.get(
       `map-${this.currentMapKey}`
     ) as MapData;
