@@ -222,15 +222,15 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  // Sand tile IDs that should animate
-  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36];
-  // Sparkle frame mapping: sand tile -> [sparkle frame A, sparkle frame B]
-  // Sparkle tiles: A=41-48, B=49-56 (8 variants each)
+  // Animated tile base IDs (sand sparkle + farm crops). 70 = farm crop bed.
+  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70];
+  // Base tile -> [frame A, frame B] cycled every 800ms (base -> A -> B).
+  // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72.
   private static SPARKLE_MAP: Record<number, [number, number]> = {
     5: [41, 49], 6: [42, 50], 7: [43, 51], 8: [44, 52],
     9: [45, 53], 10: [46, 54], 11: [47, 55], 12: [48, 56],
     32: [41, 49], 33: [42, 50], 34: [43, 51], 35: [44, 52],
-    36: [45, 53],
+    36: [45, 53], 70: [71, 72],
   };
 
   private drawMap(): void {

@@ -97,6 +97,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-house-dome", `${base}/assets/buildings/sprites/house_dome.png`);
     this.load.image("bldg-gym", `${base}/assets/buildings/sprites/gym.png`);
     this.load.image("bldg-medical", `${base}/assets/buildings/sprites/medical_center.png`);
+    this.load.image("bldg-farm", `${base}/assets/buildings/sprites/farm_dome.png`);
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
@@ -468,6 +469,37 @@ export class BootScene extends Phaser.Scene {
         ctx.fillStyle = "#eef2f8";
         if (!vertical) ctx.fillRect(ts / 2 - 3, 3, 6, 3);
         else ctx.fillRect(3, ts / 2 - 3, 3, 6);
+      } else if (id === "70" || id === "71" || id === "72") {
+        // Farm crop bed — 3-frame animation (70=base,71=A,72=B) cycled by the
+        // MapScene tile animator. Grow-light pulses + crops sway for "movement".
+        const phase = id === "70" ? 0 : id === "71" ? 1 : 2;
+        // tilled soil base with furrows
+        ctx.fillStyle = "#5b4632"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#493627";
+        for (let yy = 4; yy < ts; yy += 8) ctx.fillRect(0, yy, ts, 3);   // furrow shadow
+        ctx.fillStyle = "#6d5640";
+        for (let yy = 1; yy < ts; yy += 8) ctx.fillRect(0, yy, ts, 1);   // furrow highlight
+        ctx.fillStyle = "#3d2c1e";                                        // scattered soil grains
+        for (const [gx2, gy2] of [[5, 6], [13, 14], [24, 9], [9, 22], [27, 24], [19, 27]] as [number, number][]) ctx.fillRect(gx2, gy2, 1, 1);
+        // grow-light glow (pulses brighter across frames)
+        const glow = [0.10, 0.20, 0.30][phase];
+        const g = ctx.createRadialGradient(16, 13, 1, 16, 13, 20);
+        g.addColorStop(0, `rgba(150,255,205,${glow})`);
+        g.addColorStop(1, "rgba(150,255,205,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, ts, ts);
+        // crops (lean sways with the frame)
+        const lean = [0, -2, 2][phase];
+        const plant = (bx: number, by: number, h: number, leaf: string) => {
+          ctx.strokeStyle = "#3d7a35"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + lean, by - h); ctx.stroke();
+          ctx.fillStyle = leaf;
+          ctx.beginPath(); ctx.ellipse(bx + lean - 3, by - h + 4, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(bx + lean + 3, by - h + 6, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(bx + lean, by - h - 1, 2.5, 3.5, 0, 0, Math.PI * 2); ctx.fill();  // bud
+        };
+        plant(8, 27, 12, "#5fae4a");
+        plant(17, 29, 16, "#6cc255");
+        plant(26, 27, 11, "#57a244");
       }
 
       this.textures.addCanvas(key, canvas);

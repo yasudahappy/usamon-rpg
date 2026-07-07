@@ -1273,15 +1273,15 @@
       "x": 0,
       "y": 16,
       "targetMap": "crater_city",
-      "targetX": 12,
-      "targetY": 16
+      "targetX": 18,
+      "targetY": 10
     },
     {
       "x": 0,
       "y": 17,
       "targetMap": "crater_city",
-      "targetX": 12,
-      "targetY": 16
+      "targetX": 18,
+      "targetY": 10
     }
   ]
 }

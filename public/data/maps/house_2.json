@@ -228,15 +228,15 @@
       "x": 4,
       "y": 7,
       "targetMap": "crater_city",
-      "targetX": 15,
-      "targetY": 21
+      "targetX": 16,
+      "targetY": 32
     },
     {
       "x": 5,
       "y": 7,
       "targetMap": "crater_city",
-      "targetX": 15,
-      "targetY": 21
+      "targetX": 16,
+      "targetY": 32
     }
   ]
 }
