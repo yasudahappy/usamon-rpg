@@ -93,6 +93,11 @@ export class MapScene extends Phaser.Scene {
   private researcher2NpcX = 6;
   private researcher2NpcY = 3;
 
+  // Resident NPC (house interiors) — talk-only
+  private residentSprite?: Phaser.GameObjects.Image;
+  private residentNpcX = 3;
+  private residentNpcY = 3;
+
   // Shop system
   private shopOpen = false;
   private shopSelectedIndex = 0;
@@ -208,6 +213,12 @@ export class MapScene extends Phaser.Scene {
     // Medical Center interior — two researchers to talk to
     if (this.currentMapKey === "medical_center") {
       this.placeMedicalNpcs();
+    }
+
+    // House interiors — cozy home + a resident to talk to
+    if (this.currentMapKey === "house_1" || this.currentMapKey === "house_2") {
+      this.placeHomeDecor(false);
+      this.placeResidentNpc();
     }
   }
 
@@ -617,6 +628,7 @@ export class MapScene extends Phaser.Scene {
     if (this.momSprite && x === this.momNpcX && y === this.momNpcY) return true;
     if (this.researcher1Sprite && x === this.researcher1NpcX && y === this.researcher1NpcY) return true;
     if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
+    if (this.residentSprite && x === this.residentNpcX && y === this.residentNpcY) return true;
     return false;
   }
 
@@ -1775,6 +1787,10 @@ export class MapScene extends Phaser.Scene {
       this.triggerResearcher2Event();
       return;
     }
+    if (this.residentSprite && fx === this.residentNpcX && fy === this.residentNpcY) {
+      this.triggerResidentEvent();
+      return;
+    }
   }
 
   // ---- Home interiors (player / rival) ----
@@ -1927,6 +1943,32 @@ export class MapScene extends Phaser.Scene {
       "わたしは 月面の アルモンの 生態を\n調べているの。",
       "しんかする アルモンも いるのよ。\n育てるのが 楽しみね！",
     ]);
+  }
+
+  // ---- Resident NPC (house interiors) — talk only ----
+  private placeResidentNpc(): void {
+    const cast = this.currentMapKey === "house_1" ? "cast-char2-down" : "cast-char7-down";
+    this.residentSprite = this.add.image(
+      this.residentNpcX * this.tileSize + this.tileSize / 2,
+      this.residentNpcY * this.tileSize + this.tileSize / 2,
+      this.npcTex(cast, "npc-mom")
+    ).setDepth(9);
+  }
+
+  private triggerResidentEvent(): void {
+    if (this.currentMapKey === "house_1") {
+      this.showDialog([
+        "やあ、クレーターシティへ ようこそ！",
+        "この街は アルモンたちと 一緒に\n暮らしているんだ。",
+        "ジムの リーダーは とても 強いぞ。\n挑むなら 気をつけてな！",
+      ]);
+    } else {
+      this.showDialog([
+        "あら、こんにちは。",
+        "月面の 暮らしにも すっかり\n慣れちゃったわ。",
+        "メディカルセンターの 人たちは\nとても 親切なのよ。",
+      ]);
+    }
   }
 
   // ---- Rival NPC (Moon Town) ----

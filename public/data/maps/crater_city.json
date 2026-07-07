@@ -1459,12 +1459,12 @@
         0,
         0,
         1,
-        1,
+        0,
         1,
         0,
         0,
         1,
-        1,
+        0,
         1,
         0,
         1,
@@ -1768,6 +1768,20 @@
       "x": 5,
       "y": 19,
       "targetMap": "medical_center",
+      "targetX": 5,
+      "targetY": 6
+    },
+    {
+      "x": 10,
+      "y": 20,
+      "targetMap": "house_1",
+      "targetX": 5,
+      "targetY": 6
+    },
+    {
+      "x": 15,
+      "y": 20,
+      "targetMap": "house_2",
       "targetX": 5,
       "targetY": 6
     }
