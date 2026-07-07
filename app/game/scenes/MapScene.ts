@@ -192,6 +192,7 @@ export class MapScene extends Phaser.Scene {
 
     // Place Kinoshita NPC on moonbase
     if (this.currentMapKey === "moonbase") {
+      this.placeMoonbaseDecor();
       this.placeKinoshitaNpc();
       this.placeLabNpcs();
     }
@@ -1999,6 +2000,108 @@ export class MapScene extends Phaser.Scene {
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
+  }
+
+  // ---- Moonbase (博士の研究所) equipment fit-out ----
+  private placeMoonbaseDecor(): void {
+    const ts = this.tileSize;
+    this.genMoonbaseTextures();
+    // Cool tech floor overlay across the main hall (x3-20, y3-15) + central corridor.
+    const fo = this.add.graphics().setDepth(1);
+    fo.fillStyle(0xdfe6ee, 1); fo.fillRect(3 * ts, 3 * ts, 17 * ts, 13 * ts);
+    fo.fillStyle(0xccd5df, 1);                                   // panel seams
+    for (let x = 3; x <= 20; x += 2) fo.fillRect(x * ts, 3 * ts, 2, 13 * ts);
+    for (let y = 3; y <= 15; y += 2) fo.fillRect(3 * ts, y * ts, 17 * ts, 2);
+    fo.fillStyle(0xdfe6ee, 1); fo.fillRect(11 * ts, 16 * ts, 2 * ts, 11 * ts);   // corridor
+    // glowing emblem ring under the central holo-projector
+    const cx = 12 * ts, cy = Math.round(9.7 * ts);
+    fo.fillStyle(0x8fc0ea, 0.45); fo.fillCircle(cx, cy, 52);
+    fo.fillStyle(0xbfe4f7, 0.4); fo.fillCircle(cx, cy, 34);
+    fo.lineStyle(2, 0x6fb0e0, 0.6); fo.strokeCircle(cx, cy, 52);
+
+    // Equipment sprites (sit on the non-walkable equipment tiles).
+    this.add.image(12 * ts, Math.round(9.2 * ts), "mb-holo").setDepth(6);      // centerpiece
+    this.add.image(Math.round(6.5 * ts), Math.round(13.4 * ts), "mb-console").setDepth(6);   // bottom-left cluster
+    this.add.image(Math.round(16.6 * ts), Math.round(13.3 * ts), "mb-tank").setDepth(6);     // bottom-right cluster
+    this.add.image(Math.round(17.7 * ts), Math.round(13.3 * ts), "mb-tank").setDepth(6);
+    this.add.image(Math.round(4.5 * ts), Math.round(20.4 * ts), "mb-console-s").setDepth(6); // lower-left room
+    this.add.image(Math.round(17.5 * ts), Math.round(20.3 * ts), "mb-server").setDepth(6);   // lower-right room
+    this.add.image(Math.round(19.5 * ts), Math.round(21.4 * ts), "mb-console-s").setDepth(6);
+  }
+
+  private genMoonbaseTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false; draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Central holo-projector 128x104: metal base + cyan beam + moon hologram
+    mk("mb-holo", 128, 104, (ctx) => {
+      ctx.fillStyle = "#4a5566"; this.roundRect(ctx, 34, 84, 60, 16, 5); ctx.fill();       // base
+      ctx.fillStyle = "#6b7789"; this.roundRect(ctx, 40, 80, 48, 8, 3); ctx.fill();
+      ctx.fillStyle = "#3a4454"; ctx.fillRect(46, 88, 36, 4);
+      // projection beam (cone)
+      const g = ctx.createLinearGradient(0, 30, 0, 84);
+      g.addColorStop(0, "rgba(120,220,255,0.30)"); g.addColorStop(1, "rgba(120,220,255,0.02)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(52, 82); ctx.lineTo(76, 82); ctx.lineTo(96, 34); ctx.lineTo(32, 34); ctx.closePath(); ctx.fill();
+      // moon hologram sphere
+      const mg = ctx.createRadialGradient(58, 40, 4, 64, 44, 24);
+      mg.addColorStop(0, "#eaf6ff"); mg.addColorStop(1, "#7fb8e6");
+      ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(64, 44, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(90,150,200,0.55)";                                              // craters
+      for (const [dx, dy, r] of [[-8, -6, 4], [6, 2, 5], [-2, 8, 3], [10, -8, 2]] as [number, number, number][]) { ctx.beginPath(); ctx.arc(64 + dx, 44 + dy, r, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = "rgba(150,220,255,0.7)"; ctx.lineWidth = 1.5;                        // orbit ring
+      ctx.beginPath(); ctx.ellipse(64, 44, 30, 10, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#bff0ff"; ctx.beginPath(); ctx.arc(94, 44, 2.5, 0, Math.PI * 2); ctx.fill();
+    });
+    // Almon specimen tank 48x92: glass tube + liquid + specimen + bubbles
+    mk("mb-tank", 48, 92, (ctx) => {
+      ctx.fillStyle = "#3a4454"; this.roundRect(ctx, 6, 82, 36, 10, 4); ctx.fill();          // base
+      ctx.fillStyle = "#525d70"; ctx.fillRect(10, 8, 28, 6);                                  // top cap
+      ctx.fillStyle = "#6b7789"; ctx.fillRect(12, 4, 24, 5);
+      const lg = ctx.createLinearGradient(0, 14, 0, 82);                                      // liquid
+      lg.addColorStop(0, "#7fe0dc"); lg.addColorStop(1, "#3aa6c8");
+      ctx.fillStyle = lg; this.roundRect(ctx, 10, 14, 28, 68, 8); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(13, 18, 4, 60);                  // glass sheen
+      // specimen silhouette (little almon)
+      ctx.fillStyle = "rgba(30,60,80,0.6)"; ctx.beginPath(); ctx.arc(24, 50, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(20, 34, 3, 10); ctx.fillRect(26, 34, 3, 10);                               // ears
+      ctx.fillStyle = "rgba(255,255,255,0.7)";                                                // bubbles
+      for (const [bx, by, r] of [[18, 60, 2], [30, 44, 1.5], [22, 30, 1.5], [28, 66, 2]] as [number, number, number][]) { ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = "#8fb4cc"; ctx.lineWidth = 2; this.roundRect(ctx, 10, 14, 28, 68, 8); ctx.stroke();
+    });
+    // Research console 76x64: desk + angled monitor with data
+    mk("mb-console", 76, 64, (ctx) => {
+      ctx.fillStyle = "#4a5566"; this.roundRect(ctx, 6, 30, 64, 30, 4); ctx.fill();           // desk
+      ctx.fillStyle = "#5c6879"; ctx.fillRect(8, 32, 60, 4);
+      ctx.fillStyle = "#20304a"; this.roundRect(ctx, 12, 6, 52, 28, 4); ctx.fill();           // monitor
+      ctx.fillStyle = "#0e2340"; ctx.fillRect(15, 9, 46, 22);
+      ctx.strokeStyle = "#4fd0e0"; ctx.lineWidth = 1;                                          // data lines
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(18, 13 + i * 5); ctx.lineTo(18 + (10 + i * 7 % 30), 13 + i * 5); ctx.stroke(); }
+      ctx.fillStyle = "#8effa0"; ctx.fillRect(52, 12, 6, 4);
+      ctx.fillStyle = "#2a3a52"; ctx.fillRect(20, 40, 36, 10);                                 // keyboard
+      ctx.fillStyle = "#6fb0e0"; for (let i = 0; i < 6; i++) ctx.fillRect(22 + i * 6, 42, 4, 3);
+    });
+    // Small terminal 40x48
+    mk("mb-console-s", 40, 48, (ctx) => {
+      ctx.fillStyle = "#4a5566"; this.roundRect(ctx, 6, 26, 28, 20, 3); ctx.fill();
+      ctx.fillStyle = "#20304a"; this.roundRect(ctx, 8, 6, 24, 22, 3); ctx.fill();
+      ctx.fillStyle = "#123"; ctx.fillRect(10, 9, 20, 16);
+      ctx.fillStyle = "#4fd0e0"; ctx.fillRect(12, 12, 12, 2); ctx.fillRect(12, 16, 8, 2);
+      ctx.fillStyle = "#ffd86f"; ctx.fillRect(24, 20, 4, 3);
+    });
+    // Server rack 48x66: blinking LEDs
+    mk("mb-server", 48, 66, (ctx) => {
+      ctx.fillStyle = "#2f3846"; this.roundRect(ctx, 6, 4, 36, 58, 4); ctx.fill();
+      ctx.fillStyle = "#3c4757"; ctx.fillRect(9, 7, 30, 54);
+      for (let r = 0; r < 6; r++) {
+        ctx.fillStyle = "#141c28"; ctx.fillRect(11, 10 + r * 8, 26, 6);
+        const cols = ["#8effa0", "#4fd0e0", "#ffd86f", "#ff8f8f"];
+        for (let i = 0; i < 3; i++) { ctx.fillStyle = cols[(r + i) % 4]; ctx.fillRect(13 + i * 5, 12 + r * 8, 3, 2); }
+      }
+      ctx.fillStyle = "#20283440"; ctx.fillRect(6, 60, 36, 3);
+    });
   }
 
   // ---- Lab researcher NPCs (Moonbase / 博士の研究所) — talk only ----
