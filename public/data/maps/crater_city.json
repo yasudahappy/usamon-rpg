@@ -1423,8 +1423,8 @@
         1,
         1,
         1,
-        1,
-        1,
+        0,
+        0,
         1,
         1,
         1,
@@ -1756,6 +1756,20 @@
       "targetMap": "gym_1",
       "targetX": 1,
       "targetY": 16
+    },
+    {
+      "x": 4,
+      "y": 19,
+      "targetMap": "medical_center",
+      "targetX": 5,
+      "targetY": 6
+    },
+    {
+      "x": 5,
+      "y": 19,
+      "targetMap": "medical_center",
+      "targetX": 5,
+      "targetY": 6
     }
   ],
   "buildings": [

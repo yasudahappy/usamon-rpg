@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -105,7 +105,7 @@ export class BootScene extends Phaser.Scene {
     ["down", "up", "left", "right"].forEach(dir => {
       this.load.image(`cast-char0-${dir}`, `${base}/assets/characters/cast/char0_${dir}.png`);
     });
-    [1, 3, 5, 6, 9].forEach(c => {
+    [1, 3, 4, 5, 6, 8, 9].forEach(c => {
       this.load.image(`cast-char${c}-down`, `${base}/assets/characters/cast/char${c}_down.png`);
     });
   }
@@ -431,7 +431,19 @@ export class BootScene extends Phaser.Scene {
       } else if (id === "63" || id === "64") {
         // Fence (railing) that tiles seamlessly along the town border.
         //  63 = horizontal run (top/bottom edges), 64 = vertical run (left/right).
-        // Base ground already filled from tile.color above; draw metal railing.
+        // Ground base = the town's plaza floor (tileset frame 40) so the fence
+        // sits on the exact same ground colour as the walkable town tiles.
+        if (hasSpritesheet) {
+          const gf = this.textures.getFrame("moon-tileset", 40);
+          if (gf) {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(
+              gf.source.image as HTMLImageElement,
+              gf.cutX, gf.cutY, gf.cutWidth, gf.cutHeight,
+              0, 0, ts, ts
+            );
+          }
+        }
         const vertical = id === "64";
         // helper drawing a "horizontal" fence, rotated when vertical
         const bar = (a: number, b: number, len: number, thick: number, col: string) => {

@@ -85,6 +85,14 @@ export class MapScene extends Phaser.Scene {
   private shopkeeperNpcX = 2;
   private shopkeeperNpcY = 2;
 
+  // Researcher NPCs (Medical Center) — talk-only
+  private researcher1Sprite?: Phaser.GameObjects.Image;
+  private researcher1NpcX = 3;
+  private researcher1NpcY = 3;
+  private researcher2Sprite?: Phaser.GameObjects.Image;
+  private researcher2NpcX = 6;
+  private researcher2NpcY = 3;
+
   // Shop system
   private shopOpen = false;
   private shopSelectedIndex = 0;
@@ -195,6 +203,11 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "player_home" || this.currentMapKey === "rival_home") {
       this.placeHomeDecor(this.currentMapKey === "player_home");
       this.placeMomNpc();
+    }
+
+    // Medical Center interior — two researchers to talk to
+    if (this.currentMapKey === "medical_center") {
+      this.placeMedicalNpcs();
     }
   }
 
@@ -602,6 +615,8 @@ export class MapScene extends Phaser.Scene {
     if (this.shopkeeperSprite && x === this.shopkeeperNpcX && y === this.shopkeeperNpcY) return true;
     if (this.rivalSprite && x === this.rivalNpcX && y === this.rivalNpcY) return true;
     if (this.momSprite && x === this.momNpcX && y === this.momNpcY) return true;
+    if (this.researcher1Sprite && x === this.researcher1NpcX && y === this.researcher1NpcY) return true;
+    if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
     return false;
   }
 
@@ -1752,6 +1767,14 @@ export class MapScene extends Phaser.Scene {
       this.triggerMomEvent();
       return;
     }
+    if (this.researcher1Sprite && fx === this.researcher1NpcX && fy === this.researcher1NpcY) {
+      this.triggerResearcher1Event();
+      return;
+    }
+    if (this.researcher2Sprite && fx === this.researcher2NpcX && fy === this.researcher2NpcY) {
+      this.triggerResearcher2Event();
+      return;
+    }
   }
 
   // ---- Home interiors (player / rival) ----
@@ -1875,6 +1898,35 @@ export class MapScene extends Phaser.Scene {
         "うちの子なら 出かけちゃったわよ。\nまた 勝負したいって 言ってたわ。",
       ]);
     }
+  }
+
+  // ---- Researcher NPCs (Medical Center) — talk only ----
+  private placeMedicalNpcs(): void {
+    this.researcher1Sprite = this.add.image(
+      this.researcher1NpcX * this.tileSize + this.tileSize / 2,
+      this.researcher1NpcY * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char4-down", "npc-kinoshita")
+    ).setDepth(9);
+    this.researcher2Sprite = this.add.image(
+      this.researcher2NpcX * this.tileSize + this.tileSize / 2,
+      this.researcher2NpcY * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char8-down", "npc-kinoshita")
+    ).setDepth(9);
+  }
+
+  private triggerResearcher1Event(): void {
+    this.showDialog([
+      "ようこそ メディカルセンターへ。",
+      "ここでは アルモンの けんこうを\n研究しているんだ。",
+      "ケガをした アルモンは リカバリーポッドで\n手当てしてもらえるよ。",
+    ]);
+  }
+
+  private triggerResearcher2Event(): void {
+    this.showDialog([
+      "わたしは 月面の アルモンの 生態を\n調べているの。",
+      "しんかする アルモンも いるのよ。\n育てるのが 楽しみね！",
+    ]);
   }
 
   // ---- Rival NPC (Moon Town) ----
