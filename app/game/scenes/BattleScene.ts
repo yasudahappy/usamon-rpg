@@ -118,6 +118,7 @@ export class BattleScene extends Phaser.Scene {
   private trainerPortrait?: Phaser.GameObjects.Image;
   private playerBackPortrait?: Phaser.GameObjects.Image;
   private enemyInfoObjects: Phaser.GameObjects.GameObject[] = [];
+  private playerInfoObjects: Phaser.GameObjects.GameObject[] = [];
   private fleeAttempts = 0;
 
   constructor() {
@@ -284,6 +285,10 @@ export class BattleScene extends Phaser.Scene {
     this.drawBackground();
     this.drawMonsters();
     this.drawHpBars();
+    // While the hero's back illustration is up, hide the player's status panel too.
+    if (this.playerBackPortrait?.visible) {
+      this.playerInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(false));
+    }
     this.drawMessageWindow();
     this.drawCommandWindow();
     this.setupInput();
@@ -332,7 +337,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.trainerPortrait.setTexture(key);
     const h = this.trainerPortrait.height || 32;
-    this.trainerPortrait.setScale((150 * this.sy) / h);   // ~150px tall
+    this.trainerPortrait.setScale((122 * this.sy) / h);   // trainer portrait size
     this.trainerPortrait.setVisible(true).setAlpha(1).setPosition(720, y);
     // hide the enemy monster's status panel while the trainer stands in
     this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(false));
@@ -504,7 +509,7 @@ export class BattleScene extends Phaser.Scene {
       this.playerBackPortrait = this.add.image(this.PPLAT_X, y, "player-back").setOrigin(0.5, 1).setDepth(6);
     }
     const h = this.playerBackPortrait.height || 32;
-    this.playerBackPortrait.setScale((170 * this.sy) / h);
+    this.playerBackPortrait.setScale((148 * this.sy) / h);
     this.playerBackPortrait.setVisible(true).setAlpha(1).setPosition(this.PPLAT_X, y);
   }
 
@@ -534,6 +539,7 @@ export class BattleScene extends Phaser.Scene {
           onComplete: () => flash.destroy() });
         this.tweens.add({ targets: bp, x: bp.x - 130 * sy, alpha: 0, duration: 300, ease: "Cubic.in",
           onComplete: () => bp.setVisible(false) });
+        this.playerInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
         const s = this.playerSprite.scaleX;
         this.playerSprite.setVisible(true).setAlpha(1).setScale(s * 0.1);
         this.tweens.add({ targets: this.playerSprite, scaleX: s, scaleY: s, duration: 250,
@@ -615,7 +621,7 @@ export class BattleScene extends Phaser.Scene {
 
     // ===== Player status panel (lower-right) =====
     const pb = this.playerBoxRect();
-    this.drawStatusPanel(pb);
+    const pPanel = this.drawStatusPanel(pb);
     this.playerNameText = this.add
       .text(pb.x + 16, pb.y + Math.round(9 * this.sy), `${this.playerMon.name}`, {
         fontSize: "20px", color: NAME, fontFamily: F, fontStyle: "bold",
@@ -624,7 +630,7 @@ export class BattleScene extends Phaser.Scene {
       fontSize: "18px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
     const pg = this.hpGeom(true);
-    this.drawTag(pb.x + 16, pg.y, "HP", HPTAG);
+    const pTag = this.drawTag(pb.x + 16, pg.y, "HP", HPTAG);
     this.playerHpBar = this.add.graphics().setDepth(11);
     this.drawHpBarGraphic(this.playerHpBar, pg.x, pg.y - pg.h / 2, pg.w, pg.h, this.playerMon.currentHp / this.playerMon.maxHp);
     this.playerHpText = this.add
@@ -633,9 +639,12 @@ export class BattleScene extends Phaser.Scene {
       }).setOrigin(1, 0).setDepth(11);
     // EXP bar (player only)
     const xg = this.expGeom();
-    this.drawTag(pb.x + 16, xg.y, "EXP", EXPTAG);
+    const xTag = this.drawTag(pb.x + 16, xg.y, "EXP", EXPTAG);
     this.playerExpBar = this.add.graphics().setDepth(11);
     this.refreshPlayerExp();
+    // Group so the panel can be hidden until the hero sends out the almon.
+    this.playerInfoObjects = [pPanel, this.playerNameText, this.playerLvText, pTag,
+      this.playerHpBar, this.playerHpText, xTag, this.playerExpBar];
   }
 
   // Draw a capsule HP bar: outer dark border, light track, colored fill.
