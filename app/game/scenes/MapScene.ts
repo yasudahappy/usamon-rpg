@@ -2834,7 +2834,7 @@ export class MapScene extends Phaser.Scene {
     const W = this.scale.width;
     const H = this.scale.height;
     const margin = 20;
-    const boxH = 130;
+    const boxH = 166;
     const boxY = H - boxH - 16;
 
     // Box background
