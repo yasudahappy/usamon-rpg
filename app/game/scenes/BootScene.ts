@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [

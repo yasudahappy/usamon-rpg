@@ -2538,7 +2538,7 @@
         0,
         0,
         1,
-        1,
+        0,
         1,
         0,
         0,
@@ -2581,7 +2581,7 @@
         0,
         0,
         1,
-        1,
+        0,
         1,
         0,
         1,
@@ -2837,6 +2837,20 @@
       "x": 16,
       "y": 31,
       "targetMap": "house_2",
+      "targetX": 5,
+      "targetY": 6
+    },
+    {
+      "x": 21,
+      "y": 30,
+      "targetMap": "house_3",
+      "targetX": 5,
+      "targetY": 6
+    },
+    {
+      "x": 26,
+      "y": 31,
+      "targetMap": "house_4",
       "targetX": 5,
       "targetY": 6
     },

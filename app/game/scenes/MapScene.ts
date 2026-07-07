@@ -98,6 +98,14 @@ export class MapScene extends Phaser.Scene {
   private residentNpcX = 3;
   private residentNpcY = 3;
 
+  // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
+  private labRes1Sprite?: Phaser.GameObjects.Image;
+  private labRes1X = 6;
+  private labRes1Y = 8;
+  private labRes2Sprite?: Phaser.GameObjects.Image;
+  private labRes2X = 17;
+  private labRes2Y = 8;
+
   // Shop system
   private shopOpen = false;
   private shopSelectedIndex = 0;
@@ -185,6 +193,7 @@ export class MapScene extends Phaser.Scene {
     // Place Kinoshita NPC on moonbase
     if (this.currentMapKey === "moonbase") {
       this.placeKinoshitaNpc();
+      this.placeLabNpcs();
     }
 
     // Place Nurse NPC in recovery pod
@@ -216,7 +225,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     // House interiors — cozy home + a resident to talk to
-    if (this.currentMapKey === "house_1" || this.currentMapKey === "house_2") {
+    if (this.currentMapKey.startsWith("house_")) {
       this.placeHomeDecor(false);
       this.placeResidentNpc();
     }
@@ -629,6 +638,8 @@ export class MapScene extends Phaser.Scene {
     if (this.researcher1Sprite && x === this.researcher1NpcX && y === this.researcher1NpcY) return true;
     if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
     if (this.residentSprite && x === this.residentNpcX && y === this.residentNpcY) return true;
+    if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
+    if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
     return false;
   }
 
@@ -1791,6 +1802,14 @@ export class MapScene extends Phaser.Scene {
       this.triggerResidentEvent();
       return;
     }
+    if (this.labRes1Sprite && fx === this.labRes1X && fy === this.labRes1Y) {
+      this.triggerLabRes1Event();
+      return;
+    }
+    if (this.labRes2Sprite && fx === this.labRes2X && fy === this.labRes2Y) {
+      this.triggerLabRes2Event();
+      return;
+    }
   }
 
   // ---- Home interiors (player / rival) ----
@@ -1947,28 +1966,69 @@ export class MapScene extends Phaser.Scene {
 
   // ---- Resident NPC (house interiors) — talk only ----
   private placeResidentNpc(): void {
-    const cast = this.currentMapKey === "house_1" ? "cast-char2-down" : "cast-char7-down";
+    const cast: Record<string, string> = {
+      house_1: "cast-char2-down", house_2: "cast-char7-down",
+      house_3: "cast-char4-down", house_4: "cast-char8-down",
+    };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
       this.residentNpcY * this.tileSize + this.tileSize / 2,
-      this.npcTex(cast, "npc-mom")
+      this.npcTex(cast[this.currentMapKey] ?? "cast-char2-down", "npc-mom")
     ).setDepth(9);
   }
 
   private triggerResidentEvent(): void {
-    if (this.currentMapKey === "house_1") {
-      this.showDialog([
+    const lines: Record<string, string[]> = {
+      house_1: [
         "やあ、クレーターシティへ ようこそ！",
         "この街は アルモンたちと 一緒に\n暮らしているんだ。",
         "ジムの リーダーは とても 強いぞ。\n挑むなら 気をつけてな！",
-      ]);
-    } else {
-      this.showDialog([
+      ],
+      house_2: [
         "あら、こんにちは。",
         "月面の 暮らしにも すっかり\n慣れちゃったわ。",
         "メディカルセンターの 人たちは\nとても 親切なのよ。",
-      ]);
-    }
+      ],
+      house_3: [
+        "この街は 静かの海に あるんだ。",
+        "アポロ11号が 人類で はじめて\n降り立った 場所なんだよ。",
+      ],
+      house_4: [
+        "農園ドームでは 月で 食べものを\n育てているの。",
+        "水も 空気も 自分たちで つくる。\n月で 暮らすって そういうことね。",
+      ],
+    };
+    this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
+  }
+
+  // ---- Lab researcher NPCs (Moonbase / 博士の研究所) — talk only ----
+  private placeLabNpcs(): void {
+    this.labRes1Sprite = this.add.image(
+      this.labRes1X * this.tileSize + this.tileSize / 2,
+      this.labRes1Y * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char4-down", "npc-kinoshita")
+    ).setDepth(9);
+    this.labRes2Sprite = this.add.image(
+      this.labRes2X * this.tileSize + this.tileSize / 2,
+      this.labRes2Y * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char8-down", "npc-kinoshita")
+    ).setDepth(9);
+  }
+
+  private triggerLabRes1Event(): void {
+    this.showDialog([
+      "ぼくは アルモンの 生態を\n記録している 研究員さ。",
+      "ここは ムーンベース——\n月面開発プロジェクトの 拠点だよ。",
+      "きみの 冒険の データも\n大事な 研究資料に なるんだ。",
+    ]);
+  }
+
+  private triggerLabRes2Event(): void {
+    this.showDialog([
+      "博士は おおらかな 人でしょう？",
+      "でも アルモン研究にかけては\n月いちの 天才なのよ。",
+      "困ったら 博士に 相談してみてね。",
+    ]);
   }
 
   // ---- Rival NPC (Moon Town) ----
