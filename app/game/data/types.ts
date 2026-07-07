@@ -80,4 +80,5 @@ export interface TrainerData {
   dialogWin: string;
   dialogLose: string;
   party: { id: string; level: number }[];
+  battleSprite?: string;   // texture key for the battle intro/outro portrait
 }

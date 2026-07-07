@@ -16,7 +16,8 @@
         "id": "mochichi",
         "level": 4
       }
-    ]
+    ],
+    "battleSprite": "cast-char1-down"
   },
   {
     "id": "yamaoka",
@@ -39,7 +40,8 @@
         "id": "rairai",
         "level": 5
       }
-    ]
+    ],
+    "battleSprite": "cast-char4-down"
   },
   {
     "id": "genki",
@@ -58,7 +60,8 @@
         "id": "regonyas",
         "level": 6
       }
-    ]
+    ],
+    "battleSprite": "cast-char2-down"
   },
   {
     "id": "ryuma",
@@ -85,6 +88,7 @@
         "id": "lobsner",
         "level": 10
       }
-    ]
+    ],
+    "battleSprite": "cast-char8-down"
   }
 ]

@@ -115,6 +115,8 @@ export class BattleScene extends Phaser.Scene {
   private isWild = true;
   private trainerData: TrainerData | null = null;
   private trainerPartyIndex = 0;
+  private trainerPortrait?: Phaser.GameObjects.Image;
+  private enemyInfoObjects: Phaser.GameObjects.GameObject[] = [];
   private fleeAttempts = 0;
 
   constructor() {
@@ -150,6 +152,7 @@ export class BattleScene extends Phaser.Scene {
     this.isWild = data.isWild !== false;
     this.trainerData = data.trainerData || null;
     this.trainerPartyIndex = 0;
+    this.trainerPortrait = undefined;   // display object is recreated per battle
 
     // Load JSON data
     this.allMonsters = this.cache.json.get("monsters") as MonsterData[];
@@ -287,20 +290,63 @@ export class BattleScene extends Phaser.Scene {
 
     this.time.delayedCall(600, () => {
       const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
-      const introMsgs: string[] = [];
+      const toCommand = () => { this.phase = "command"; this.showCommandWindow(); };
       if (this.trainerData) {
-        introMsgs.push(`${this.trainerData.name}が しょうぶを しかけてきた！`);
-        introMsgs.push(this.trainerData.dialogBefore);
-        introMsgs.push(`${this.trainerData.name}は ${enemyData.name}を くりだした！`);
+        const t = this.trainerData;
+        // Show the trainer portrait first (RSE-style), then send out the monster.
+        this.enemySprite.setVisible(false);
+        this.showTrainerPortrait(() => {
+          this.showMessages(
+            [`${t.name}が しょうぶを しかけてきた！`, t.dialogBefore],
+            () => this.hideTrainerPortrait(() => {
+              this.enemySprite.setVisible(true);
+              this.showMessages(
+                [`${t.name}は ${enemyData.name}を くりだした！`, `ゆけっ！ ${this.playerMon.name}！`],
+                toCommand
+              );
+            })
+          );
+        });
       } else {
-        introMsgs.push(`やせいの ${enemyData.name} が あらわれた！`);
+        this.showMessages(
+          [`やせいの ${enemyData.name} が あらわれた！`, `ゆけっ！ ${this.playerMon.name}！`],
+          toCommand
+        );
       }
-      introMsgs.push(`ゆけっ！ ${this.playerMon.name}！`);
-      this.showMessages(introMsgs, () => {
-        this.phase = "command";
-        this.showCommandWindow();
-      });
     });
+  }
+
+  // ---- Trainer battle portrait (intro / victory) ----
+  private trainerPortraitKey(): string {
+    const k = this.trainerData?.battleSprite;
+    if (k && this.textures.exists(k)) return k;
+    return this.textures.exists("cast-char0-down") ? "cast-char0-down" : "player-frame-0";
+  }
+
+  private showTrainerPortrait(onDone?: () => void): void {
+    const y = Math.round((this.EPLAT_Y + 8) * this.sy);
+    const key = this.trainerPortraitKey();
+    if (!this.trainerPortrait) {
+      this.trainerPortrait = this.add.image(720, y, key).setOrigin(0.5, 1).setDepth(6);
+    }
+    this.trainerPortrait.setTexture(key);
+    const h = this.trainerPortrait.height || 32;
+    this.trainerPortrait.setScale((150 * this.sy) / h);   // ~150px tall
+    this.trainerPortrait.setVisible(true).setAlpha(1).setPosition(720, y);
+    // hide the enemy monster's status panel while the trainer stands in
+    this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(false));
+    this.tweens.add({ targets: this.trainerPortrait, x: this.EPLAT_X, duration: 350, ease: "Cubic.out",
+      onComplete: () => onDone && onDone() });
+  }
+
+  private hideTrainerPortrait(onDone?: () => void): void {
+    if (!this.trainerPortrait) { onDone && onDone(); return; }
+    this.tweens.add({ targets: this.trainerPortrait, x: 740, duration: 300, ease: "Cubic.in",
+      onComplete: () => {
+        this.trainerPortrait!.setVisible(false);
+        this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(true));
+        onDone && onDone();
+      } });
   }
 
   // ---- Drawing ----
@@ -422,7 +468,7 @@ export class BattleScene extends Phaser.Scene {
   private expGeom() { const s = this.sy; return { x: 340, y: Math.round(220 * s), w: 270, h: Math.max(4, Math.round(6 * s)) }; }
 
   // RSE-style light status panel with a small pointed tab.
-  private drawStatusPanel(r: { x: number; y: number; w: number; h: number }): void {
+  private drawStatusPanel(r: { x: number; y: number; w: number; h: number }): Phaser.GameObjects.Graphics {
     const g = this.add.graphics().setDepth(9);
     g.fillStyle(0x101018, 0.30);
     g.fillRoundedRect(r.x + 3, r.y + 4, r.w, r.h, 11);      // drop shadow
@@ -432,6 +478,7 @@ export class BattleScene extends Phaser.Scene {
     g.strokeRoundedRect(r.x, r.y, r.w, r.h, 11);            // blue frame
     g.lineStyle(1, 0xd6d0bc, 1);
     g.strokeRoundedRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6, 8); // inner line
+    return g;
   }
 
   // Small "HP"/"EXP" label tag drawn on the light panel.
@@ -446,7 +493,7 @@ export class BattleScene extends Phaser.Scene {
     const NAME = "#2b3346", LV = "#3a4256", HPTAG = "#c24a30", EXPTAG = "#2f6ab0";
     // ===== Enemy status panel (upper-left) =====
     const eb = this.enemyBoxRect();
-    this.drawStatusPanel(eb);
+    const ePanel = this.drawStatusPanel(eb);
     this.enemyNameText = this.add
       .text(eb.x + 16, eb.y + Math.round(7 * this.sy), `${this.enemyMon.name}`, {
         fontSize: "20px", color: NAME, fontFamily: F, fontStyle: "bold",
@@ -455,11 +502,13 @@ export class BattleScene extends Phaser.Scene {
       fontSize: "18px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
     const eg = this.hpGeom(false);
-    this.drawTag(eb.x + 16, eg.y, "HP", HPTAG);
+    const eTag = this.drawTag(eb.x + 16, eg.y, "HP", HPTAG);
     this.enemyHpBar = this.add.graphics().setDepth(11);
     this.drawHpBarGraphic(this.enemyHpBar, eg.x, eg.y - eg.h / 2, eg.w, eg.h, this.enemyMon.currentHp / this.enemyMon.maxHp);
     // enemy HP numbers are hidden (RSE-style); keep the object to avoid null refs
     this.enemyHpText = this.add.text(0, 0, "", { fontSize: "1px" }).setVisible(false).setDepth(11);
+    // Group the enemy status UI so it can be hidden while the trainer portrait shows.
+    this.enemyInfoObjects = [ePanel, this.enemyNameText, this.enemyLvText, eTag, this.enemyHpBar];
 
     // ===== Player status panel (lower-right) =====
     const pb = this.playerBoxRect();
@@ -1837,17 +1886,18 @@ export class BattleScene extends Phaser.Scene {
   private trainerSendNext(): void {
     this.trainerPartyIndex++;
     if (!this.trainerData || this.trainerPartyIndex >= this.trainerData.party.length) {
-      // Trainer defeated!
-      const prize = this.trainerData!.prizeMoneyBase;
+      // Trainer defeated! Show the trainer portrait again with the defeat line.
+      const t = this.trainerData!;
+      const prize = t.prizeMoneyBase;
       this.playerState.money += prize;
-      this.playerState.defeatedTrainers.push(this.trainerData!.id);
-      this.showMessages(
-        [
-          this.trainerData!.dialogWin,
-          `${prize}円 もらった！`,
-        ],
-        () => this.handleExpGain()
-      );
+      this.playerState.defeatedTrainers.push(t.id);
+      this.enemySprite.setVisible(false);
+      this.showTrainerPortrait(() => {
+        this.showMessages(
+          [t.dialogWin, `${prize}円 もらった！`],
+          () => this.hideTrainerPortrait(() => this.handleExpGain())
+        );
+      });
       return;
     }
 
