@@ -17,7 +17,7 @@
         "level": 4
       }
     ],
-    "battleSprite": "trainer-casual"
+    "battleSprite": "trainer-girl"
   },
   {
     "id": "yamaoka",
@@ -41,7 +41,7 @@
         "level": 5
       }
     ],
-    "battleSprite": "trainer-suit"
+    "battleSprite": "trainer-worker"
   },
   {
     "id": "genki",
@@ -61,7 +61,7 @@
         "level": 6
       }
     ],
-    "battleSprite": "trainer-peace"
+    "battleSprite": "trainer-redcap"
   },
   {
     "id": "ryuma",
@@ -89,6 +89,6 @@
         "level": 10
       }
     ],
-    "battleSprite": "trainer-hoodie"
+    "battleSprite": "trainer-armor"
   }
 ]

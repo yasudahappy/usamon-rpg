@@ -293,18 +293,17 @@ export class BattleScene extends Phaser.Scene {
       const toCommand = () => { this.phase = "command"; this.showCommandWindow(); };
       if (this.trainerData) {
         const t = this.trainerData;
-        // Show the trainer portrait first (RSE-style), then send out the monster.
+        // Trainer appears FIRST, then throws a capsule and the almon pops out.
         this.enemySprite.setVisible(false);
         this.showTrainerPortrait(() => {
           this.showMessages(
             [`${t.name}が しょうぶを しかけてきた！`, t.dialogBefore],
-            () => this.hideTrainerPortrait(() => {
-              this.enemySprite.setVisible(true);
-              this.showMessages(
-                [`${t.name}は ${enemyData.name}を くりだした！`, `ゆけっ！ ${this.playerMon.name}！`],
-                toCommand
-              );
-            })
+            () => this.showMessages(
+              [`${t.name}は ${enemyData.name}を くりだした！`],
+              () => this.throwCapsuleAndReveal(() => this.hideTrainerPortrait(() =>
+                this.showMessages([`ゆけっ！ ${this.playerMon.name}！`], toCommand)
+              ))
+            )
           );
         });
       } else {
@@ -347,6 +346,56 @@ export class BattleScene extends Phaser.Scene {
         this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(true));
         onDone && onDone();
       } });
+  }
+
+  private genCapsuleTexture(): void {
+    if (this.textures.exists("capsule-moon")) return;
+    const c = document.createElement("canvas"); c.width = 24; c.height = 24;
+    const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "#e8edf3"; ctx.beginPath(); ctx.arc(12, 12, 10, 0, Math.PI * 2); ctx.fill();     // sphere
+    ctx.fillStyle = "#2b3a63"; ctx.beginPath(); ctx.arc(12, 12, 10, Math.PI, Math.PI * 2); ctx.fill(); // top navy
+    ctx.fillStyle = "#f4c95a"; ctx.beginPath(); ctx.arc(9, 7, 4, 0, Math.PI * 2); ctx.fill();          // crescent
+    ctx.fillStyle = "#2b3a63"; ctx.beginPath(); ctx.arc(11, 6, 3.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#8a94a8"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(2, 12); ctx.lineTo(22, 12); ctx.stroke();
+    ctx.fillStyle = "#cfd6e2"; ctx.beginPath(); ctx.arc(12, 12, 3, 0, Math.PI * 2); ctx.fill();        // button
+    ctx.strokeStyle = "#30384a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(12, 12, 10, 0, Math.PI * 2); ctx.stroke();
+    this.textures.addCanvas("capsule-moon", c);
+  }
+
+  /** Trainer tosses a moon-capsule from their hand; it bursts and the almon appears. */
+  private throwCapsuleAndReveal(onDone: () => void): void {
+    this.genCapsuleTexture();
+    const sy = this.sy;
+    const startX = (this.trainerPortrait?.x ?? this.EPLAT_X) - 22 * sy;
+    const startY = this.trainerPortrait
+      ? this.trainerPortrait.y - this.trainerPortrait.displayHeight * 0.55
+      : Math.round(this.EPLAT_Y * sy);
+    const endX = this.EPLAT_X;
+    const endY = Math.round((this.EPLAT_Y + 2) * sy);
+    const cap = this.add.image(startX, startY, "capsule-moon").setDepth(8).setScale(sy * 1.1);
+    const o = { t: 0 };
+    this.tweens.add({
+      targets: o, t: 1, duration: 480, ease: "Sine.in",
+      onUpdate: () => {
+        cap.x = startX + (endX - startX) * o.t;
+        cap.y = (startY + (endY - startY) * o.t) - Math.sin(o.t * Math.PI) * 70 * sy;
+        cap.rotation += 0.35;
+      },
+      onComplete: () => {
+        cap.destroy();
+        // burst
+        const flash = this.add.circle(endX, endY, 8 * sy, 0xffffff).setDepth(7);
+        this.tweens.add({ targets: flash, scale: 6, alpha: 0, duration: 320, ease: "Cubic.out",
+          onComplete: () => flash.destroy() });
+        this.cameras.main.flash(160, 200, 240, 255);
+        // reveal the almon, scaling up from the capsule point
+        const s = this.enemySprite.scaleX;
+        this.enemySprite.setVisible(true).setAlpha(1).setScale(s * 0.1);
+        this.enemyInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
+        this.tweens.add({ targets: this.enemySprite, scaleX: s, scaleY: s, duration: 260,
+          ease: "Back.out", onComplete: onDone });
+      },
+    });
   }
 
   // ---- Drawing ----
@@ -437,6 +486,8 @@ export class BattleScene extends Phaser.Scene {
     // inside a box so wide monsters (e.g. crabs) aren't oversized (crisp: pixelArt).
     this.sizeMonsterSprite(this.playerSprite, 128, 132);
     this.sizeMonsterSprite(this.enemySprite, 110, 116);
+    // Trainer battles reveal the enemy only after the capsule is thrown.
+    if (this.trainerData) this.enemySprite.setVisible(false);
   }
 
   // The player's own monster shows its back sprite (RSE-style) when available,
