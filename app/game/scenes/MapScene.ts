@@ -2173,7 +2173,7 @@ export class MapScene extends Phaser.Scene {
     this.rivalSprite = this.add.image(
       this.rivalNpcX * this.tileSize + this.tileSize / 2,
       this.rivalNpcY * this.tileSize + this.tileSize / 2,
-      this.npcTex("cast-char3-down", "npc-rival")
+      this.npcTex("cast-eezen-down", "npc-rival")
     ).setDepth(9);
   }
 

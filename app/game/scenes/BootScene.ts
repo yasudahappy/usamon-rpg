@@ -103,6 +103,10 @@ export class BootScene extends Phaser.Scene {
     ["suit", "casual", "peace", "hoodie", "eezen"].forEach(t => {
       this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
     });
+    // イーゼン overworld NPC sprite (4 directions)
+    ["down", "up", "left", "right"].forEach(dir => {
+      this.load.image(`cast-eezen-${dir}`, `${base}/assets/characters/cast/eezen_${dir}.png`);
+    });
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
