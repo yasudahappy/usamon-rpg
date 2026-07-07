@@ -96,6 +96,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-moonbase-lab", `${base}/assets/buildings/sprites/moonbase_lab.png`);
     this.load.image("bldg-house-dome", `${base}/assets/buildings/sprites/house_dome.png`);
     this.load.image("bldg-gym", `${base}/assets/buildings/sprites/gym.png`);
+    this.load.image("bldg-medical", `${base}/assets/buildings/sprites/medical_center.png`);
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
@@ -427,6 +428,34 @@ export class BootScene extends Phaser.Scene {
         for (let i = 0; i < 24; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 2);
         ctx.fillStyle = "#6b8a5f";
         for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+      } else if (id === "63" || id === "64") {
+        // Fence (railing) that tiles seamlessly along the town border.
+        //  63 = horizontal run (top/bottom edges), 64 = vertical run (left/right).
+        // Base ground already filled from tile.color above; draw metal railing.
+        const vertical = id === "64";
+        // helper drawing a "horizontal" fence, rotated when vertical
+        const bar = (a: number, b: number, len: number, thick: number, col: string) => {
+          ctx.fillStyle = col;
+          if (!vertical) ctx.fillRect(a, b, len, thick);
+          else ctx.fillRect(b, a, thick, len);
+        };
+        const post = (center: number, col: string, w: number) => {
+          ctx.fillStyle = col;
+          if (!vertical) ctx.fillRect(center - w / 2, 4, w, ts - 8);
+          else ctx.fillRect(4, center - w / 2, ts - 8, w);
+        };
+        // two rails spanning the full length (so neighbours connect seamlessly)
+        bar(0, 8, ts, 4, "#aeb6c4");   // upper rail shadow
+        bar(0, 8, ts, 2, "#e8edf5");   // upper rail highlight
+        bar(0, 19, ts, 4, "#9aa3b3");  // lower rail shadow
+        bar(0, 19, ts, 2, "#dfe5ef");  // lower rail highlight
+        // post at tile centre -> evenly spaced posts across the run
+        post(ts / 2, "#8b93a3", 6);
+        post(ts / 2, "#cfd6e2", 3);
+        // post cap
+        ctx.fillStyle = "#eef2f8";
+        if (!vertical) ctx.fillRect(ts / 2 - 3, 3, 6, 3);
+        else ctx.fillRect(3, ts / 2 - 3, 3, 6);
       }
 
       this.textures.addCanvas(key, canvas);
