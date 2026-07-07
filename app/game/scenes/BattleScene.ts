@@ -116,6 +116,7 @@ export class BattleScene extends Phaser.Scene {
   private trainerData: TrainerData | null = null;
   private trainerPartyIndex = 0;
   private trainerPortrait?: Phaser.GameObjects.Image;
+  private playerBackPortrait?: Phaser.GameObjects.Image;
   private enemyInfoObjects: Phaser.GameObjects.GameObject[] = [];
   private fleeAttempts = 0;
 
@@ -153,6 +154,7 @@ export class BattleScene extends Phaser.Scene {
     this.trainerData = data.trainerData || null;
     this.trainerPartyIndex = 0;
     this.trainerPortrait = undefined;   // display object is recreated per battle
+    this.playerBackPortrait = undefined;
 
     // Load JSON data
     this.allMonsters = this.cache.json.get("monsters") as MonsterData[];
@@ -291,6 +293,11 @@ export class BattleScene extends Phaser.Scene {
     this.time.delayedCall(600, () => {
       const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
       const toCommand = () => { this.phase = "command"; this.showCommandWindow(); };
+      // Hero throws a capsule and sends out the player's almon.
+      const sendOutPlayer = () => this.showMessages(
+        [`ゆけっ！ ${this.playerMon.name}！`],
+        () => this.throwPlayerCapsuleAndReveal(toCommand)
+      );
       if (this.trainerData) {
         const t = this.trainerData;
         // Trainer appears FIRST, then throws a capsule and the almon pops out.
@@ -300,17 +307,12 @@ export class BattleScene extends Phaser.Scene {
             [`${t.name}が しょうぶを しかけてきた！`, t.dialogBefore],
             () => this.showMessages(
               [`${t.name}は ${enemyData.name}を くりだした！`],
-              () => this.throwCapsuleAndReveal(() => this.hideTrainerPortrait(() =>
-                this.showMessages([`ゆけっ！ ${this.playerMon.name}！`], toCommand)
-              ))
+              () => this.throwCapsuleAndReveal(() => this.hideTrainerPortrait(sendOutPlayer))
             )
           );
         });
       } else {
-        this.showMessages(
-          [`やせいの ${enemyData.name} が あらわれた！`, `ゆけっ！ ${this.playerMon.name}！`],
-          toCommand
-        );
+        this.showMessages([`やせいの ${enemyData.name} が あらわれた！`], sendOutPlayer);
       }
     });
   }
@@ -488,6 +490,56 @@ export class BattleScene extends Phaser.Scene {
     this.sizeMonsterSprite(this.enemySprite, 110, 116);
     // Trainer battles reveal the enemy only after the capsule is thrown.
     if (this.trainerData) this.enemySprite.setVisible(false);
+    // The player's almon is sent out after the hero throws a capsule; until then
+    // show the hero's back illustration (both wild and trainer battles).
+    if (this.textures.exists("player-back")) {
+      this.playerSprite.setVisible(false);
+      this.showPlayerBack();
+    }
+  }
+
+  private showPlayerBack(): void {
+    const y = Math.round((this.PPLAT_Y + 12) * this.sy);
+    if (!this.playerBackPortrait) {
+      this.playerBackPortrait = this.add.image(this.PPLAT_X, y, "player-back").setOrigin(0.5, 1).setDepth(6);
+    }
+    const h = this.playerBackPortrait.height || 32;
+    this.playerBackPortrait.setScale((170 * this.sy) / h);
+    this.playerBackPortrait.setVisible(true).setAlpha(1).setPosition(this.PPLAT_X, y);
+  }
+
+  /** Hero throws a moon-capsule; it bursts and the player's almon appears. */
+  private throwPlayerCapsuleAndReveal(onDone: () => void): void {
+    const bp = this.playerBackPortrait;
+    if (!bp) { this.playerSprite.setVisible(true); onDone(); return; }
+    this.genCapsuleTexture();
+    const sy = this.sy;
+    const startX = bp.x + 16 * sy;
+    const startY = bp.y - bp.displayHeight * 0.5;
+    const endX = this.PPLAT_X;
+    const endY = Math.round((this.PPLAT_Y + 6) * sy);
+    const cap = this.add.image(startX, startY, "capsule-moon").setDepth(8).setScale(sy * 1.1);
+    const o = { t: 0 };
+    this.tweens.add({
+      targets: o, t: 1, duration: 460, ease: "Sine.in",
+      onUpdate: () => {
+        cap.x = startX + (endX - startX) * o.t;
+        cap.y = (startY + (endY - startY) * o.t) - Math.sin(o.t * Math.PI) * 60 * sy;
+        cap.rotation += 0.35;
+      },
+      onComplete: () => {
+        cap.destroy();
+        const flash = this.add.circle(endX, endY, 8 * sy, 0xffffff).setDepth(7);
+        this.tweens.add({ targets: flash, scale: 6, alpha: 0, duration: 300, ease: "Cubic.out",
+          onComplete: () => flash.destroy() });
+        this.tweens.add({ targets: bp, x: bp.x - 130 * sy, alpha: 0, duration: 300, ease: "Cubic.in",
+          onComplete: () => bp.setVisible(false) });
+        const s = this.playerSprite.scaleX;
+        this.playerSprite.setVisible(true).setAlpha(1).setScale(s * 0.1);
+        this.tweens.add({ targets: this.playerSprite, scaleX: s, scaleY: s, duration: 250,
+          ease: "Back.out", onComplete: onDone });
+      },
+    });
   }
 
   // The player's own monster shows its back sprite (RSE-style) when available,
