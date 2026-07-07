@@ -101,6 +101,11 @@ export class MapScene extends Phaser.Scene {
   private residentNpcX = 3;
   private residentNpcY = 3;
 
+  // Farm researcher NPC (farm dome interior) — talk-only
+  private farmResSprite?: Phaser.GameObjects.Image;
+  private farmResX = 7;
+  private farmResY = 4;
+
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
   private labRes1Sprite?: Phaser.GameObjects.Image;
   private labRes1X = 6;
@@ -225,9 +230,15 @@ export class MapScene extends Phaser.Scene {
       this.placeMomNpc();
     }
 
-    // Medical Center interior — two researchers to talk to
+    // Medical Center interior — research equipment + two researchers to talk to
     if (this.currentMapKey === "medical_center") {
+      this.placeMedicalDecor();
       this.placeMedicalNpcs();
+    }
+
+    // Farm dome interior — a researcher tending the plants
+    if (this.currentMapKey === "farm_dome") {
+      this.placeFarmResearcherNpc();
     }
 
     // House interiors — cozy home + a resident to talk to
@@ -651,6 +662,7 @@ export class MapScene extends Phaser.Scene {
     if (this.researcher1Sprite && x === this.researcher1NpcX && y === this.researcher1NpcY) return true;
     if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
     if (this.residentSprite && x === this.residentNpcX && y === this.residentNpcY) return true;
+    if (this.farmResSprite && x === this.farmResX && y === this.farmResY) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
     return false;
@@ -1810,6 +1822,10 @@ export class MapScene extends Phaser.Scene {
       this.triggerResidentEvent();
       return;
     }
+    if (this.farmResSprite && fx === this.farmResX && fy === this.farmResY) {
+      this.triggerFarmResearcherEvent();
+      return;
+    }
     if (this.labRes1Sprite && fx === this.labRes1X && fy === this.labRes1Y) {
       this.triggerLabRes1Event();
       return;
@@ -1957,6 +1973,70 @@ export class MapScene extends Phaser.Scene {
     ).setDepth(9);
   }
 
+  // Three pieces of research equipment lined against the top wall of the
+  // Medical Center so it reads as a lab rather than an empty room.
+  private placeMedicalDecor(): void {
+    const ts = this.tileSize;
+    this.genMedicalTextures();
+    // Row 1 (just below the top wall): scanner bed, holo-console, specimen tank
+    this.add.image(Math.round(2.0 * ts), Math.round(1.5 * ts), "med-scanner").setDepth(6);
+    this.add.image(Math.round(5.0 * ts), Math.round(1.4 * ts), "med-console").setDepth(6);
+    this.add.image(Math.round(7.5 * ts), Math.round(1.5 * ts), "med-tank").setDepth(6);
+  }
+
+  private genMedicalTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false; draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Scanner bed (health scanner) — white pad + blue readout arch
+    mk("med-scanner", 88, 40, (ctx) => {
+      ctx.fillStyle = "#e8eef4"; this.roundRect(ctx, 4, 14, 80, 22, 5); ctx.fill();      // bed pad
+      ctx.fillStyle = "#c6d0dc"; ctx.fillRect(4, 30, 80, 6);
+      ctx.fillStyle = "#aeb9c8"; ctx.fillRect(10, 36, 6, 4); ctx.fillRect(72, 36, 6, 4);  // legs
+      ctx.strokeStyle = "#7fd0e6"; ctx.lineWidth = 3; ctx.beginPath();                    // scan arch
+      ctx.arc(44, 20, 26, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+      ctx.fillStyle = "#8ff0d8"; ctx.fillRect(20, 20, 48, 2);                             // scan line
+    });
+    // Holo-console — dark cabinet with a glowing vitals screen
+    mk("med-console", 52, 46, (ctx) => {
+      ctx.fillStyle = "#20242c"; this.roundRect(ctx, 4, 2, 44, 30, 4); ctx.fill();
+      ctx.fillStyle = "#123b52"; ctx.fillRect(8, 6, 36, 22);
+      ctx.strokeStyle = "#5fd0f0"; ctx.lineWidth = 1.5;                                   // heartbeat line
+      ctx.beginPath(); ctx.moveTo(10, 18); ctx.lineTo(18, 18); ctx.lineTo(22, 10);
+      ctx.lineTo(26, 26); ctx.lineTo(30, 18); ctx.lineTo(42, 18); ctx.stroke();
+      ctx.fillStyle = "#a0ffc0"; ctx.fillRect(11, 24, 4, 2); ctx.fillStyle = "#ff9aa0"; ctx.fillRect(37, 24, 4, 2);
+      ctx.fillStyle = "#3a4250"; ctx.fillRect(10, 34, 32, 10);                            // stand
+    });
+    // Specimen tank — glass cylinder with fluid + floating capsule
+    mk("med-tank", 40, 52, (ctx) => {
+      ctx.fillStyle = "#c6d0dc"; ctx.fillRect(6, 46, 28, 6);                              // base
+      ctx.fillStyle = "rgba(90,180,210,0.55)"; this.roundRect(ctx, 8, 4, 24, 44, 10); ctx.fill(); // fluid
+      ctx.strokeStyle = "#dfe8f0"; ctx.lineWidth = 2; this.roundRect(ctx, 8, 4, 24, 44, 10); ctx.stroke();
+      ctx.fillStyle = "#eaf6ff"; this.roundRect(ctx, 12, 6, 6, 30, 3); ctx.fill();        // highlight
+      ctx.fillStyle = "#ffe08a"; ctx.beginPath(); ctx.arc(22, 30, 5, 0, Math.PI * 2); ctx.fill(); // specimen
+    });
+  }
+
+  private placeFarmResearcherNpc(): void {
+    this.farmResSprite = this.add.image(
+      this.farmResX * this.tileSize + this.tileSize / 2,
+      this.farmResY * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char3-down", "npc-kinoshita")
+    ).setDepth(9);
+  }
+
+  private triggerFarmResearcherEvent(): void {
+    this.showDialog([
+      "ようこそ 農園ドームへ。",
+      "ここでは にんげんと アルモンが\nあんしんして くらせるように",
+      "しょくぶつを そだてているんだ。",
+      "しんせんな くうきも たべものも\nこの ドームから 生まれるんだよ。",
+    ]);
+  }
+
   private triggerResearcher1Event(): void {
     this.showDialog([
       "ようこそ メディカルセンターへ。",
@@ -2070,16 +2150,18 @@ export class MapScene extends Phaser.Scene {
         "ジムの リーダーは とても 強いぞ。\n挑むなら 気をつけてな！",
       ],
       house_2: [
-        "あら、こんにちは。",
-        "月面の 暮らしにも すっかり\n慣れちゃったわ。",
-        "メディカルセンターの 人たちは\nとても 親切なのよ。",
+        "あら、こんにちは。ここでの 暮らしにも\nすっかり 慣れちゃったわ。",
+        "豆知識よ。月の 重力は 地球の\nおよそ 6ぶんの1 なの。",
+        "だから ここでは みんな\nふわっと 軽く 歩けるのよ。",
       ],
       house_3: [
-        "この街は 静かの海に あるんだ。",
+        "クレーターシティは 「静かの海」に\nある 街なんだ。",
         "アポロ11号が 人類で はじめて\n降り立った 場所なんだよ。",
+        "月には 空気が ないから、空は\nいつも 真っ暗で 星が よく見える。",
       ],
       house_4: [
-        "農園ドームでは 月で 食べものを\n育てているの。",
+        "月の 1日は とても 長くてね、\n昼も 夜も 地球の 2週間ずつ 続くの。",
+        "だから 農園ドームの ライトで\n作物に ひかりを あげているのよ。",
         "水も 空気も 自分たちで つくる。\n月で 暮らすって そういうことね。",
       ],
     };
