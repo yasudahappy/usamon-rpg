@@ -441,17 +441,20 @@ export class BootScene extends Phaser.Scene {
         ctx.fillStyle = "#6b8a5f";
         for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
       } else if (id === "65") {
-        // Facility path/road: warm paved stone, distinct from the cool plaza floor.
-        ctx.fillStyle = "#ccb98d"; ctx.fillRect(0, 0, ts, ts);
-        ctx.fillStyle = "#c2ae7f";                                   // brick-ish blocks
-        for (let yy = 0; yy < ts; yy += 8) {
-          for (let xx = (((yy / 8) % 2) * 8); xx < ts; xx += 16) ctx.fillRect(xx, yy, 8, 8);
-        }
-        ctx.strokeStyle = "#b2a071"; ctx.lineWidth = 1;              // seams
-        for (let yy = 8; yy < ts; yy += 8) { ctx.beginPath(); ctx.moveTo(0, yy + 0.5); ctx.lineTo(ts, yy + 0.5); ctx.stroke(); }
-        ctx.fillStyle = "#dccaa0";                                   // light speckle
-        for (const [gx2, gy2] of [[6, 10], [21, 4], [26, 22], [12, 27]] as [number, number][]) ctx.fillRect(gx2, gy2, 2, 2);
-        ctx.strokeStyle = "#aa9668"; ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        // Facility path: the plaza floor, just a bit darker (same cool palette).
+        if (hasSpritesheet) {
+          const gf = this.textures.getFrame("moon-tileset", 40);
+          if (gf) {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(gf.source.image as HTMLImageElement,
+              gf.cutX, gf.cutY, gf.cutWidth, gf.cutHeight, 0, 0, ts, ts);
+          } else { ctx.fillStyle = tile.color; ctx.fillRect(0, 0, ts, ts); }
+        } else { ctx.fillStyle = tile.color; ctx.fillRect(0, 0, ts, ts); }
+        // darken slightly with a cool tint so it reads as a path, same colour family
+        ctx.fillStyle = "rgba(46,62,78,0.24)"; ctx.fillRect(0, 0, ts, ts);
+        // faint seam border
+        ctx.strokeStyle = "rgba(70,88,104,0.45)"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
       } else if (id === "63" || id === "64") {
         // Fence (railing) that tiles seamlessly along the town border.
         //  63 = horizontal run (top/bottom edges), 64 = vertical run (left/right).
