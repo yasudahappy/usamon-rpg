@@ -157,19 +157,21 @@ export class BootScene extends Phaser.Scene {
         }
       } catch (e) { /* ignore */ }
 
-      // Load full save data if available
-      let mapKey = "moonbase";
-      let sceneData: Record<string, unknown> = { mapKey };
+      // Continue from a real save if one exists; otherwise (setup done but no
+      // progress yet) begin the prologue in the player's bedroom.
+      let sceneData: Record<string, unknown> = { mapKey: "player_home", intro: true };
       try {
         const raw = localStorage.getItem("usamon-save-data");
         if (raw) {
           const save = JSON.parse(raw);
-          sceneData = {
-            mapKey: save.mapKey || "moonbase",
-            playerX: save.gridX,
-            playerY: save.gridY,
-            playerState: save.playerState,
-          };
+          if (save.mapKey) {
+            sceneData = {
+              mapKey: save.mapKey,
+              playerX: save.gridX,
+              playerY: save.gridY,
+              playerState: save.playerState,
+            };
+          }
         }
       } catch (e) { /* ignore */ }
 

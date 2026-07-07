@@ -64,6 +64,26 @@
     "battleSprite": "trainer-redcap"
   },
   {
+    "id": "kagen",
+    "name": "影マニア カゲン",
+    "mapKey": "gym_1",
+    "x": 10,
+    "y": 13,
+    "direction": "up",
+    "sightRange": 4,
+    "prizeMoneyBase": 450,
+    "dialogBefore": "ゲンキの あいぼうさ。この おくには リーダーが 待つ。まずは 俺を 倒してみろ！",
+    "dialogWin": "ちっ…光が 影を 切りさいたか。リーダーの もとへ 行くがいい。",
+    "dialogLose": "フハハ！影の まえに ひかりは とどかない！",
+    "party": [
+      {
+        "id": "regonyas",
+        "level": 6
+      }
+    ],
+    "battleSprite": "trainer-hoodie"
+  },
+  {
     "id": "ryuma",
     "name": "ジムリーダー リューマ",
     "mapKey": "gym_1",

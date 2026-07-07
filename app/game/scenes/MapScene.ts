@@ -53,6 +53,11 @@ export class MapScene extends Phaser.Scene {
   private encounterData?: EncounterData;
   private allTrainers: TrainerData[] = [];
   private trainerSprites: Map<string, Phaser.GameObjects.Image> = new Map();
+  // Gym-leader gates: leader id -> trainers that must be beaten first.
+  private static GYM_LEADER_GATES: Record<string, string[]> = {
+    ryuma: ["genki", "kagen"],
+  };
+  private leaderGateNotified = false;
 
   // Facing direction (for NPC interaction)
   private facingDirection: Direction = "down";
@@ -478,6 +483,7 @@ export class MapScene extends Phaser.Scene {
       t => t.mapKey === this.currentMapKey
     );
 
+    let leaderBlockedInSight = false;
     for (const trainer of mapTrainers) {
       if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
 
@@ -501,10 +507,25 @@ export class MapScene extends Phaser.Scene {
       }
 
       if (inSight) {
+        // Gym-leader gate: block the battle until the required trainers are beaten.
+        const gate = MapScene.GYM_LEADER_GATES[trainer.id];
+        if (gate && !gate.every(id => this.playerState?.defeatedTrainers.includes(id))) {
+          if (!this.leaderGateNotified) {
+            this.leaderGateNotified = true;
+            this.showDialog([
+              "……まだ 早い。",
+              "このジムの トレーナー2人を\n倒してから 挑むがいい。",
+            ]);
+          }
+          leaderBlockedInSight = true;
+          continue;
+        }
         this.beginTrainerApproach(trainer);
         return;
       }
     }
+    // Re-arm the leader gate message once the player leaves the leader's sight.
+    if (!leaderBlockedInSight) this.leaderGateNotified = false;
   }
 
   // Ruby/Sapphire-style: on being spotted, a "！" pops over the trainer, the
