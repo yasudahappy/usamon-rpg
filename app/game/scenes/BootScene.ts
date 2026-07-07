@@ -100,7 +100,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-farm", `${base}/assets/buildings/sprites/farm_dome.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
-    ["suit", "casual", "peace", "hoodie"].forEach(t => {
+    ["suit", "casual", "peace", "hoodie", "eezen"].forEach(t => {
       this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
     });
 
