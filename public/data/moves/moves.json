@@ -596,5 +596,50 @@
     "isSupport": false,
     "effect": null,
     "description": "隕石群を呼び落とす大技"
+  },
+  {
+    "id": "magma_kick",
+    "name": "マグマキック",
+    "type": "炎",
+    "power": 80,
+    "accuracy": 95,
+    "isSupport": false,
+    "effect": null,
+    "description": "溶岩の 足で 蹴りつける"
+  },
+  {
+    "id": "funka",
+    "name": "ふんか",
+    "type": "炎",
+    "power": 95,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "地面から 炎を ふきあげる"
+  },
+  {
+    "id": "bakuen",
+    "name": "ばくえん",
+    "type": "炎",
+    "power": 110,
+    "accuracy": 90,
+    "isSupport": false,
+    "effect": null,
+    "description": "爆発する 炎で 攻撃する"
+  },
+  {
+    "id": "iwa_yoroi",
+    "name": "いわよろい",
+    "type": "炎",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "statChange",
+      "stat": "defense",
+      "multiplier": 2.0,
+      "target": "self"
+    },
+    "description": "岩の よろいで ぼうぎょ大アップ"
   }
 ]

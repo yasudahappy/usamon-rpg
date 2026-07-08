@@ -733,6 +733,10 @@
         "moveId": "hinoko"
       },
       {
+        "level": 6,
+        "moveId": "magma_kick"
+      },
+      {
         "level": 8,
         "moveId": "kaen_tosshin"
       },
@@ -741,12 +745,20 @@
         "moveId": "kaenbullet"
       },
       {
+        "level": 20,
+        "moveId": "iwa_yoroi"
+      },
+      {
         "level": 24,
         "moveId": "moeru_toushi"
       },
       {
         "level": 30,
         "moveId": "meteor_punch"
+      },
+      {
+        "level": 38,
+        "moveId": "funka"
       },
       {
         "level": 44,
@@ -793,8 +805,16 @@
         "moveId": "kaenbullet"
       },
       {
+        "level": 1,
+        "moveId": "magma_kick"
+      },
+      {
         "level": 30,
         "moveId": "meteor_punch"
+      },
+      {
+        "level": 36,
+        "moveId": "funka"
       },
       {
         "level": 38,
@@ -803,6 +823,10 @@
       {
         "level": 48,
         "moveId": "kaen_housha"
+      },
+      {
+        "level": 54,
+        "moveId": "bakuen"
       },
       {
         "level": 66,
