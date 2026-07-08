@@ -5,19 +5,56 @@
     "type": "光",
     "role": "バランス型",
     "description": "宇宙服うさぎ。明るく元気な相棒。",
-    "baseStats": { "hp": 22, "attack": 12, "defense": 11, "speed": 12 },
-    "statsAt50": { "hp": 135, "attack": 78, "defense": 72, "speed": 76 },
+    "baseStats": {
+      "hp": 22,
+      "attack": 12,
+      "defense": 11,
+      "speed": 12
+    },
+    "statsAt50": {
+      "hp": 135,
+      "attack": 78,
+      "defense": 72,
+      "speed": 76
+    },
     "evolution": null,
     "learnset": [
-      { "level": 1, "moveId": "tataku" },
-      { "level": 8, "moveId": "kansya_no_mai" },
-      { "level": 24, "moveId": "senjin_no_chie" },
-      { "level": 36, "moveId": "ryuseigun" },
-      { "level": 42, "moveId": "shooting_star" },
-      { "level": 45, "moveId": "kansya_no_tasuki" },
-      { "level": 58, "moveId": "luna_break" },
-      { "level": 72, "moveId": "kibou_no_hikari" },
-      { "level": 85, "moveId": "kirameku_kansya" }
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 8,
+        "moveId": "kansya_no_mai"
+      },
+      {
+        "level": 24,
+        "moveId": "senjin_no_chie"
+      },
+      {
+        "level": 36,
+        "moveId": "ryuseigun"
+      },
+      {
+        "level": 42,
+        "moveId": "shooting_star"
+      },
+      {
+        "level": 45,
+        "moveId": "kansya_no_tasuki"
+      },
+      {
+        "level": 58,
+        "moveId": "luna_break"
+      },
+      {
+        "level": 72,
+        "moveId": "kibou_no_hikari"
+      },
+      {
+        "level": 85,
+        "moveId": "kirameku_kansya"
+      }
     ],
     "color": "#40d0ff",
     "baseExp": 64
@@ -28,20 +65,63 @@
     "type": "ガス",
     "role": "耐久型",
     "description": "月の餅から生まれた精。ふわふわ癒やし系。",
-    "baseStats": { "hp": 25, "attack": 10, "defense": 14, "speed": 7 },
-    "statsAt50": { "hp": 140, "attack": 65, "defense": 72, "speed": 30 },
-    "evolution": { "level": 20, "to": "mochigori" },
+    "baseStats": {
+      "hp": 25,
+      "attack": 10,
+      "defense": 14,
+      "speed": 7
+    },
+    "statsAt50": {
+      "hp": 140,
+      "attack": 65,
+      "defense": 72,
+      "speed": 30
+    },
+    "evolution": {
+      "level": 20,
+      "to": "mochigori"
+    },
     "learnset": [
-      { "level": 1, "moveId": "taiatari" },
-      { "level": 1, "moveId": "doku_gas" },
-      { "level": 7, "moveId": "mochiageru" },
-      { "level": 13, "moveId": "hataku" },
-      { "level": 20, "moveId": "mochinageru" },
-      { "level": 34, "moveId": "steam_burst" },
-      { "level": 40, "moveId": "heavy_mochi_press" },
-      { "level": 50, "moveId": "fukuramu" },
-      { "level": 66, "moveId": "gas_storm" },
-      { "level": 82, "moveId": "mochi_daibakuhatsu" }
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "doku_gas"
+      },
+      {
+        "level": 7,
+        "moveId": "mochiageru"
+      },
+      {
+        "level": 13,
+        "moveId": "hataku"
+      },
+      {
+        "level": 20,
+        "moveId": "mochinageru"
+      },
+      {
+        "level": 34,
+        "moveId": "steam_burst"
+      },
+      {
+        "level": 40,
+        "moveId": "heavy_mochi_press"
+      },
+      {
+        "level": 50,
+        "moveId": "fukuramu"
+      },
+      {
+        "level": 66,
+        "moveId": "gas_storm"
+      },
+      {
+        "level": 82,
+        "moveId": "mochi_daibakuhatsu"
+      }
     ],
     "color": "#e0e0f0",
     "baseExp": 60
@@ -52,20 +132,63 @@
     "type": "ガス",
     "role": "耐久型",
     "description": "モチチの進化形。もちもちのパワーが増した。",
-    "baseStats": { "hp": 35, "attack": 14, "defense": 18, "speed": 9 },
-    "statsAt50": { "hp": 158, "attack": 76, "defense": 84, "speed": 38 },
-    "evolution": { "level": 40, "to": "gorimocchi" },
+    "baseStats": {
+      "hp": 35,
+      "attack": 14,
+      "defense": 18,
+      "speed": 9
+    },
+    "statsAt50": {
+      "hp": 158,
+      "attack": 76,
+      "defense": 84,
+      "speed": 38
+    },
+    "evolution": {
+      "level": 40,
+      "to": "gorimocchi"
+    },
     "learnset": [
-      { "level": 1, "moveId": "taiatari" },
-      { "level": 1, "moveId": "doku_gas" },
-      { "level": 7, "moveId": "mochiageru" },
-      { "level": 13, "moveId": "hataku" },
-      { "level": 20, "moveId": "mochinageru" },
-      { "level": 34, "moveId": "steam_burst" },
-      { "level": 40, "moveId": "heavy_mochi_press" },
-      { "level": 50, "moveId": "fukuramu" },
-      { "level": 66, "moveId": "gas_storm" },
-      { "level": 82, "moveId": "mochi_daibakuhatsu" }
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "doku_gas"
+      },
+      {
+        "level": 7,
+        "moveId": "mochiageru"
+      },
+      {
+        "level": 13,
+        "moveId": "hataku"
+      },
+      {
+        "level": 20,
+        "moveId": "mochinageru"
+      },
+      {
+        "level": 34,
+        "moveId": "steam_burst"
+      },
+      {
+        "level": 40,
+        "moveId": "heavy_mochi_press"
+      },
+      {
+        "level": 50,
+        "moveId": "fukuramu"
+      },
+      {
+        "level": 66,
+        "moveId": "gas_storm"
+      },
+      {
+        "level": 82,
+        "moveId": "mochi_daibakuhatsu"
+      }
     ],
     "color": "#d0d0e8",
     "baseExp": 120
@@ -76,20 +199,60 @@
     "type": "ガス",
     "role": "耐久型",
     "description": "モチチの最終進化。圧倒的な耐久力。",
-    "baseStats": { "hp": 45, "attack": 18, "defense": 24, "speed": 10 },
-    "statsAt50": { "hp": 175, "attack": 88, "defense": 95, "speed": 45 },
+    "baseStats": {
+      "hp": 45,
+      "attack": 18,
+      "defense": 24,
+      "speed": 10
+    },
+    "statsAt50": {
+      "hp": 175,
+      "attack": 88,
+      "defense": 95,
+      "speed": 45
+    },
     "evolution": null,
     "learnset": [
-      { "level": 1, "moveId": "taiatari" },
-      { "level": 1, "moveId": "doku_gas" },
-      { "level": 7, "moveId": "mochiageru" },
-      { "level": 13, "moveId": "hataku" },
-      { "level": 20, "moveId": "mochinageru" },
-      { "level": 34, "moveId": "steam_burst" },
-      { "level": 40, "moveId": "heavy_mochi_press" },
-      { "level": 50, "moveId": "fukuramu" },
-      { "level": 66, "moveId": "gas_storm" },
-      { "level": 82, "moveId": "mochi_daibakuhatsu" }
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "doku_gas"
+      },
+      {
+        "level": 7,
+        "moveId": "mochiageru"
+      },
+      {
+        "level": 13,
+        "moveId": "hataku"
+      },
+      {
+        "level": 20,
+        "moveId": "mochinageru"
+      },
+      {
+        "level": 34,
+        "moveId": "steam_burst"
+      },
+      {
+        "level": 40,
+        "moveId": "heavy_mochi_press"
+      },
+      {
+        "level": 50,
+        "moveId": "fukuramu"
+      },
+      {
+        "level": 66,
+        "moveId": "gas_storm"
+      },
+      {
+        "level": 82,
+        "moveId": "mochi_daibakuhatsu"
+      }
     ],
     "color": "#c0c0d8",
     "baseExp": 200
@@ -100,19 +263,59 @@
     "type": "砂",
     "role": "防御特化型",
     "description": "月の砂に住むカニ。がんこで守りが固い。",
-    "baseStats": { "hp": 24, "attack": 11, "defense": 16, "speed": 6 },
-    "statsAt50": { "hp": 120, "attack": 60, "defense": 85, "speed": 28 },
-    "evolution": { "level": 22, "to": "lobsner" },
+    "baseStats": {
+      "hp": 24,
+      "attack": 11,
+      "defense": 16,
+      "speed": 6
+    },
+    "statsAt50": {
+      "hp": 120,
+      "attack": 60,
+      "defense": 85,
+      "speed": 28
+    },
+    "evolution": {
+      "level": 22,
+      "to": "lobsner"
+    },
     "learnset": [
-      { "level": 1, "moveId": "hasamu" },
-      { "level": 1, "moveId": "sand_blast" },
-      { "level": 8, "moveId": "suna_no_shield" },
-      { "level": 15, "moveId": "ana_wo_horu" },
-      { "level": 22, "moveId": "rock_hasami" },
-      { "level": 38, "moveId": "sandstorm" },
-      { "level": 55, "moveId": "teppeki_guard" },
-      { "level": 70, "moveId": "grand_crash" },
-      { "level": 84, "moveId": "daisabaku" }
+      {
+        "level": 1,
+        "moveId": "hasamu"
+      },
+      {
+        "level": 1,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 8,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 15,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 22,
+        "moveId": "rock_hasami"
+      },
+      {
+        "level": 38,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 55,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 70,
+        "moveId": "grand_crash"
+      },
+      {
+        "level": 84,
+        "moveId": "daisabaku"
+      }
     ],
     "color": "#c0a060",
     "baseExp": 65
@@ -123,19 +326,56 @@
     "type": "砂",
     "role": "防御特化型",
     "description": "スナガニの進化形。鉄壁の守り。",
-    "baseStats": { "hp": 32, "attack": 16, "defense": 24, "speed": 8 },
-    "statsAt50": { "hp": 150, "attack": 82, "defense": 110, "speed": 42 },
+    "baseStats": {
+      "hp": 32,
+      "attack": 16,
+      "defense": 24,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 150,
+      "attack": 82,
+      "defense": 110,
+      "speed": 42
+    },
     "evolution": null,
     "learnset": [
-      { "level": 1, "moveId": "hasamu" },
-      { "level": 1, "moveId": "sand_blast" },
-      { "level": 8, "moveId": "suna_no_shield" },
-      { "level": 15, "moveId": "ana_wo_horu" },
-      { "level": 22, "moveId": "rock_hasami" },
-      { "level": 38, "moveId": "sandstorm" },
-      { "level": 55, "moveId": "teppeki_guard" },
-      { "level": 70, "moveId": "grand_crash" },
-      { "level": 84, "moveId": "daisabaku" }
+      {
+        "level": 1,
+        "moveId": "hasamu"
+      },
+      {
+        "level": 1,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 8,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 15,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 22,
+        "moveId": "rock_hasami"
+      },
+      {
+        "level": 38,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 55,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 70,
+        "moveId": "grand_crash"
+      },
+      {
+        "level": 84,
+        "moveId": "daisabaku"
+      }
     ],
     "color": "#b09050",
     "baseExp": 150
@@ -146,19 +386,59 @@
     "type": "電",
     "role": "速攻アタッカー",
     "description": "電気をまとうライオンの子。せっかちですばやい。",
-    "baseStats": { "hp": 20, "attack": 14, "defense": 8, "speed": 16 },
-    "statsAt50": { "hp": 95, "attack": 78, "defense": 45, "speed": 90 },
-    "evolution": { "level": 20, "to": "ikarion" },
+    "baseStats": {
+      "hp": 20,
+      "attack": 14,
+      "defense": 8,
+      "speed": 16
+    },
+    "statsAt50": {
+      "hp": 95,
+      "attack": 78,
+      "defense": 45,
+      "speed": 90
+    },
+    "evolution": {
+      "level": 20,
+      "to": "ikarion"
+    },
     "learnset": [
-      { "level": 1, "moveId": "hikkaki" },
-      { "level": 1, "moveId": "spark" },
-      { "level": 9, "moveId": "denkou_dash" },
-      { "level": 17, "moveId": "kaminari" },
-      { "level": 20, "moveId": "inazuma_kick" },
-      { "level": 35, "moveId": "plasma_ball" },
-      { "level": 52, "moveId": "raimei_no_tategami" },
-      { "level": 68, "moveId": "thunder_storm" },
-      { "level": 83, "moveId": "giga_volt" }
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "spark"
+      },
+      {
+        "level": 9,
+        "moveId": "denkou_dash"
+      },
+      {
+        "level": 17,
+        "moveId": "kaminari"
+      },
+      {
+        "level": 20,
+        "moveId": "inazuma_kick"
+      },
+      {
+        "level": 35,
+        "moveId": "plasma_ball"
+      },
+      {
+        "level": 52,
+        "moveId": "raimei_no_tategami"
+      },
+      {
+        "level": 68,
+        "moveId": "thunder_storm"
+      },
+      {
+        "level": 83,
+        "moveId": "giga_volt"
+      }
     ],
     "color": "#ffdd44",
     "baseExp": 62
@@ -169,19 +449,56 @@
     "type": "電",
     "role": "速攻アタッカー",
     "description": "ライライの進化形。雷をまとう獅子。",
-    "baseStats": { "hp": 26, "attack": 20, "defense": 12, "speed": 22 },
-    "statsAt50": { "hp": 120, "attack": 100, "defense": 60, "speed": 115 },
+    "baseStats": {
+      "hp": 26,
+      "attack": 20,
+      "defense": 12,
+      "speed": 22
+    },
+    "statsAt50": {
+      "hp": 120,
+      "attack": 100,
+      "defense": 60,
+      "speed": 115
+    },
     "evolution": null,
     "learnset": [
-      { "level": 1, "moveId": "hikkaki" },
-      { "level": 1, "moveId": "spark" },
-      { "level": 9, "moveId": "denkou_dash" },
-      { "level": 17, "moveId": "kaminari" },
-      { "level": 20, "moveId": "inazuma_kick" },
-      { "level": 35, "moveId": "plasma_ball" },
-      { "level": 52, "moveId": "raimei_no_tategami" },
-      { "level": 68, "moveId": "thunder_storm" },
-      { "level": 83, "moveId": "giga_volt" }
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "spark"
+      },
+      {
+        "level": 9,
+        "moveId": "denkou_dash"
+      },
+      {
+        "level": 17,
+        "moveId": "kaminari"
+      },
+      {
+        "level": 20,
+        "moveId": "inazuma_kick"
+      },
+      {
+        "level": 35,
+        "moveId": "plasma_ball"
+      },
+      {
+        "level": 52,
+        "moveId": "raimei_no_tategami"
+      },
+      {
+        "level": 68,
+        "moveId": "thunder_storm"
+      },
+      {
+        "level": 83,
+        "moveId": "giga_volt"
+      }
     ],
     "color": "#eebb22",
     "baseExp": 160
@@ -192,20 +509,63 @@
     "type": "影",
     "role": "一撃屋",
     "description": "クレーターの影に住む猫。クールで気まぐれ。",
-    "baseStats": { "hp": 18, "attack": 15, "defense": 9, "speed": 15 },
-    "statsAt50": { "hp": 90, "attack": 90, "defense": 48, "speed": 82 },
-    "evolution": { "level": 23, "to": "sharisu" },
+    "baseStats": {
+      "hp": 18,
+      "attack": 15,
+      "defense": 9,
+      "speed": 15
+    },
+    "statsAt50": {
+      "hp": 90,
+      "attack": 90,
+      "defense": 48,
+      "speed": 82
+    },
+    "evolution": {
+      "level": 23,
+      "to": "sharisu"
+    },
     "learnset": [
-      { "level": 1, "moveId": "hikkaki" },
-      { "level": 1, "moveId": "shadow_claw" },
-      { "level": 5, "moveId": "ikaku_suru" },
-      { "level": 8, "moveId": "hara_wo_miseru" },
-      { "level": 23, "moveId": "shadow_dive" },
-      { "level": 25, "moveId": "renzoku_neko_punch" },
-      { "level": 45, "moveId": "void_slash" },
-      { "level": 60, "moveId": "yami_no_tobari" },
-      { "level": 74, "moveId": "dark_nebula" },
-      { "level": 86, "moveId": "genei_ranbu" }
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "shadow_claw"
+      },
+      {
+        "level": 5,
+        "moveId": "ikaku_suru"
+      },
+      {
+        "level": 8,
+        "moveId": "hara_wo_miseru"
+      },
+      {
+        "level": 23,
+        "moveId": "shadow_dive"
+      },
+      {
+        "level": 25,
+        "moveId": "renzoku_neko_punch"
+      },
+      {
+        "level": 45,
+        "moveId": "void_slash"
+      },
+      {
+        "level": 60,
+        "moveId": "yami_no_tobari"
+      },
+      {
+        "level": 74,
+        "moveId": "dark_nebula"
+      },
+      {
+        "level": 86,
+        "moveId": "genei_ranbu"
+      }
     ],
     "color": "#8844aa",
     "baseExp": 66
@@ -216,20 +576,63 @@
     "type": "影",
     "role": "一撃屋",
     "description": "レゴニャスの進化形。影に溶ける猫。",
-    "baseStats": { "hp": 22, "attack": 20, "defense": 12, "speed": 20 },
-    "statsAt50": { "hp": 102, "attack": 104, "defense": 56, "speed": 95 },
-    "evolution": { "level": 45, "to": "sharian" },
+    "baseStats": {
+      "hp": 22,
+      "attack": 20,
+      "defense": 12,
+      "speed": 20
+    },
+    "statsAt50": {
+      "hp": 102,
+      "attack": 104,
+      "defense": 56,
+      "speed": 95
+    },
+    "evolution": {
+      "level": 45,
+      "to": "sharian"
+    },
     "learnset": [
-      { "level": 1, "moveId": "hikkaki" },
-      { "level": 1, "moveId": "shadow_claw" },
-      { "level": 5, "moveId": "ikaku_suru" },
-      { "level": 8, "moveId": "hara_wo_miseru" },
-      { "level": 23, "moveId": "shadow_dive" },
-      { "level": 25, "moveId": "renzoku_neko_punch" },
-      { "level": 45, "moveId": "void_slash" },
-      { "level": 60, "moveId": "yami_no_tobari" },
-      { "level": 74, "moveId": "dark_nebula" },
-      { "level": 86, "moveId": "genei_ranbu" }
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "shadow_claw"
+      },
+      {
+        "level": 5,
+        "moveId": "ikaku_suru"
+      },
+      {
+        "level": 8,
+        "moveId": "hara_wo_miseru"
+      },
+      {
+        "level": 23,
+        "moveId": "shadow_dive"
+      },
+      {
+        "level": 25,
+        "moveId": "renzoku_neko_punch"
+      },
+      {
+        "level": 45,
+        "moveId": "void_slash"
+      },
+      {
+        "level": 60,
+        "moveId": "yami_no_tobari"
+      },
+      {
+        "level": 74,
+        "moveId": "dark_nebula"
+      },
+      {
+        "level": 86,
+        "moveId": "genei_ranbu"
+      }
     ],
     "color": "#7733aa",
     "baseExp": 140
@@ -240,22 +643,173 @@
     "type": "影",
     "role": "一撃屋",
     "description": "レゴニャスの最終進化。闇を統べる猫。",
-    "baseStats": { "hp": 26, "attack": 26, "defense": 14, "speed": 24 },
-    "statsAt50": { "hp": 115, "attack": 118, "defense": 65, "speed": 108 },
+    "baseStats": {
+      "hp": 26,
+      "attack": 26,
+      "defense": 14,
+      "speed": 24
+    },
+    "statsAt50": {
+      "hp": 115,
+      "attack": 118,
+      "defense": 65,
+      "speed": 108
+    },
     "evolution": null,
     "learnset": [
-      { "level": 1, "moveId": "hikkaki" },
-      { "level": 1, "moveId": "shadow_claw" },
-      { "level": 5, "moveId": "ikaku_suru" },
-      { "level": 8, "moveId": "hara_wo_miseru" },
-      { "level": 23, "moveId": "shadow_dive" },
-      { "level": 25, "moveId": "renzoku_neko_punch" },
-      { "level": 45, "moveId": "void_slash" },
-      { "level": 60, "moveId": "yami_no_tobari" },
-      { "level": 74, "moveId": "dark_nebula" },
-      { "level": 86, "moveId": "genei_ranbu" }
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "shadow_claw"
+      },
+      {
+        "level": 5,
+        "moveId": "ikaku_suru"
+      },
+      {
+        "level": 8,
+        "moveId": "hara_wo_miseru"
+      },
+      {
+        "level": 23,
+        "moveId": "shadow_dive"
+      },
+      {
+        "level": 25,
+        "moveId": "renzoku_neko_punch"
+      },
+      {
+        "level": 45,
+        "moveId": "void_slash"
+      },
+      {
+        "level": 60,
+        "moveId": "yami_no_tobari"
+      },
+      {
+        "level": 74,
+        "moveId": "dark_nebula"
+      },
+      {
+        "level": 86,
+        "moveId": "genei_ranbu"
+      }
     ],
     "color": "#6622aa",
     "baseExp": 210
+  },
+  {
+    "id": "meteko",
+    "name": "メテコ",
+    "type": "炎",
+    "role": "速攻アタッカー",
+    "description": "月に降ってきた小さな隕石から生まれた火の玉アルモン。せっかちで熱血、いつも全力で戦う。",
+    "baseStats": {
+      "hp": 19,
+      "attack": 15,
+      "defense": 9,
+      "speed": 15
+    },
+    "statsAt50": {
+      "hp": 92,
+      "attack": 84,
+      "defense": 48,
+      "speed": 86
+    },
+    "evolution": {
+      "level": 30,
+      "to": "meteodon"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 8,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 16,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 24,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 30,
+        "moveId": "meteor_punch"
+      },
+      {
+        "level": 44,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 60,
+        "moveId": "meteor_storm"
+      }
+    ],
+    "color": "#ff6a1e",
+    "baseExp": 64
+  },
+  {
+    "id": "meteodon",
+    "name": "メテオドン",
+    "type": "炎",
+    "role": "パワーアタッカー",
+    "description": "隕石のエネルギーが限界を超えて進化した姿。全身が溶岩のように燃え上がる大きな隕石獣アルモン。敵も味方も巻きこむ熱さで大暴れ！",
+    "baseStats": {
+      "hp": 34,
+      "attack": 26,
+      "defense": 20,
+      "speed": 18
+    },
+    "statsAt50": {
+      "hp": 150,
+      "attack": 132,
+      "defense": 98,
+      "speed": 92
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 1,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 1,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 30,
+        "moveId": "meteor_punch"
+      },
+      {
+        "level": 38,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 48,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 66,
+        "moveId": "meteor_storm"
+      }
+    ],
+    "color": "#e0531a",
+    "baseExp": 150
   }
 ]

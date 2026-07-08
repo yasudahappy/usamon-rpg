@@ -2,18 +2,18 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
   "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
-  "rairai", "ikarion", "regonyas", "sharisu", "sharian",
+  "rairai", "ikarion", "regonyas", "sharisu", "sharian", "meteko", "meteodon",
 ];
 // Back-facing sprites (the player's own monster in battle). Only the ids that
 // actually have a "<id>_back.png" asset — others fall back to the front sprite.
 const MONSTER_BACK_SPRITE_IDS = [
   "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
-  "rairai", "ikarion", "regonyas", "sharisu", "sharian",
+  "rairai", "ikarion", "regonyas", "sharisu", "sharian", "meteko",
 ];
 
 export class BootScene extends Phaser.Scene {
@@ -530,6 +530,46 @@ export class BootScene extends Phaser.Scene {
         plant(8, 27, 12, "#5fae4a");
         plant(17, 29, 16, "#6cc255");
         plant(26, 27, 11, "#57a244");
+      } else if (id === "80") {
+        // Cave floor: dark rocky ground with speckle + faint ember glow
+        let s = 53;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#2c252f";
+        for (let i = 0; i < 40; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#48404c";
+        for (let i = 0; i < 20; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // a couple of small cracks with warm glow
+        ctx.strokeStyle = "rgba(255,110,30,0.22)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(6, 24); ctx.lineTo(12, 18); ctx.lineTo(10, 12); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(22, 6); ctx.lineTo(26, 12); ctx.stroke();
+      } else if (id === "81") {
+        // Cave rock wall: chunky dark boulders with rim light
+        ctx.fillStyle = "#1b151c"; ctx.fillRect(0, 0, ts, ts);
+        let s = 88;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        for (const [bx, by, br] of [[8, 9, 8], [22, 8, 7], [9, 23, 7], [24, 24, 8], [16, 16, 6]] as [number, number, number][]) {
+          ctx.fillStyle = "#332a37";
+          ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "#4a3f50"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(bx, by, br, Math.PI * 1.05, Math.PI * 1.75); ctx.stroke();
+        }
+        ctx.fillStyle = "#0f0b10";
+        for (let i = 0; i < 12; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+      } else if (id === "82") {
+        // Ladder (ハシゴ): cave floor base + wooden rails and rungs
+        ctx.fillStyle = "#2c252f"; ctx.fillRect(0, 0, ts, ts);
+        const railL = 8, railR = ts - 8;
+        ctx.fillStyle = "#5a4020";
+        ctx.fillRect(railL - 2, 0, 4, ts);
+        ctx.fillRect(railR - 2, 0, 4, ts);
+        ctx.fillStyle = "#8a6636";
+        ctx.fillRect(railL - 2, 0, 2, ts);
+        ctx.fillRect(railR - 2, 0, 2, ts);
+        // rungs
+        ctx.fillStyle = "#7a5a34";
+        for (let ry = 4; ry < ts; ry += 8) ctx.fillRect(railL, ry, railR - railL, 3);
+        ctx.fillStyle = "#a07d45";
+        for (let ry = 4; ry < ts; ry += 8) ctx.fillRect(railL, ry, railR - railL, 1);
       }
 
       this.textures.addCanvas(key, canvas);

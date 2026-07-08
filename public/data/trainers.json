@@ -115,5 +115,109 @@
     ],
     "battleSprite": "trainer-armor",
     "overworldSprite": "char4"
+  },
+  {
+    "id": "explorer1",
+    "name": "たんけんか ホリ",
+    "mapKey": "crater_cave",
+    "x": 6,
+    "y": 6,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 500,
+    "dialogBefore": "この あな、隕石が うがった ものらしい。中は 熱くて… おっと、キミも 探検家か？ 腕くらべと いこう！",
+    "dialogWin": "つよい…！ さすがだ。この さきは もっと 熱く なるぞ、気を つけてな。",
+    "dialogLose": "ふう、まだ 負けられんな！",
+    "party": [
+      {
+        "id": "rairai",
+        "level": 9
+      },
+      {
+        "id": "sunagani",
+        "level": 9
+      }
+    ],
+    "battleSprite": "trainer-casual",
+    "overworldSprite": "char6"
+  },
+  {
+    "id": "explorer2",
+    "name": "たんけんか ミサキ",
+    "mapKey": "crater_cave_b1",
+    "x": 6,
+    "y": 6,
+    "direction": "up",
+    "sightRange": 3,
+    "prizeMoneyBase": 600,
+    "dialogBefore": "ここは 地下1階。下に いくほど あなは せまく、熱く なるの。覚悟は いい？",
+    "dialogWin": "まいったわ…。奥の 人には 気を つけてね。",
+    "dialogLose": "まだまだ！ 探検は これからよ。",
+    "party": [
+      {
+        "id": "regonyas",
+        "level": 10
+      },
+      {
+        "id": "ikarion",
+        "level": 11
+      }
+    ],
+    "battleSprite": "trainer-peace",
+    "overworldSprite": "char5"
+  },
+  {
+    "id": "explorer3",
+    "name": "たんけんか ゴウ",
+    "mapKey": "crater_cave_b2",
+    "x": 3,
+    "y": 5,
+    "direction": "right",
+    "sightRange": 3,
+    "prizeMoneyBase": 700,
+    "dialogBefore": "最下層まで きたか…！ この さきには あの人が いる。おれを 倒してから いけ！",
+    "dialogWin": "…行け。あの人は 隕石の ことを 誰より 知っている。",
+    "dialogLose": "ここは 通さんぞ！",
+    "party": [
+      {
+        "id": "sharisu",
+        "level": 12
+      },
+      {
+        "id": "gorimocchi",
+        "level": 12
+      }
+    ],
+    "battleSprite": "trainer-suit",
+    "overworldSprite": "char9"
+  },
+  {
+    "id": "eezen",
+    "name": "ライバル イーゼン",
+    "mapKey": "crater_cave_b2",
+    "x": 5,
+    "y": 8,
+    "direction": "up",
+    "sightRange": 4,
+    "prizeMoneyBase": 1500,
+    "dialogBefore": "やあ、遅かったね。ぼくは 先に この隕石を 調べていたよ。\n知ってる？ 月の クレーターの ほとんどは、隕石の 衝突で できたんだ。\nそして この隕石は… ただの 石じゃない。中から 火の アルモンの 気配が する。\nさあ、キミの 力を 見せてよ。この発見に ふさわしいか、ね！",
+    "dialogWin": "まいったな…! キミには かなわないや。この さきは キミに たくす。\n…おっと、大事なものを 忘れる ところだった。じゃあ また！",
+    "dialogLose": "ふふ、まだ ぼくの 研究は 終わらせない。",
+    "party": [
+      {
+        "id": "ikarion",
+        "level": 14
+      },
+      {
+        "id": "sharian",
+        "level": 15
+      },
+      {
+        "id": "meteko",
+        "level": 17
+      }
+    ],
+    "battleSprite": "trainer-eezen",
+    "overworldSprite": "eezen"
   }
 ]

@@ -2,10 +2,99 @@
   "sand_route_1": {
     "encounterRate": 0.1,
     "monsters": [
-      { "id": "mochichi", "weight": 40, "minLevel": 2, "maxLevel": 4 },
-      { "id": "sunagani", "weight": 35, "minLevel": 2, "maxLevel": 4 },
-      { "id": "rairai", "weight": 20, "minLevel": 3, "maxLevel": 4 },
-      { "id": "regonyas", "weight": 5, "minLevel": 3, "maxLevel": 5 }
+      {
+        "id": "mochichi",
+        "weight": 40,
+        "minLevel": 2,
+        "maxLevel": 4
+      },
+      {
+        "id": "sunagani",
+        "weight": 35,
+        "minLevel": 2,
+        "maxLevel": 4
+      },
+      {
+        "id": "rairai",
+        "weight": 20,
+        "minLevel": 3,
+        "maxLevel": 4
+      },
+      {
+        "id": "regonyas",
+        "weight": 5,
+        "minLevel": 3,
+        "maxLevel": 5
+      }
+    ]
+  },
+  "crater_cave": {
+    "encounterRate": 0.1,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 55,
+        "minLevel": 8,
+        "maxLevel": 12
+      },
+      {
+        "id": "sunagani",
+        "weight": 25,
+        "minLevel": 8,
+        "maxLevel": 11
+      },
+      {
+        "id": "rairai",
+        "weight": 20,
+        "minLevel": 9,
+        "maxLevel": 12
+      }
+    ]
+  },
+  "crater_cave_b1": {
+    "encounterRate": 0.11,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 60,
+        "minLevel": 11,
+        "maxLevel": 15
+      },
+      {
+        "id": "regonyas",
+        "weight": 22,
+        "minLevel": 11,
+        "maxLevel": 14
+      },
+      {
+        "id": "ikarion",
+        "weight": 18,
+        "minLevel": 12,
+        "maxLevel": 15
+      }
+    ]
+  },
+  "crater_cave_b2": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 62,
+        "minLevel": 14,
+        "maxLevel": 18
+      },
+      {
+        "id": "sharisu",
+        "weight": 20,
+        "minLevel": 14,
+        "maxLevel": 17
+      },
+      {
+        "id": "ikarion",
+        "weight": 18,
+        "minLevel": 15,
+        "maxLevel": 18
+      }
     ]
   }
 }
