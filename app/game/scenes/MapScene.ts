@@ -2552,9 +2552,9 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
-    // (2) Grand battlefield circle in the lower arena (cols5-14, rows13-18).
+    // (2) Grand battlefield circle in the lower arena (cols5-14, rows9-14).
     const ring = this.add.graphics().setDepth(2);
-    const bcx = 9.5 * ts, bcy = 15.5 * ts;
+    const bcx = 9.5 * ts, bcy = 11.5 * ts;
     ring.fillStyle(0x6a4fb0, 0.14); ring.fillEllipse(bcx, bcy, 9.2 * ts, 5.4 * ts);
     ring.lineStyle(3, 0xd8b24a, 0.85); ring.strokeEllipse(bcx, bcy, 8.6 * ts, 4.9 * ts);
     ring.lineStyle(2, 0x8f74d6, 0.7);  ring.strokeEllipse(bcx, bcy, 7.2 * ts, 4.0 * ts);
@@ -2568,21 +2568,21 @@ export class MapScene extends Phaser.Scene {
 
     // (3) Leader's dais glow (around the central device where リューマ stands).
     const dais = this.add.graphics().setDepth(2);
-    const dcx = 9 * ts + ts / 2, dcy = 10.5 * ts + ts / 2;
+    const dcx = 9 * ts + ts / 2, dcy = 6.5 * ts + ts / 2;
     dais.fillStyle(0x8f74d6, 0.22); dais.fillEllipse(dcx, dcy, 4.6 * ts, 3.0 * ts);
     dais.lineStyle(3, 0xe8c766, 0.9); dais.strokeEllipse(dcx, dcy, 4.0 * ts, 2.5 * ts);
 
     // (4) Crest high on the arena's north wall, above the leader.
-    this.add.image(9 * ts + ts / 2, 8 * ts + ts / 2, "gym-crest").setDepth(6);
+    this.add.image(9 * ts + ts / 2, 4 * ts + ts / 2, "gym-crest").setDepth(6);
     // (5) Banners flanking the crest.
-    this.add.image(6 * ts + ts / 2, 8 * ts + ts / 2, "gym-banner").setDepth(6);
-    this.add.image(12 * ts + ts / 2, 8 * ts + ts / 2, "gym-banner").setDepth(6);
+    this.add.image(6 * ts + ts / 2, 4 * ts + ts / 2, "gym-banner").setDepth(6);
+    this.add.image(12 * ts + ts / 2, 4 * ts + ts / 2, "gym-banner").setDepth(6);
     // (6) Ornate pillars at the arena's upper corners + hall.
-    for (const [cx, cy] of [[3, 8], [15, 8], [2, 20], [16, 20]] as [number, number][]) {
+    for (const [cx, cy] of [[3, 4], [15, 4], [2, 16], [16, 16]] as [number, number][]) {
       this.add.image(cx * ts + ts / 2, cy * ts + ts, "gym-pillar").setOrigin(0.5, 1).setDepth(6);
     }
     // (7) Flaming braziers flanking the leader's dais.
-    for (const [cx, cy] of [[7, 9], [11, 9]] as [number, number][]) {
+    for (const [cx, cy] of [[7, 5], [11, 5]] as [number, number][]) {
       this.add.image(cx * ts + ts / 2, cy * ts + ts * 0.9, "gym-brazier").setOrigin(0.5, 1).setDepth(6);
     }
   }
