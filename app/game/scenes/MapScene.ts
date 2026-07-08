@@ -283,6 +283,11 @@ export class MapScene extends Phaser.Scene {
       this.placeMedicalNpcs();
     }
 
+    // Gym interior — a lavish battle hall (marble, pillars, banners, braziers)
+    if (this.currentMapKey === "gym_1") {
+      this.placeGymDecor();
+    }
+
     // Farm dome interior — a researcher tending the plants
     if (this.currentMapKey === "farm_dome") {
       this.placeFarmResearcherNpc();
@@ -2506,6 +2511,134 @@ export class MapScene extends Phaser.Scene {
       ctx.strokeStyle = "#dfe8f0"; ctx.lineWidth = 2; this.roundRect(ctx, 8, 4, 24, 44, 10); ctx.stroke();
       ctx.fillStyle = "#eaf6ff"; this.roundRect(ctx, 12, 6, 6, 30, 3); ctx.fill();        // highlight
       ctx.fillStyle = "#ffe08a"; ctx.beginPath(); ctx.arc(22, 30, 5, 0, Math.PI * 2); ctx.fill(); // specimen
+    });
+  }
+
+  // ---- Gym interior: lavish battle hall ----
+  private placeGymDecor(): void {
+    const ts = this.tileSize;
+    this.genGymTextures();
+    const { width, height, layers } = this.mapData;
+    const floor = layers.floor;
+
+    // (1) Luxurious marble floor laid over every walkable gym tile. Hall tiles
+    // (10) get a warm champagne marble; arena tiles (38) a deep royal marble.
+    const fo = this.add.graphics().setDepth(1);
+    let seed = 20250708;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const t = floor[y][x];
+        if (t !== 10 && t !== 38) continue;
+        const px = x * ts, py = y * ts;
+        const hall = t === 10;
+        fo.fillStyle(hall ? 0x3b3550 : 0x2a2440, 1);
+        fo.fillRect(px, py, ts, ts);
+        // marble veining
+        fo.lineStyle(1, hall ? 0x554d70 : 0x413a5e, 0.9);
+        fo.beginPath();
+        fo.moveTo(px + rnd() * ts, py);
+        fo.lineTo(px + rnd() * ts, py + ts);
+        fo.strokePath();
+        // gold seam grid
+        fo.lineStyle(1, 0xb9962f, 0.55);
+        fo.strokeRect(px + 0.5, py + 0.5, ts - 1, ts - 1);
+        // corner studs
+        fo.fillStyle(0xe8c766, 0.8);
+        fo.fillRect(px + 1, py + 1, 2, 2);
+        fo.fillRect(px + ts - 3, py + 1, 2, 2);
+        fo.fillRect(px + 1, py + ts - 3, 2, 2);
+        fo.fillRect(px + ts - 3, py + ts - 3, 2, 2);
+      }
+    }
+
+    // (2) Grand battlefield circle in the lower arena (cols5-14, rows13-18).
+    const ring = this.add.graphics().setDepth(2);
+    const bcx = 9.5 * ts, bcy = 15.5 * ts;
+    ring.fillStyle(0x6a4fb0, 0.14); ring.fillEllipse(bcx, bcy, 9.2 * ts, 5.4 * ts);
+    ring.lineStyle(3, 0xd8b24a, 0.85); ring.strokeEllipse(bcx, bcy, 8.6 * ts, 4.9 * ts);
+    ring.lineStyle(2, 0x8f74d6, 0.7);  ring.strokeEllipse(bcx, bcy, 7.2 * ts, 4.0 * ts);
+    ring.lineStyle(2, 0xd8b24a, 0.6);  ring.strokeEllipse(bcx, bcy, 2.4 * ts, 1.4 * ts);
+    // centre emblem diamond
+    ring.fillStyle(0xd8b24a, 0.5);
+    ring.beginPath();
+    ring.moveTo(bcx, bcy - 0.7 * ts); ring.lineTo(bcx + 0.55 * ts, bcy);
+    ring.lineTo(bcx, bcy + 0.7 * ts); ring.lineTo(bcx - 0.55 * ts, bcy);
+    ring.closePath(); ring.fill();
+
+    // (3) Leader's dais glow (around the central device where リューマ stands).
+    const dais = this.add.graphics().setDepth(2);
+    const dcx = 9 * ts + ts / 2, dcy = 10.5 * ts + ts / 2;
+    dais.fillStyle(0x8f74d6, 0.22); dais.fillEllipse(dcx, dcy, 4.6 * ts, 3.0 * ts);
+    dais.lineStyle(3, 0xe8c766, 0.9); dais.strokeEllipse(dcx, dcy, 4.0 * ts, 2.5 * ts);
+
+    // (4) Crest high on the arena's north wall, above the leader.
+    this.add.image(9 * ts + ts / 2, 8 * ts + ts / 2, "gym-crest").setDepth(6);
+    // (5) Banners flanking the crest.
+    this.add.image(6 * ts + ts / 2, 8 * ts + ts / 2, "gym-banner").setDepth(6);
+    this.add.image(12 * ts + ts / 2, 8 * ts + ts / 2, "gym-banner").setDepth(6);
+    // (6) Ornate pillars at the arena's upper corners + hall.
+    for (const [cx, cy] of [[3, 8], [15, 8], [2, 20], [16, 20]] as [number, number][]) {
+      this.add.image(cx * ts + ts / 2, cy * ts + ts, "gym-pillar").setOrigin(0.5, 1).setDepth(6);
+    }
+    // (7) Flaming braziers flanking the leader's dais.
+    for (const [cx, cy] of [[7, 9], [11, 9]] as [number, number][]) {
+      this.add.image(cx * ts + ts / 2, cy * ts + ts * 0.9, "gym-brazier").setOrigin(0.5, 1).setDepth(6);
+    }
+  }
+
+  private genGymTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false; draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Ornate marble pillar with a gold capital and base.
+    mk("gym-pillar", 30, 78, (ctx) => {
+      ctx.fillStyle = "#c9c2dd"; ctx.fillRect(7, 8, 16, 62);          // shaft
+      ctx.fillStyle = "#ded8ee"; ctx.fillRect(9, 8, 4, 62);           // highlight flute
+      ctx.fillStyle = "#a79ec2"; ctx.fillRect(17, 8, 4, 62);          // shadow flute
+      ctx.fillStyle = "#e8c766"; ctx.fillRect(3, 0, 24, 9);           // capital
+      ctx.fillStyle = "#b9962f"; ctx.fillRect(3, 6, 24, 3);
+      ctx.fillStyle = "#e8c766"; ctx.fillRect(2, 70, 26, 8);          // base
+      ctx.fillStyle = "#b9962f"; ctx.fillRect(2, 70, 26, 2);
+    });
+    // Hanging banner (royal purple) with a gold moon-and-star emblem.
+    mk("gym-banner", 28, 62, (ctx) => {
+      ctx.fillStyle = "#5a2a86"; ctx.fillRect(3, 0, 22, 52);          // cloth
+      ctx.fillStyle = "#6d38a0"; ctx.fillRect(3, 0, 22, 4);
+      ctx.beginPath(); ctx.moveTo(3, 52); ctx.lineTo(14, 60); ctx.lineTo(25, 52); ctx.closePath();
+      ctx.fillStyle = "#5a2a86"; ctx.fill();                          // pointed hem
+      ctx.strokeStyle = "#e8c766"; ctx.lineWidth = 2; ctx.strokeRect(4, 1, 20, 50); // gold trim
+      ctx.fillStyle = "#e8c766";                                      // crescent
+      ctx.beginPath(); ctx.arc(14, 22, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5a2a86"; ctx.beginPath(); ctx.arc(17, 20, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffe7a0"; ctx.fillRect(9, 34, 2, 2); ctx.fillRect(18, 38, 2, 2); ctx.fillRect(13, 42, 2, 2);
+    });
+    // Gold brazier with a flickering flame.
+    mk("gym-brazier", 26, 42, (ctx) => {
+      ctx.fillStyle = "#8a6a24"; ctx.fillRect(11, 26, 4, 12);         // stem
+      ctx.fillStyle = "#6a5018"; ctx.fillRect(6, 38, 14, 4);          // foot
+      ctx.fillStyle = "#e8c766"; this.roundRect(ctx, 3, 20, 20, 9, 3); ctx.fill();   // bowl
+      ctx.fillStyle = "#b9962f"; ctx.fillRect(3, 26, 20, 3);
+      ctx.fillStyle = "#ff6a1e"; ctx.beginPath();                     // flame
+      ctx.moveTo(13, 2); ctx.quadraticCurveTo(21, 14, 13, 22); ctx.quadraticCurveTo(5, 14, 13, 2); ctx.fill();
+      ctx.fillStyle = "#ffd257"; ctx.beginPath();
+      ctx.moveTo(13, 8); ctx.quadraticCurveTo(17, 15, 13, 21); ctx.quadraticCurveTo(9, 15, 13, 8); ctx.fill();
+    });
+    // Large circular gym crest — gold ring around a purple gem with crossed batons.
+    mk("gym-crest", 60, 54, (ctx) => {
+      ctx.fillStyle = "#e8c766"; ctx.beginPath(); ctx.arc(30, 26, 24, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#b9962f"; ctx.beginPath(); ctx.arc(30, 26, 24, 0, Math.PI * 2); ctx.lineWidth = 0;
+      ctx.strokeStyle = "#b9962f"; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = "#3a2560"; ctx.beginPath(); ctx.arc(30, 26, 17, 0, Math.PI * 2); ctx.fill();
+      // crossed batons
+      ctx.strokeStyle = "#e8c766"; ctx.lineWidth = 4; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(20, 16); ctx.lineTo(40, 36); ctx.moveTo(40, 16); ctx.lineTo(20, 36); ctx.stroke();
+      // central gem
+      ctx.fillStyle = "#9a6ff0"; ctx.beginPath(); ctx.arc(30, 26, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#d8c2ff"; ctx.beginPath(); ctx.arc(28, 24, 2, 0, Math.PI * 2); ctx.fill();
     });
   }
 
