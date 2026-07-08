@@ -111,10 +111,16 @@ export class MapScene extends Phaser.Scene {
   private farmResX = 7;
   private farmResY = 4;
 
-  // Meteorite (appears at the Crater City outskirts after the gym is cleared)
+  // Meteorite (appears at the Crater City outskirts after the gym is cleared).
+  // (meteorX,meteorY) is the TOP-LEFT of a 5x5 footprint; the cracked-open cave
+  // entrance sits just below its bottom-centre.
   private meteorSprite?: Phaser.GameObjects.Image;
-  private meteorX = 30;
-  private meteorY = 24;
+  private caveEntranceSprite?: Phaser.GameObjects.Image;
+  private meteorX = 27;
+  private meteorY = 22;
+  private static METEOR_SIZE = 5;
+  private caveEntranceX = 29;
+  private caveEntranceY = 27;
   private lastTrainerDefeated?: string;
 
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
@@ -167,6 +173,7 @@ export class MapScene extends Phaser.Scene {
     this.nurseSprite = undefined;
     this.shopkeeperSprite = undefined;
     this.meteorSprite = undefined;
+    this.caveEntranceSprite = undefined;
     this.farmResSprite = undefined;
     this.residentSprite = undefined;
     this.rivalSprite = undefined;
@@ -723,7 +730,9 @@ export class MapScene extends Phaser.Scene {
     if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
     if (this.residentSprite && x === this.residentNpcX && y === this.residentNpcY) return true;
     if (this.farmResSprite && x === this.farmResX && y === this.farmResY) return true;
-    if (this.meteorSprite && x === this.meteorX && y === this.meteorY) return true;
+    if (this.meteorSprite &&
+        x >= this.meteorX && x < this.meteorX + MapScene.METEOR_SIZE &&
+        y >= this.meteorY && y < this.meteorY + MapScene.METEOR_SIZE) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
     return false;
@@ -1948,8 +1957,10 @@ export class MapScene extends Phaser.Scene {
       this.tryPickMoonSand();
       return;
     }
-    // Meteorite investigation (Crater City outskirts)
-    if (this.meteorSprite && fx === this.meteorX && fy === this.meteorY) {
+    // Meteorite investigation (Crater City outskirts): facing any of its tiles
+    if (this.meteorSprite &&
+        fx >= this.meteorX && fx < this.meteorX + MapScene.METEOR_SIZE &&
+        fy >= this.meteorY && fy < this.meteorY + MapScene.METEOR_SIZE) {
       this.triggerMeteorEvent();
       return;
     }
@@ -2018,52 +2029,103 @@ export class MapScene extends Phaser.Scene {
     ]);
   }
 
-  // ---- Post-gym meteorite event (Chapter 4, phase A: staging only) ----
+  // ---- Post-gym meteorite event (Chapter 4) ----
   private genMeteorTexture(): void {
     if (this.textures.exists("meteor-rock")) return;
+    const s = 256;
+    const c = document.createElement("canvas"); c.width = s; c.height = s;
+    const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+    const R = s * 0.42, cx = s / 2, cy = s * 0.46;
+    // scorched impact ring on the ground
+    ctx.fillStyle = "rgba(40,26,20,0.45)";
+    ctx.beginPath(); ctx.ellipse(cx, s * 0.82, R * 1.25, R * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(70,46,34,0.4)";
+    ctx.beginPath(); ctx.ellipse(cx, s * 0.82, R * 0.9, R * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+    // jagged rock body
+    let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const pts: [number, number][] = [];
+    const N = 16;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      const rr = R * (0.82 + rnd() * 0.24);
+      pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.96]);
+    }
+    const grd = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, 8, cx, cy, R * 1.1);
+    grd.addColorStop(0, "#6f5d54"); grd.addColorStop(0.55, "#42352f"); grd.addColorStop(1, "#201814");
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.fill();
+    // surface craters
+    ctx.fillStyle = "#2a211c";
+    for (let i = 0; i < 7; i++) {
+      const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.7;
+      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.9, 6 + rnd() * 12, 0, Math.PI * 2); ctx.fill();
+    }
+    // molten cracks + embers
+    ctx.strokeStyle = "#ff6a1e"; ctx.lineWidth = 4; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.4, cy - R * 0.2); ctx.lineTo(cx - R * 0.05, cy + R * 0.1);
+    ctx.lineTo(cx + R * 0.3, cy + R * 0.05); ctx.stroke();
+    ctx.strokeStyle = "#ffd257"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = "#ffb347";
+    for (let i = 0; i < 5; i++) { const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.6; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 3, 0, Math.PI * 2); ctx.fill(); }
+    // top rim highlight
+    ctx.strokeStyle = "rgba(160,138,120,0.8)"; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < N / 2; i++) { const p = pts[i]; if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); }
+    ctx.stroke();
+    this.textures.addCanvas("meteor-rock", c);
+  }
+
+  private genCaveEntranceTexture(): void {
+    if (this.textures.exists("cave-entrance")) return;
     const s = 64;
     const c = document.createElement("canvas"); c.width = s; c.height = s;
     const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
-    // scorched impact ring
-    ctx.fillStyle = "rgba(60,40,30,0.5)";
-    ctx.beginPath(); ctx.ellipse(s/2, s*0.72, s*0.46, s*0.22, 0, 0, Math.PI*2); ctx.fill();
-    // rock body
-    const grd = ctx.createRadialGradient(s*0.4, s*0.4, 4, s/2, s/2, s*0.5);
-    grd.addColorStop(0, "#6a5a52"); grd.addColorStop(0.6, "#3f342f"); grd.addColorStop(1, "#241c19");
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.moveTo(14, 40); ctx.lineTo(10, 24); ctx.lineTo(24, 12); ctx.lineTo(42, 12);
-    ctx.lineTo(54, 26); ctx.lineTo(52, 44); ctx.lineTo(36, 54); ctx.lineTo(18, 50);
-    ctx.closePath(); ctx.fill();
-    // craters + glowing embers
-    ctx.fillStyle = "#2a2320";
-    ctx.beginPath(); ctx.arc(26, 28, 5, 0, Math.PI*2); ctx.arc(40, 36, 4, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "#ff7a2a";
-    ctx.beginPath(); ctx.arc(34, 24, 2.5, 0, Math.PI*2); ctx.arc(22, 40, 2, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "#ffd06a";
-    ctx.fillRect(33, 23, 2, 2); ctx.fillRect(21, 39, 2, 2);
-    // rim highlight
-    ctx.strokeStyle = "#8a7568"; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(24, 12); ctx.lineTo(42, 12); ctx.lineTo(54, 26); ctx.stroke();
-    this.textures.addCanvas("meteor-rock", c);
+    // rocky rim
+    ctx.fillStyle = "#3a2f28";
+    ctx.beginPath(); ctx.ellipse(s / 2, s / 2, s * 0.46, s * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#5a4a3f";
+    ctx.beginPath(); ctx.ellipse(s / 2, s * 0.44, s * 0.46, s * 0.32, 0, 0, Math.PI); ctx.fill();
+    // dark hole
+    const g = ctx.createRadialGradient(s / 2, s * 0.55, 2, s / 2, s * 0.55, s * 0.4);
+    g.addColorStop(0, "#000000"); g.addColorStop(0.7, "#0a0710"); g.addColorStop(1, "#241a22");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(s / 2, s * 0.55, s * 0.34, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    // faint ember glow from within
+    ctx.fillStyle = "rgba(255,110,30,0.25)";
+    ctx.beginPath(); ctx.ellipse(s / 2, s * 0.62, s * 0.16, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    this.textures.addCanvas("cave-entrance", c);
   }
 
   private placeMeteor(): void {
     this.genMeteorTexture();
+    this.genCaveEntranceTexture();
     const ts = this.tileSize;
+    const n = MapScene.METEOR_SIZE;
     this.meteorSprite = this.add.image(
-      this.meteorX * ts + ts / 2,
-      this.meteorY * ts + ts / 2 - 4,
+      (this.meteorX + n / 2) * ts,
+      (this.meteorY + n / 2) * ts,
       "meteor-rock"
-    ).setDepth(9).setDisplaySize(ts * 1.4, ts * 1.4);
+    ).setDepth(9).setDisplaySize(ts * n, ts * n);
+    // Cracked-open cave entrance just below the meteor's bottom-centre.
+    this.caveEntranceSprite = this.add.image(
+      this.caveEntranceX * ts + ts / 2,
+      this.caveEntranceY * ts + ts / 2,
+      "cave-entrance"
+    ).setDepth(8).setDisplaySize(ts, ts);
+    // Register the warp into the cave (idempotent).
+    const warps = this.mapData.warps || (this.mapData.warps = []);
+    if (!warps.some(w => w.x === this.caveEntranceX && w.y === this.caveEntranceY)) {
+      warps.push({ x: this.caveEntranceX, y: this.caveEntranceY, targetMap: "crater_cave", targetX: 6, targetY: 10 });
+    }
   }
 
   private triggerMeteorEvent(): void {
     this.showDialog([
-      "空から 落ちてきた 隕石だ。",
-      "表面は まだ ほんのり あたたかい…。",
-      "奥から かすかに 熱い 空気が\nもれている 気がする。",
-      "（この さきは また 今度 調べよう。）",
+      "空から 落ちてきた 巨大な 隕石だ。",
+      "衝突の しょうげきで 地面が われ、\nしたに ぽっかりと あなが あいている。",
+      "熱い 空気が 奥から ふきあげている…。\n(あなに もぐって みよう。)",
     ]);
   }
 
