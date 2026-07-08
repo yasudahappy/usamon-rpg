@@ -96,5 +96,40 @@
         "maxLevel": 18
       }
     ]
+  },
+  "sand_route_2": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "sunagani",
+        "weight": 30,
+        "minLevel": 16,
+        "maxLevel": 20
+      },
+      {
+        "id": "lobsner",
+        "weight": 15,
+        "minLevel": 18,
+        "maxLevel": 22
+      },
+      {
+        "id": "rairai",
+        "weight": 20,
+        "minLevel": 16,
+        "maxLevel": 20
+      },
+      {
+        "id": "ikarion",
+        "weight": 15,
+        "minLevel": 18,
+        "maxLevel": 22
+      },
+      {
+        "id": "meteko",
+        "weight": 20,
+        "minLevel": 17,
+        "maxLevel": 21
+      }
+    ]
   }
 }

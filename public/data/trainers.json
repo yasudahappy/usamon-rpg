@@ -120,7 +120,7 @@
     "id": "explorer1",
     "name": "たんけんか ホリ",
     "mapKey": "crater_cave",
-    "x": 12,
+    "x": 10,
     "y": 1,
     "direction": "down",
     "sightRange": 3,

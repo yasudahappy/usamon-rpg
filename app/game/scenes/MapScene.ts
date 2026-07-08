@@ -106,6 +106,13 @@ export class MapScene extends Phaser.Scene {
   private residentNpcX = 3;
   private residentNpcY = 3;
 
+  // Two grandmothers gossiping in front of the north-west exit of Crater City.
+  // They block the way to 砂場ルート2 until イーゼン (the cave boss) is beaten.
+  private granny1Sprite?: Phaser.GameObjects.Image;
+  private granny2Sprite?: Phaser.GameObjects.Image;
+  private granny1X = 7; private granny1Y = 2;
+  private granny2X = 8; private granny2Y = 2;
+
   // Farm researcher NPC (farm dome interior) — talk-only
   private farmResSprite?: Phaser.GameObjects.Image;
   private farmResX = 7;
@@ -184,6 +191,8 @@ export class MapScene extends Phaser.Scene {
     this.caveCapsuleSprites.clear();
     this.farmResSprite = undefined;
     this.residentSprite = undefined;
+    this.granny1Sprite = undefined;
+    this.granny2Sprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
     this.shopOpen = false;
@@ -289,6 +298,13 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "crater_city" &&
         !!this.playerState?.defeatedTrainers.includes("ryuma")) {
       this.placeMeteor();
+    }
+
+    // Crater City: two grandmothers block the NW exit to 砂場ルート2 until the
+    // cave boss イーゼン is beaten; after that the road north opens up.
+    if (this.currentMapKey === "crater_city" &&
+        !this.playerState?.defeatedTrainers.includes("eezen")) {
+      this.placeCraterGrannies();
     }
 
     // Meteorite cave: scatter the moon-capsule items; award the rival's dropped
@@ -692,7 +708,7 @@ export class MapScene extends Phaser.Scene {
 
     if (warp) {
       // Block ONLY entering a wild route with no almon (town/home/base transitions are fine).
-      const WILD_MAPS = ["sand_route_1"];
+      const WILD_MAPS = ["sand_route_1", "sand_route_2"];
       if (WILD_MAPS.includes(warp.targetMap) &&
           (!this.playerState || this.playerState.party.length === 0)) {
         this.showDialog([
@@ -749,6 +765,8 @@ export class MapScene extends Phaser.Scene {
     if (this.researcher1Sprite && x === this.researcher1NpcX && y === this.researcher1NpcY) return true;
     if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
     if (this.residentSprite && x === this.residentNpcX && y === this.residentNpcY) return true;
+    if (this.granny1Sprite && x === this.granny1X && y === this.granny1Y) return true;
+    if (this.granny2Sprite && x === this.granny2X && y === this.granny2Y) return true;
     if (this.farmResSprite && x === this.farmResX && y === this.farmResY) return true;
     if (this.meteorSprite &&
         x >= this.meteorX && x < this.meteorX + MapScene.METEOR_SIZE &&
@@ -2028,6 +2046,11 @@ export class MapScene extends Phaser.Scene {
       this.triggerResidentEvent();
       return;
     }
+    if ((this.granny1Sprite && fx === this.granny1X && fy === this.granny1Y) ||
+        (this.granny2Sprite && fx === this.granny2X && fy === this.granny2Y)) {
+      this.triggerCraterGrannyEvent();
+      return;
+    }
     if (this.farmResSprite && fx === this.farmResX && fy === this.farmResY) {
       this.triggerFarmResearcherEvent();
       return;
@@ -2632,6 +2655,35 @@ export class MapScene extends Phaser.Scene {
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
+  }
+
+  // ---- Crater City NW-exit grandmothers (gate to 砂場ルート2) ----
+  private placeCraterGrannies(): void {
+    // The two face each other (left one looks right, right one looks left) so
+    // they read as gossiping neighbours.
+    this.granny1Sprite = this.add.image(
+      this.granny1X * this.tileSize + this.tileSize / 2,
+      this.granny1Y * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char5-right", "npc-mom")
+    ).setDepth(9);
+    this.granny2Sprite = this.add.image(
+      this.granny2X * this.tileSize + this.tileSize / 2,
+      this.granny2Y * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char5-left", "npc-mom")
+    ).setDepth(9);
+  }
+
+  private triggerCraterGrannyEvent(): void {
+    this.showDialog([
+      "おばあさん「あらあら、こんにちは。\nこの さきの 砂の 道は 通れないのよ。」",
+      "おばあさん「そうそう、ここで ゆっくり\n宇宙の おしゃべりでも しましょ。」",
+      "おばあさん「知ってる？ 太陽の 光が\n地球に とどくまで 約8分 かかるのよ。」",
+      "おばあさん「あら すごい。じゃあ わたしから。\n宇宙には 音が ないの。空気が ないからね。」",
+      "おばあさん「土星の 輪っかは ほとんどが\n氷の つぶで できているんですって。」",
+      "おばあさん「わたしの ばんね。宇宙で いちばん\n大きな 火山は 火星の オリンポス山。\nエベレストの 3倍 くらい あるのよ。」",
+      "おばあさん「ふふ、月の うらがわは 地球からは\nぜったいに 見えないの。ふしぎねぇ。」",
+      "おばあさん「…さて、あの 隕石さわぎが\nおさまれば、この 道も 通れるように\nなるかもね。」",
+    ]);
   }
 
   // ---- Moonbase (博士の研究所) equipment fit-out ----

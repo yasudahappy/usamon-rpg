@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -13,7 +13,7 @@ const MONSTER_SPRITE_IDS = [
 // actually have a "<id>_back.png" asset — others fall back to the front sprite.
 const MONSTER_BACK_SPRITE_IDS = [
   "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
-  "rairai", "ikarion", "regonyas", "sharisu", "sharian", "meteko",
+  "rairai", "ikarion", "regonyas", "sharisu", "sharian", "meteko", "meteodon",
 ];
 
 export class BootScene extends Phaser.Scene {
