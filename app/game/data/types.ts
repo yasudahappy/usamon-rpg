@@ -63,6 +63,7 @@ export interface PlayerState {
   items: { id: string; count: number }[];
   money: number;
   defeatedTrainers: string[]; // trainer ids
+  pickups?: string[]; // ids of one-time field items already collected
 }
 
 // ---- Trainer data ----

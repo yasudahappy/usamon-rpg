@@ -1918,6 +1918,11 @@ export class MapScene extends Phaser.Scene {
       case "left": fx--; break;
       case "right": fx++; break;
     }
+    // Moon-sand deposit: crater at the south edge of Crater City (23,33)
+    if (this.currentMapKey === "crater_city" && fx === 23 && fy === 33) {
+      this.tryPickMoonSand();
+      return;
+    }
     if (this.kinoshitaSprite && fx === this.kinoshitaNpcX && fy === this.kinoshitaNpcY) {
       this.triggerKinoshitaEvent();
       return;
@@ -1962,6 +1967,25 @@ export class MapScene extends Phaser.Scene {
       this.triggerLabRes2Event();
       return;
     }
+  }
+
+  /** One-time pickup: investigate the moon crater to receive つきのすな. */
+  private tryPickMoonSand(): void {
+    if (!this.playerState) return;
+    const flag = "crater_moon_sand";
+    this.playerState.pickups = this.playerState.pickups || [];
+    if (this.playerState.pickups.includes(flag)) {
+      this.showDialog(["クレーターを しらべたが、\nもう なにも なさそうだ。"]);
+      return;
+    }
+    this.playerState.pickups.push(flag);
+    const existing = this.playerState.items.find(i => i.id === "moon_sand");
+    if (existing) existing.count++;
+    else this.playerState.items.push({ id: "moon_sand", count: 1 });
+    this.showDialog([
+      "クレーターを しらべた。",
+      "きらきら 光る「つきのすな」を\nてにいれた！",
+    ]);
   }
 
   // ---- Home interiors (player / rival) ----
