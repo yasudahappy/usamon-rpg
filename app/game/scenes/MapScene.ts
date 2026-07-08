@@ -129,7 +129,7 @@ export class MapScene extends Phaser.Scene {
 
   // Menu system
   private menuOpen = false;
-  private menuSubScreen: "none" | "party" | "save" | "stub" = "none";
+  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" = "none";
   private menuSelectedIndex = 0;
   private menuElements: Phaser.GameObjects.GameObject[] = [];
   private menuGpPrevDpad: string | null = null;
@@ -973,6 +973,10 @@ export class MapScene extends Phaser.Scene {
       if (b || menu) { this.closeSubScreen(); return; }
       // Sub-screen specific: save confirm
       if (this.menuSubScreen === "save" && a) { this.doSave(); return; }
+      // Settings: A on "はじめからはじめる" opens a confirm
+      if (this.menuSubScreen === "settings" && a) { this.showRestartConfirm(); return; }
+      // Restart confirm: A wipes the save and starts a brand-new game
+      if (this.menuSubScreen === "restart-confirm" && a) { this.doRestartGame(); return; }
       return;
     }
 
@@ -1048,7 +1052,7 @@ export class MapScene extends Phaser.Scene {
       case 2: this.showStubScreen("どうぐ"); break;
       case 3: this.showPlayerInfoScreen(); break;
       case 4: this.showSaveScreen(); break;
-      case 5: this.showStubScreen("せってい"); break;
+      case 5: this.showSettingsScreen(); break;
       case 6: this.closeMenu(); break;
     }
   }
@@ -1468,6 +1472,94 @@ export class MapScene extends Phaser.Scene {
     this.menuSubScreen = "stub"; // prevent double-save
     this.time.delayedCall(1200, () => {
       if (this.menuOpen) this.closeMenu();
+    });
+  }
+
+  // ---- Settings Screen ----
+  private showSettingsScreen(): void {
+    this.menuSubScreen = "settings";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    this.menuElements.push(
+      this.add.text(this.uiX(W/2), this.uiY(40), "せってい", {
+        fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold",
+        stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5)
+    );
+
+    // Option row (single option for now)
+    const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+    panel.fillStyle(0x1a3366, 0.9);
+    panel.fillRoundedRect(this.uiX(W/2 - 170), this.uiY(H/2 - 24), this.uiS(340), this.uiS(48), this.uiS(8));
+    panel.lineStyle(2, 0x3366aa);
+    panel.strokeRoundedRect(this.uiX(W/2 - 170), this.uiY(H/2 - 24), this.uiS(340), this.uiS(48), this.uiS(8));
+    this.menuElements.push(panel);
+    this.menuElements.push(
+      this.add.text(this.uiX(W/2), this.uiY(H/2), "▶ はじめから はじめる", {
+        fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F,
+        stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
+    );
+
+    this.menuElements.push(
+      this.add.text(this.uiX(W/2), this.uiY(H - 30), "Aボタン: えらぶ  /  Bボタン: もどる", {
+        fontSize: `${this.uiS(12)}px`, color: "#88aacc", fontFamily: F,
+        stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5)
+    );
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private showRestartConfirm(): void {
+    this.menuSubScreen = "restart-confirm";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+    panel.fillStyle(0x2a1020, 0.95);
+    panel.fillRoundedRect(this.uiX(W/2 - 200), this.uiY(H/2 - 90), this.uiS(400), this.uiS(180), this.uiS(12));
+    panel.lineStyle(2, 0xcc5566);
+    panel.strokeRoundedRect(this.uiX(W/2 - 200), this.uiY(H/2 - 90), this.uiS(400), this.uiS(180), this.uiS(12));
+    this.menuElements.push(panel);
+
+    this.menuElements.push(
+      this.add.text(this.uiX(W/2), this.uiY(H/2 - 40), "セーブを けして\nはじめから やり直しますか？", {
+        fontSize: `${this.uiS(15)}px`, color: "#ffffff", fontFamily: F, align: "center",
+        stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
+    );
+    this.menuElements.push(
+      this.add.text(this.uiX(W/2), this.uiY(H/2 + 40), "Aボタン: はい  /  Bボタン: いいえ", {
+        fontSize: `${this.uiS(13)}px`, color: "#ffaaaa", fontFamily: F,
+        stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
+    );
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private doRestartGame(): void {
+    // Wipe all saved progress + character setup, then start a brand-new game.
+    try {
+      localStorage.removeItem("usamon-save-data");
+      localStorage.removeItem("usamon-player-setup");
+    } catch (e) { /* ignore */ }
+    this.menuOpen = false;
+    this.menuSubScreen = "none";
+    this.clearMenuElements();
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => {
+      this.scene.start("SetupScene");
     });
   }
 
