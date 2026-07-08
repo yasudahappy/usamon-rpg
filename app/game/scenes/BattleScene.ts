@@ -2027,8 +2027,10 @@ export class BattleScene extends Phaser.Scene {
     const enemyData = this.allMonsters.find(m => m.id === next.id)!;
     this.enemySprite.setTexture(`monster-${next.id}`);
     this.sizeMonsterSprite(this.enemySprite, 110, 116);
-    this.enemySprite.setAlpha(1);
-    this.enemySprite.setY(Math.round(80 * this.sy));
+    this.enemySprite.setAlpha(1).setVisible(true);
+    this.enemySprite.setPosition(this.EPLAT_X, Math.round((this.EPLAT_Y + 6) * this.sy));
+    // The player's almon stays on the field between the trainer's switches.
+    this.playerSprite.setVisible(true).setAlpha(1);
     this.enemyNameText.setText(`${enemyData.name}`);
     this.enemyLvText.setText(`Lv${next.level}`);
     this.refreshEnemyHp();
