@@ -111,6 +111,12 @@ export class MapScene extends Phaser.Scene {
   private farmResX = 7;
   private farmResY = 4;
 
+  // Meteorite (appears at the Crater City outskirts after the gym is cleared)
+  private meteorSprite?: Phaser.GameObjects.Image;
+  private meteorX = 30;
+  private meteorY = 24;
+  private lastTrainerDefeated?: string;
+
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
   private labRes1Sprite?: Phaser.GameObjects.Image;
   private labRes1X = 6;
@@ -160,6 +166,9 @@ export class MapScene extends Phaser.Scene {
     this.kinoshitaSprite = undefined;
     this.nurseSprite = undefined;
     this.shopkeeperSprite = undefined;
+    this.meteorSprite = undefined;
+    this.farmResSprite = undefined;
+    this.residentSprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
     this.shopOpen = false;
@@ -176,6 +185,7 @@ export class MapScene extends Phaser.Scene {
       };
     }
     // Track defeated trainer
+    this.lastTrainerDefeated = data.trainerDefeated;
     if (data.trainerDefeated && this.playerState) {
       if (!this.playerState.defeatedTrainers.includes(data.trainerDefeated)) {
         this.playerState.defeatedTrainers.push(data.trainerDefeated);
@@ -258,6 +268,20 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey.startsWith("house_")) {
       this.placeHomeDecor(false);
       this.placeResidentNpc();
+    }
+
+    // Crater City: after the gym is cleared, a meteorite sits at the outskirts.
+    if (this.currentMapKey === "crater_city" &&
+        !!this.playerState?.defeatedTrainers.includes("ryuma")) {
+      this.placeMeteor();
+    }
+
+    // Gym: right after beating the leader, the ground shakes (meteor impact).
+    if (this.currentMapKey === "gym_1" && this.lastTrainerDefeated === "ryuma") {
+      const pk = this.playerState?.pickups || [];
+      if (!pk.includes("gym1_quake")) {
+        this.time.delayedCall(500, () => this.playGymClearCutscene());
+      }
     }
 
     // Prologue: wake-up cutscene in the player's home
@@ -699,6 +723,7 @@ export class MapScene extends Phaser.Scene {
     if (this.researcher2Sprite && x === this.researcher2NpcX && y === this.researcher2NpcY) return true;
     if (this.residentSprite && x === this.residentNpcX && y === this.residentNpcY) return true;
     if (this.farmResSprite && x === this.farmResX && y === this.farmResY) return true;
+    if (this.meteorSprite && x === this.meteorX && y === this.meteorY) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
     return false;
@@ -1923,6 +1948,11 @@ export class MapScene extends Phaser.Scene {
       this.tryPickMoonSand();
       return;
     }
+    // Meteorite investigation (Crater City outskirts)
+    if (this.meteorSprite && fx === this.meteorX && fy === this.meteorY) {
+      this.triggerMeteorEvent();
+      return;
+    }
     if (this.kinoshitaSprite && fx === this.kinoshitaNpcX && fy === this.kinoshitaNpcY) {
       this.triggerKinoshitaEvent();
       return;
@@ -1986,6 +2016,74 @@ export class MapScene extends Phaser.Scene {
       "クレーターを しらべた。",
       "きらきら 光る「つきのすな」を\nてにいれた！",
     ]);
+  }
+
+  // ---- Post-gym meteorite event (Chapter 4, phase A: staging only) ----
+  private genMeteorTexture(): void {
+    if (this.textures.exists("meteor-rock")) return;
+    const s = 64;
+    const c = document.createElement("canvas"); c.width = s; c.height = s;
+    const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+    // scorched impact ring
+    ctx.fillStyle = "rgba(60,40,30,0.5)";
+    ctx.beginPath(); ctx.ellipse(s/2, s*0.72, s*0.46, s*0.22, 0, 0, Math.PI*2); ctx.fill();
+    // rock body
+    const grd = ctx.createRadialGradient(s*0.4, s*0.4, 4, s/2, s/2, s*0.5);
+    grd.addColorStop(0, "#6a5a52"); grd.addColorStop(0.6, "#3f342f"); grd.addColorStop(1, "#241c19");
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(14, 40); ctx.lineTo(10, 24); ctx.lineTo(24, 12); ctx.lineTo(42, 12);
+    ctx.lineTo(54, 26); ctx.lineTo(52, 44); ctx.lineTo(36, 54); ctx.lineTo(18, 50);
+    ctx.closePath(); ctx.fill();
+    // craters + glowing embers
+    ctx.fillStyle = "#2a2320";
+    ctx.beginPath(); ctx.arc(26, 28, 5, 0, Math.PI*2); ctx.arc(40, 36, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ff7a2a";
+    ctx.beginPath(); ctx.arc(34, 24, 2.5, 0, Math.PI*2); ctx.arc(22, 40, 2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ffd06a";
+    ctx.fillRect(33, 23, 2, 2); ctx.fillRect(21, 39, 2, 2);
+    // rim highlight
+    ctx.strokeStyle = "#8a7568"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(24, 12); ctx.lineTo(42, 12); ctx.lineTo(54, 26); ctx.stroke();
+    this.textures.addCanvas("meteor-rock", c);
+  }
+
+  private placeMeteor(): void {
+    this.genMeteorTexture();
+    const ts = this.tileSize;
+    this.meteorSprite = this.add.image(
+      this.meteorX * ts + ts / 2,
+      this.meteorY * ts + ts / 2 - 4,
+      "meteor-rock"
+    ).setDepth(9).setDisplaySize(ts * 1.4, ts * 1.4);
+  }
+
+  private triggerMeteorEvent(): void {
+    this.showDialog([
+      "空から 落ちてきた 隕石だ。",
+      "表面は まだ ほんのり あたたかい…。",
+      "奥から かすかに 熱い 空気が\nもれている 気がする。",
+      "（この さきは また 今度 調べよう。）",
+    ]);
+  }
+
+  /** Right after the gym leader falls, the ground shakes: a meteor has struck. */
+  private playGymClearCutscene(): void {
+    if (this.playerState) {
+      this.playerState.pickups = this.playerState.pickups || [];
+      if (this.playerState.pickups.includes("gym1_quake")) return;
+      this.playerState.pickups.push("gym1_quake");
+    }
+    this.inCutscene = true;
+    this.cameras.main.shake(1400, 0.012);
+    this.time.delayedCall(1500, () => {
+      this.showDialog([
+        "ゴゴゴ…！ 地面が 大きく ゆれた！",
+        "リューマ「なんだ…！？ 今の 揺れは…！」",
+        "リューマ「街の はずれに 何かが\n落ちたようだ。」",
+        "リューマ「きみ、様子を 見てきて\nくれ ないか。」",
+      ], () => { this.inCutscene = false; });
+    });
   }
 
   // ---- Home interiors (player / rival) ----
