@@ -117,6 +117,12 @@ export class BootScene extends Phaser.Scene {
         this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
       });
     });
+    // トレーナー専用 overworld NPC sprites (4 directions each)
+    ["aragaki", "shiina", "sunaga", "astronaut"].forEach(who => {
+      ["down", "up", "left", "right"].forEach(dir => {
+        this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
+      });
+    });
 
     // Title screen key art (continue / new-game menu)
     this.load.image("title-art", `${base}/assets/ui/title.jpg`);

@@ -43,7 +43,7 @@
       }
     ],
     "battleSprite": "trainer-astronaut",
-    "overworldSprite": "char9"
+    "overworldSprite": "astronaut"
   },
   {
     "id": "genki",
@@ -139,7 +139,7 @@
       }
     ],
     "battleSprite": "trainer-astronaut",
-    "overworldSprite": "char6"
+    "overworldSprite": "astronaut"
   },
   {
     "id": "explorer2",
@@ -164,7 +164,7 @@
       }
     ],
     "battleSprite": "trainer-shiina",
-    "overworldSprite": "char7"
+    "overworldSprite": "shiina"
   },
   {
     "id": "explorer3",
@@ -189,7 +189,7 @@
       }
     ],
     "battleSprite": "trainer-aragaki",
-    "overworldSprite": "char2"
+    "overworldSprite": "aragaki"
   },
   {
     "id": "eezen",
@@ -243,7 +243,7 @@
       }
     ],
     "battleSprite": "trainer-sunaga",
-    "overworldSprite": "char1"
+    "overworldSprite": "sunaga"
   },
   {
     "id": "route2_ren",
