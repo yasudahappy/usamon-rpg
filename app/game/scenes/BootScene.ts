@@ -102,7 +102,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-farm", `${base}/assets/buildings/sprites/farm_dome.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
-    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima"].forEach(t => {
+    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki"].forEach(t => {
       this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
     });
     // Player battle back-illustration (shown before sending out the almon)
