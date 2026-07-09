@@ -615,6 +615,22 @@ export class BootScene extends Phaser.Scene {
         // soft edge shading so paths read as pressed-down lanes
         ctx.fillStyle = "rgba(150,175,200,0.5)";
         ctx.fillRect(0, 0, ts, 2); ctx.fillRect(0, ts - 2, ts, 2);
+      } else if (id === "94" || id === "95") {
+        // Frost twinkle frames for tile 90 (animated via MapScene SPARKLE_MAP):
+        // same frost base + bright cross-shaped glints at alternating spots.
+        let s = 17;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#dce6ee"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#b6c2cf";
+        for (let i = 0; i < 44; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#e8f2fa";
+        for (let i = 0; i < 18; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        const spots: [number, number][] = id === "94" ? [[7, 21], [23, 10]] : [[16, 6], [10, 26], [26, 22]];
+        ctx.fillStyle = "#ffffff";
+        for (const [fx, fy] of spots) {
+          ctx.fillRect(fx - 2, fy, 5, 1); ctx.fillRect(fx, fy - 2, 1, 5);
+          ctx.fillRect(fx, fy, 1, 1);
+        }
       }
 
       this.textures.addCanvas(key, canvas);

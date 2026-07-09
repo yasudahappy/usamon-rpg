@@ -317,6 +317,13 @@ export class MapScene extends Phaser.Scene {
       this.placeGymDecor();
     }
 
+    // Nectar Town — frozen basin ambience: ice crystals, a playing almon on the
+    // pond, falling snow and a cold colour cast.
+    if (this.currentMapKey === "nectar_town") {
+      this.placeNectarDecor();
+      this.startSnowfall();
+    }
+
     // Farm dome interior — a researcher tending the plants
     if (this.currentMapKey === "farm_dome") {
       this.placeFarmResearcherNpc();
@@ -372,15 +379,16 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  // Animated tile base IDs (sand sparkle + farm crops). 70 = farm crop bed.
-  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70];
+  // Animated tile base IDs (sand sparkle + farm crops + frost twinkle).
+  // 70 = farm crop bed, 90 = frost regolith (ネクタルタウン).
+  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70, 90];
   // Base tile -> [frame A, frame B] cycled every 800ms (base -> A -> B).
-  // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72.
+  // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72. Frost: 90 -> 94/95.
   private static SPARKLE_MAP: Record<number, [number, number]> = {
     5: [41, 49], 6: [42, 50], 7: [43, 51], 8: [44, 52],
     9: [45, 53], 10: [46, 54], 11: [47, 55], 12: [48, 56],
     32: [41, 49], 33: [42, 50], 34: [43, 51], 35: [44, 52],
-    36: [45, 53], 70: [71, 72],
+    36: [45, 53], 70: [71, 72], 90: [94, 95],
   };
 
   private drawMap(): void {
@@ -878,6 +886,23 @@ export class MapScene extends Phaser.Scene {
 
         // Check random encounter
         this.checkRandomEncounter();
+
+        // Ice (tile 91): keep sliding in the same direction until something
+        // blocks the way (RSE-style skating — ネクタルタウンの凍った池 etc.).
+        if (!this.isWarping && !this.startingBattle) {
+          const hereId = this.mapData.layers.floor[this.gridY]?.[this.gridX];
+          if (hereId === 91) {
+            const d = this.facingDirection;
+            const nx = this.gridX + (d === "right" ? 1 : d === "left" ? -1 : 0);
+            const ny = this.gridY + (d === "down" ? 1 : d === "up" ? -1 : 0);
+            const sealedHere = MapScene.SEALED_EXITS[this.currentMapKey]
+              ?.some(s => s.tiles.some(t => t.x === nx && t.y === ny));
+            if (!sealedHere && !this.isCollision(nx, ny)) {
+              this.tryMove(d);
+              return;
+            }
+          }
+        }
 
         // Continue moving only while a direction is still held at completion
         // time: a quick tap moves exactly one tile, a long press keeps moving
@@ -3606,6 +3631,94 @@ export class MapScene extends Phaser.Scene {
   }
 
   // ---- Default starter ----
+  // ---- Nectar Town ambience (frozen basin) ----
+  private genIceCrystalTexture(): void {
+    if (this.textures.exists("ice-crystal")) return;
+    const s = 48;
+    const c = document.createElement("canvas"); c.width = s; c.height = s;
+    const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+    // soft ground shadow
+    ctx.fillStyle = "rgba(40,60,90,0.25)";
+    ctx.beginPath(); ctx.ellipse(s / 2, s - 6, s * 0.38, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // cluster of translucent shards (tall centre + two leaning sides)
+    const shard = (bx: number, tipX: number, tipY: number, w: number) => {
+      const grd = ctx.createLinearGradient(bx, s - 8, tipX, tipY);
+      grd.addColorStop(0, "rgba(140,190,235,0.95)");
+      grd.addColorStop(0.6, "rgba(190,225,250,0.9)");
+      grd.addColorStop(1, "rgba(240,250,255,0.95)");
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.moveTo(bx - w, s - 8); ctx.lineTo(tipX, tipY); ctx.lineTo(bx + w, s - 8);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(bx, s - 9); ctx.lineTo(tipX, tipY + 2); ctx.stroke();
+    };
+    shard(24, 24, 4, 7);
+    shard(13, 8, 16, 5);
+    shard(35, 41, 14, 5);
+    // glint
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(22, 10, 2, 2); ctx.fillRect(23, 8, 1, 6); ctx.fillRect(20, 11, 6, 1);
+    this.textures.addCanvas("ice-crystal", c);
+  }
+
+  private placeNectarDecor(): void {
+    const ts = this.tileSize;
+    this.genIceCrystalTexture();
+    // Ice crystal clusters on blocked rocks/rim tiles (decor only, no collision change)
+    for (const [x, y] of [[9, 8], [19, 18], [4, 17], [26, 24], [3, 4], [28, 3]] as [number, number][]) {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 - 6, "ice-crystal")
+        .setDepth(6).setDisplaySize(ts * 1.3, ts * 1.3);
+    }
+    // An almon skating happily across the frozen pond (⑯ 点景).
+    if (this.textures.exists("monster-mochichi")) {
+      const skater = this.add.image(13 * ts, 14.4 * ts, "monster-mochichi").setDepth(7);
+      const h = skater.height || 32;
+      skater.setScale((ts * 0.9) / h);
+      this.tweens.add({
+        targets: skater, x: 19 * ts, duration: 2800, yoyo: true, repeat: -1,
+        ease: "Sine.inOut",
+        onYoyo: () => skater.setFlipX(true),
+        onRepeat: () => skater.setFlipX(false),
+      });
+      this.tweens.add({
+        targets: skater, angle: { from: -6, to: 6 }, duration: 700, yoyo: true, repeat: -1,
+        ease: "Sine.inOut",
+      });
+    }
+    // Cold colour cast over the whole basin (subtle; below dialogs/UI).
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0x9fc8ff, 0.07)
+      .setOrigin(0).setDepth(26);
+  }
+
+  private startSnowfall(): void {
+    if (!this.textures.exists("snowflake")) {
+      const c = document.createElement("canvas"); c.width = 6; c.height = 6;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(2, 2, 2, 2);
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.fillRect(1, 2, 1, 2); ctx.fillRect(4, 2, 1, 2); ctx.fillRect(2, 1, 2, 1); ctx.fillRect(2, 4, 2, 1);
+      this.textures.addCanvas("snowflake", c);
+    }
+    const mapW = this.mapData.width * this.tileSize;
+    const mapH = this.mapData.height * this.tileSize;
+    for (let i = 0; i < 70; i++) {
+      const flake = this.add.image(Math.random() * mapW, Math.random() * mapH, "snowflake")
+        .setDepth(27)
+        .setAlpha(0.35 + Math.random() * 0.5)
+        .setScale(0.7 + Math.random() * 0.9);
+      this.tweens.add({
+        targets: flake, y: `+=${140 + Math.random() * 160}`,
+        duration: 3800 + Math.random() * 3600, repeat: -1, ease: "Linear",
+        onRepeat: () => { flake.x = Math.random() * mapW; flake.y = Math.random() * mapH * 0.9; },
+      });
+      this.tweens.add({
+        targets: flake, x: `+=${(Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 14)}`,
+        duration: 1200 + Math.random() * 1400, yoyo: true, repeat: -1, ease: "Sine.inOut",
+      });
+    }
+  }
+
   private createDefaultPlayerState(): PlayerState {
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
     const usamon = allMonsters.find(m => m.id === "usamon")!;
