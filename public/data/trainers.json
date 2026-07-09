@@ -85,7 +85,7 @@
       }
     ],
     "battleSprite": "trainer-shin",
-    "overworldSprite": "char3"
+    "overworldSprite": "shin"
   },
   {
     "id": "ryuma",
@@ -114,7 +114,7 @@
       }
     ],
     "battleSprite": "trainer-emo",
-    "overworldSprite": "char4"
+    "overworldSprite": "emo"
   },
   {
     "id": "explorer1",
@@ -343,7 +343,7 @@
       }
     ],
     "battleSprite": "trainer-bikyaku",
-    "overworldSprite": "char8"
+    "overworldSprite": "bikyaku"
   },
   {
     "id": "tsurara",
@@ -368,7 +368,7 @@
       }
     ],
     "battleSprite": "trainer-bikyaku",
-    "overworldSprite": "char1"
+    "overworldSprite": "bikyaku"
   },
   {
     "id": "simone",

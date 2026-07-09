@@ -118,7 +118,7 @@ export class BootScene extends Phaser.Scene {
       });
     });
     // トレーナー専用 overworld NPC sprites (4 directions each)
-    ["aragaki", "shiina", "sunaga", "astronaut"].forEach(who => {
+    ["aragaki", "shiina", "sunaga", "astronaut", "bikyaku", "shin", "emo"].forEach(who => {
       ["down", "up", "left", "right"].forEach(dir => {
         this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
       });
