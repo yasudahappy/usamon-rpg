@@ -224,6 +224,8 @@ export class MapScene extends Phaser.Scene {
     this.rivalSprite = undefined;
     this.momSprite = undefined;
     this.simoneSprite = undefined;
+    this.nectarExam = [];
+    this.quizAwaiting = null;
     this.shopOpen = false;
     if (data.playerState) {
       this.playerState = data.playerState;
@@ -318,11 +320,17 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Nectar Town — frozen basin ambience: ice crystals, a playing almon on the
-    // pond, falling snow and a cold colour cast.
+    // pond, falling snow and a cold colour cast. Plus the town's education
+    // events (第5章 / ネクタルタウン設計v1 §11-§12).
     if (this.currentMapKey === "nectar_town") {
       this.placeNectarDecor();
       this.startSnowfall();
       this.applyNectarGymDoorState();
+      this.placeNectarEvents();
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("nectar_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playNectarArrival());
+      }
     }
 
     // Nectar Gym — シモネ is not ready to battle yet (Phase 4 placeholder).
@@ -828,6 +836,7 @@ export class MapScene extends Phaser.Scene {
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
     if (this.simoneSprite && x === this.simoneX && y === this.simoneY) return true;
+    if (this.nectarExam.some(e => e.x === x && e.y === y)) return true;
     // Uncollected cave capsules block their tile (pick up by facing + A).
     for (const c of MapScene.CAVE_CAPSULES) {
       if (c.mapKey === this.currentMapKey && c.x === x && c.y === y && this.caveCapsuleSprites.has(c.flag)) return true;
@@ -903,6 +912,9 @@ export class MapScene extends Phaser.Scene {
         // Check random encounter
         this.checkRandomEncounter();
 
+        // Nectar Town step-on triggers (overlook / eavesdrop cutscenes)
+        this.checkNectarStepTriggers();
+
         // Ice (tile 91): keep sliding in the same direction until something
         // blocks the way (RSE-style skating — ネクタルタウンの凍った池 etc.).
         if (!this.isWarping && !this.startingBattle) {
@@ -968,6 +980,12 @@ export class MapScene extends Phaser.Scene {
 
     // --- Cutscene: block player control (movement is scripted); dialog above still advances ---
     if (this.inCutscene) return;
+
+    // --- Moon-quiz answer (Aボタン=はい / Bボタン=いいえ) ---
+    if (this.quizAwaiting && (gpA || gpB)) {
+      this.resolveQuiz(gpA ? "A" : "B");
+      return;
+    }
 
     // --- Shop ---
     if (this.shopOpen) {
@@ -2157,6 +2175,11 @@ export class MapScene extends Phaser.Scene {
     }
     if (this.simoneSprite && fx === this.simoneX && fy === this.simoneY) {
       this.triggerSimoneEvent();
+      return;
+    }
+    const exam = this.nectarExam.find(e => e.x === fx && e.y === fy);
+    if (exam) {
+      exam.fn();
       return;
     }
     if ((this.granny1Sprite && fx === this.granny1X && fy === this.granny1Y) ||
@@ -3635,11 +3658,11 @@ export class MapScene extends Phaser.Scene {
       const cb = this.dialogCallback;
       this.dialogCallback = undefined;
       this.clearDialogElements();
-      if (cb) {
-        cb();
-      } else {
-        this.dialogActive = false;
-      }
+      // Close BEFORE invoking the callback: a chained callback that opens the
+      // next dialog re-sets dialogActive itself, and a non-chaining callback
+      // must not leave a phantom "open" dialog (it used to eat one extra A).
+      this.dialogActive = false;
+      if (cb) cb();
       return;
     }
     this.drawDialogMessage();
@@ -3796,6 +3819,317 @@ export class MapScene extends Phaser.Scene {
       "でも 勝負は もう少しだけ 待って。\nアルモンたちが 南極の 観測から\n帰ったばかりで、休んでいるの。",
       "——そのあいだに、この ジムの 寒さに\nなれておくと いいわ。",
     ]);
+  }
+
+  // ---- Nectar Town education events (第5章 / 設計書 §11-§12) ----
+  // Examinable props/NPCs: face the tile and press A.
+  private nectarExam: { x: number; y: number; fn: () => void }[] = [];
+  private quizAwaiting: { correct: "A" | "B"; explain: string[] } | null = null;
+  private quizIdx = 0;
+
+  private genNectarEventTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Old telescope on a tripod (③)
+    mk("nectar-telescope", 32, 40, (ctx) => {
+      ctx.strokeStyle = "#5a4a38"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(16, 26); ctx.lineTo(8, 38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, 26); ctx.lineTo(24, 38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, 26); ctx.lineTo(16, 38); ctx.stroke();
+      ctx.save(); ctx.translate(16, 22); ctx.rotate(-0.6);
+      const grd = ctx.createLinearGradient(-14, 0, 14, 0);
+      grd.addColorStop(0, "#caa64c"); grd.addColorStop(0.5, "#e8cc80"); grd.addColorStop(1, "#a8853c");
+      ctx.fillStyle = grd; ctx.fillRect(-14, -4, 28, 8);
+      ctx.fillStyle = "#3a3a4a"; ctx.fillRect(12, -5, 4, 10);
+      ctx.restore();
+    });
+    // Rock sample display case (④)
+    mk("nectar-sample", 32, 32, (ctx) => {
+      ctx.fillStyle = "#8fa3b8"; ctx.fillRect(4, 18, 24, 12);
+      ctx.fillStyle = "#b8c8d8"; ctx.fillRect(4, 18, 24, 3);
+      ctx.fillStyle = "rgba(180,220,250,0.45)"; ctx.fillRect(6, 2, 20, 16);
+      ctx.strokeStyle = "#dceaf6"; ctx.lineWidth = 1; ctx.strokeRect(6.5, 2.5, 19, 15);
+      ctx.fillStyle = "#7a6a58";
+      ctx.beginPath(); ctx.moveTo(12, 16); ctx.lineTo(16, 7); ctx.lineTo(21, 12); ctx.lineTo(19, 16);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#9a8a74"; ctx.fillRect(14, 10, 3, 2);
+    });
+    // Snowdrift mound (⑪)
+    mk("nectar-drift", 36, 26, (ctx) => {
+      ctx.fillStyle = "#eef6fd";
+      ctx.beginPath(); ctx.ellipse(18, 18, 16, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(11, 13, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(24, 12, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(8, 9, 5, 2); ctx.fillRect(21, 8, 4, 2);
+      ctx.fillStyle = "rgba(150,175,200,0.5)";
+      ctx.beginPath(); ctx.ellipse(18, 22, 14, 3, 0, 0, Math.PI * 2); ctx.fill();
+    });
+    // Blue signpost (看板)
+    mk("nectar-sign", 26, 32, (ctx) => {
+      ctx.fillStyle = "#6a5844"; ctx.fillRect(11, 14, 4, 16);
+      ctx.fillStyle = "#2c4a6e"; ctx.fillRect(1, 2, 24, 14);
+      ctx.fillStyle = "#4a6a90"; ctx.fillRect(1, 2, 24, 2);
+      ctx.strokeStyle = "#9fc0e0"; ctx.lineWidth = 1; ctx.strokeRect(2.5, 3.5, 21, 11);
+      ctx.fillStyle = "#cfe2f4";
+      ctx.fillRect(5, 6, 16, 1); ctx.fillRect(5, 9, 12, 1); ctx.fillRect(5, 12, 14, 1);
+    });
+    // Shadowy figure (⑬ ヴォイス)
+    mk("voice-shadow", 26, 34, (ctx) => {
+      ctx.fillStyle = "#20222e";
+      ctx.beginPath(); ctx.arc(13, 9, 7, 0, Math.PI * 2); ctx.fill();      // hood
+      ctx.beginPath(); ctx.moveTo(4, 32); ctx.quadraticCurveTo(13, 8, 22, 32); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#12141c";
+      ctx.beginPath(); ctx.ellipse(13, 10, 4.5, 5, 0, 0, Math.PI * 2); ctx.fill(); // face void
+      ctx.fillStyle = "#7ad0ff"; ctx.fillRect(10, 9, 2, 2); ctx.fillRect(15, 9, 2, 2); // cold eyes
+    });
+    // Rising Earth (②)
+    mk("earth-sprite", 44, 44, (ctx) => {
+      const g = ctx.createRadialGradient(17, 15, 4, 22, 22, 22);
+      g.addColorStop(0, "#9fd8ff"); g.addColorStop(0.55, "#3a7ad0"); g.addColorStop(1, "#1c3c78");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(22, 22, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";                             // clouds/continents
+      ctx.beginPath(); ctx.ellipse(15, 15, 7, 4, 0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(28, 26, 6, 3, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(120,220,140,0.55)";
+      ctx.beginPath(); ctx.ellipse(24, 14, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(190,230,255,0.8)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(22, 22, 20.5, 0, Math.PI * 2); ctx.stroke();
+    });
+  }
+
+  private awardNectarItem(flag: string, itemId: string, itemName: string, foundLines: string[]): boolean {
+    const pk = this.playerState?.pickups || [];
+    if (!this.playerState || pk.includes(flag)) return false;
+    this.playerState.pickups = pk;
+    pk.push(flag);
+    const it = this.playerState.items.find(i => i.id === itemId);
+    if (it) it.count++;
+    else this.playerState.items.push({ id: itemId, count: 1 });
+    this.showDialog([...foundLines, `「${itemName}」を てにいれた！`]);
+    return true;
+  }
+
+  private placeNectarEvents(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+
+    // ③ 昔の望遠鏡 (repeatable)
+    put("nectar-telescope", 20, 7, () => this.showDialog([
+      "ふるい 望遠鏡を のぞいてみた…。",
+      "暗い 大地が 見わたせる。むかしの\n天文学者は 望遠鏡ごしの この 黒い\n場所を 『海』と 呼んだんだ。",
+      "ほんとうは 水の ない、溶岩の\n平原だと わかったのは ずっと あと。",
+    ]));
+
+    // ④ 神酒代の地層サンプル (first time: どうぐ)
+    put("nectar-sample", 27, 6, () => {
+      const given = this.awardNectarItem("nectar_sample_seen", "hi_repair_gel", "ハイリペアジェル", [
+        "こおりづけの 岩サンプルだ。",
+        "『約39おく年前の 神酒の海の 岩。\n月の 時代区分 神酒代(ネクタリアン)の\n名前の もとに なった 場所の 石』",
+        "ケースの 下に なにか ある…。",
+      ]);
+      if (!given) this.showDialog([
+        "こおりづけの 岩サンプルだ。",
+        "『約39おく年前の 神酒の海の 岩。\n月の 時代区分 神酒代(ネクタリアン)の\n名前の もとに なった 場所の 石』",
+      ]);
+    });
+
+    // 研究者 (展望への誘導・会話のみ)
+    put(this.npcTex("cast-char2-down", "npc-kinoshita"), 26, 6, () => this.showDialog([
+      "やあ、旅の人。ここは 神酒の海の\n研究ステーションだよ。",
+      "この 高台は 神酒の海を 見わたす\nいちばんの 場所なんだ。\nすこし 西に 立ってみて ごらん。",
+    ]));
+
+    // ⑮ 月クイズの子ども
+    put(this.npcTex("cast-char8-down", "npc-mom"), 19, 19, () => this.triggerQuizKid());
+
+    // ⑪ 雪だまりの隠しどうぐ ×2
+    put("nectar-drift", 4, 6, () => {
+      const given = this.awardNectarItem("nectar_hidden_1", "star_capsule", "スターカプセル", [
+        "雪だまりを ほってみた…。\nなにか かたい ものが ある！",
+      ]);
+      if (!given) this.showDialog(["雪だまりだ。\nもう なにも うまっていない。"]);
+    }, 4);
+    put("nectar-drift", 27, 17, () => {
+      const given = this.awardNectarItem("nectar_hidden_2", "repair_gel", "リペアジェル", [
+        "雪だまりを ほってみた…。\nつめたっ！ でも なにか ある！",
+      ]);
+      if (!given) this.showDialog(["雪だまりだ。\nもう なにも うまっていない。"]);
+    }, 4);
+
+    // 看板 ×2
+    put("nectar-sign", 14, 27, () => this.showDialog([
+      "『ネクタルタウン』",
+      "神酒の海の ほとりの 開拓地。\nようこそ！",
+    ]), -4);
+    put("nectar-sign", 13, 7, () => this.showDialog([
+      "『ネクタルジム』\nリーダー：シモネ（氷）",
+      "極低温の こおりを あやつる。\n——とびらの 氷を とかせた者だけ\n挑戦を ゆるされる。",
+    ]), -4);
+  }
+
+  /** 到着カットシーン (脚本24): 寒さを「体感」させる。1回きり。 */
+  private playNectarArrival(): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    if (this.playerState.pickups.includes("nectar_arrival_seen")) return;
+    this.playerState.pickups.push("nectar_arrival_seen");
+    this.inCutscene = true;
+    const emote = this.showEmote("!");
+    // a little shiver
+    this.tweens.add({ targets: this.player, x: this.player.x + 2, duration: 60,
+      yoyo: true, repeat: 7, ease: "Linear" });
+    this.time.delayedCall(800, () => {
+      emote.forEach(o => o.destroy());
+      this.showDialog([
+        "（さむっ…！ さっきまで\n砂漠だったのに…）",
+        "「ようこそ ネクタルタウンへ。\nここは 神酒の海の ほとり——月で\nいちばん 古い 記憶が ねむる 町さ。」",
+      ], () => { this.inCutscene = false; });
+    });
+  }
+
+  /** Step-on triggers: ①②展望+地球の出 / ⑬ヴォイスの影 */
+  private checkNectarStepTriggers(): void {
+    if (this.currentMapKey !== "nectar_town" || this.inCutscene || this.dialogActive ||
+        this.isWarping || this.startingBattle) return;
+    const pk = this.playerState?.pickups || [];
+    if (this.gridY === 6 && (this.gridX === 24 || this.gridX === 25) &&
+        !pk.includes("nectar_altai_seen")) {
+      this.playAltaiCutscene();
+    } else if (this.gridY === 15 && (this.gridX === 26 || this.gridX === 27) &&
+        !pk.includes("nectar_voice_seen")) {
+      this.playVoiceCutscene();
+    }
+  }
+
+  /** ①アルタイの崖 展望 → ②地球の出 (連結カットシーン・1回きり)。 */
+  private playAltaiCutscene(): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    this.playerState.pickups.push("nectar_altai_seen");
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    const cam = this.cameras.main;
+    this.showDialog([
+      "研究者「よく来たね。ここが 神酒の海を\n見わたす いちばんの 場所さ。」",
+      "研究者「目の前の 大きな がけ——\nアルタイの崖は、大むかし 巨大な\n衝突で 盆地が できた ときの ふち なんだ。」",
+      "研究者「その 衝突が 月の 『神酒代』の\nはじまり。ここは 月の 歴史の\nページの 1つ なんだよ。」",
+    ], () => {
+      // pan to the cliff / NE sky and let the Earth rise
+      cam.stopFollow();
+      cam.pan(26 * ts, 3 * ts, 900, "Sine.easeInOut");
+      this.time.delayedCall(1000, () => {
+        const earth = this.add.image(27.5 * ts, 3.4 * ts, "earth-sprite")
+          .setDepth(8).setAlpha(0).setScale(1.2);
+        this.tweens.add({ targets: earth, y: 1.6 * ts, alpha: 1, duration: 1900, ease: "Sine.out" });
+        this.time.delayedCall(2100, () => {
+          this.showDialog([
+            "研究者「……ちょうど いい時間だ。\n東の 空を ごらん。」",
+            "あおく かがやく 地球が\nのぼってきた…！",
+            "研究者「月は いつも 同じ顔を 地球に\n向けている。だから ここからは、地球は\nいつも あの あたりに 見えるんだ。」",
+            "研究者「記念に これを。」",
+            "「スターカプセル」を てにいれた！",
+          ], () => {
+            if (this.playerState) {
+              const it = this.playerState.items.find(i => i.id === "star_capsule");
+              if (it) it.count++;
+              else this.playerState.items.push({ id: "star_capsule", count: 1 });
+            }
+            cam.pan(this.player.x, this.player.y, 700, "Sine.easeInOut");
+            this.time.delayedCall(750, () => {
+              cam.startFollow(this.player, true, 0.15, 0.15);
+              this.inCutscene = false;
+            });
+          });
+        });
+      });
+    });
+  }
+
+  /** ⑬ヴォイスの影: 立ち聞きカットシーン (戦闘なし・1回きり)。 */
+  private playVoiceCutscene(): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    this.playerState.pickups.push("nectar_voice_seen");
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    const s1 = this.add.image(26 * ts + ts / 2, 14 * ts + ts / 2, "voice-shadow").setDepth(9);
+    const s2 = this.add.image(27 * ts + ts / 2, 14 * ts + ts / 2 - 4, "voice-shadow").setDepth(9).setFlipX(true);
+    const emote = this.showEmote("!");
+    this.time.delayedCall(700, () => {
+      emote.forEach(o => o.destroy());
+      this.showDialog([
+        "黒ずくめA「……南極の 永久影。氷、\nつまり 水さえ 押さえれば、月は\nわれらの ものだ。」",
+        "黒ずくめB「おい、だれか 来たぞ。\n……行くぞ。」",
+      ], () => {
+        this.tweens.add({ targets: [s1, s2], y: "-=96", alpha: 0, duration: 900, ease: "Sine.in",
+          onComplete: () => { s1.destroy(); s2.destroy(); } });
+        this.time.delayedCall(1000, () => {
+          this.showDialog(["（いまの…なんだ？）"], () => { this.inCutscene = false; });
+        });
+      });
+    });
+  }
+
+  /** ⑮ 月クイズの子ども: ○×クイズ (正解1回目に つきのすな)。 */
+  private static QUIZZES: { q: string; correct: "A" | "B"; explain: string[] }[] = [
+    {
+      q: "だい1もん！\n月の 『海』には 水が ある？",
+      correct: "B",
+      explain: ["せいかいは 『ない』！", "月の 海は 大むかしの 溶岩が\n固まった 平らな 大地なんだ。"],
+    },
+    {
+      q: "だい2もん！\n月で 日かげが すごーく 寒いのは\n空気が ないから？",
+      correct: "A",
+      explain: ["せいかい！ 空気が ないと 熱を\nはこべない から、日なたと 日かげで\n100ど以上も 差が つくんだ。"],
+    },
+    {
+      q: "だい3もん！\n神酒の海は 月で いちばん\n新しい 海である？",
+      correct: "B",
+      explain: ["せいかいは 『ちがう』！", "神酒の海は とびきり 古い 海。\n時代区分 『神酒代』の 名前の\nもとに なったんだよ。"],
+    },
+  ];
+
+  private triggerQuizKid(): void {
+    const quiz = MapScene.QUIZZES[this.quizIdx % MapScene.QUIZZES.length];
+    this.quizIdx++;
+    this.showDialog([
+      "月クイズの 時間だよ〜！",
+      quiz.q,
+      "Aボタン＝はい ／ Bボタン＝いいえ",
+    ], () => {
+      this.quizAwaiting = { correct: quiz.correct, explain: quiz.explain };
+    });
+  }
+
+  private resolveQuiz(answer: "A" | "B"): void {
+    const quiz = this.quizAwaiting;
+    this.quizAwaiting = null;
+    if (!quiz) return;
+    if (answer === quiz.correct) {
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("nectar_quiz_reward")) {
+        this.playerState.pickups = pk;
+        pk.push("nectar_quiz_reward");
+        const it = this.playerState.items.find(i => i.id === "moon_sand");
+        if (it) it.count++;
+        else this.playerState.items.push({ id: "moon_sand", count: 1 });
+        this.showDialog([...quiz.explain, "ごほうびに 『つきのすな』を\nあげちゃう！"]);
+      } else {
+        this.showDialog([...quiz.explain, "また ちょうせん してね！"]);
+      }
+    } else {
+      this.showDialog(["ぶっぶー！ ざんねん！", ...quiz.explain, "また ちょうせん してね！"]);
+    }
   }
 
   private startSnowfall(): void {
