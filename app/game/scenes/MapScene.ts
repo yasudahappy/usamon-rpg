@@ -2562,7 +2562,7 @@ export class MapScene extends Phaser.Scene {
     this.momSprite = this.add.image(
       this.momNpcX * this.tileSize + this.tileSize / 2,
       this.momNpcY * this.tileSize + this.tileSize / 2,
-      this.npcTex("cast-char5-down", "npc-mom")
+      this.npcTex("cast-mom2-down", "npc-mom")
     ).setDepth(9);
   }
 
