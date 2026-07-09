@@ -111,8 +111,8 @@ export class BootScene extends Phaser.Scene {
     ["down", "up", "left", "right"].forEach(dir => {
       this.load.image(`cast-eezen-${dir}`, `${base}/assets/characters/cast/eezen_${dir}.png`);
     });
-    // ヴォイス幹部 overworld NPC sprites (4 directions each)
-    ["shinobu", "kiyohara"].forEach(who => {
+    // ヴォイス幹部・団員 overworld NPC sprites (4 directions each)
+    ["shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4"].forEach(who => {
       ["down", "up", "left", "right"].forEach(dir => {
         this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
       });
