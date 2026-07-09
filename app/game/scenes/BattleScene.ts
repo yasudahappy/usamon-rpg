@@ -567,8 +567,21 @@ export class BattleScene extends Phaser.Scene {
   // Per-species battle-size tweak (multiplies the fit-to-box scale). Used when a
   // monster should read smaller/larger than its raw art implies.
   private static MONSTER_SCALE: Record<string, number> = {
-    roubau: 0.6,     // small dog-rover: 40% smaller than the fitted size
-    shakurin: 0.5,   // tiny crystal penguin: 50% smaller
+    usamon: 0.7,
+    mochigori: 1.1,
+    gorimocchi: 1.2,
+    sunagani: 0.6,
+    lobsner: 0.9,
+    rairai: 0.5,
+    ikarion: 0.85,
+    regonyas: 0.9,
+    sharisu: 0.95,
+    sharian: 1.1,
+    meteko: 0.9,
+    meteodon: 1.2,
+    roubau: 0.6,
+    shakurin: 0.5,
+    shakuruton: 1.3,
   };
 
   private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
