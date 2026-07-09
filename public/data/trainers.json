@@ -226,7 +226,7 @@
     "mapKey": "sand_route_2",
     "x": 2,
     "y": 2,
-    "direction": "down",
+    "direction": "right",
     "sightRange": 4,
     "prizeMoneyBase": 400,
     "dialogBefore": "この 迷路みたいな 砂場、\nワクワク するだろ？ 一緒に 探検しよう！",

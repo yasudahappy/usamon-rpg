@@ -1997,13 +1997,13 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private endBattleDefeat(): void {
-    // Reset all party HP for respawn
+    // Blacked out: revive the whole party and restart at the Recovery Center.
     this.playerState.party.forEach(m => { m.currentHp = m.maxHp; });
 
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       this.scene.start("MapScene", {
-        mapKey: "moonbase",
+        mapKey: "recovery_pod",
         playerState: this.playerState,
       });
     });
