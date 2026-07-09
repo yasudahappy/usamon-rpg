@@ -129,6 +129,12 @@
         "weight": 20,
         "minLevel": 17,
         "maxLevel": 21
+      },
+      {
+        "id": "roubau",
+        "weight": 20,
+        "minLevel": 16,
+        "maxLevel": 20
       }
     ]
   }

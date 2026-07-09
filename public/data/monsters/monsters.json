@@ -835,5 +835,96 @@
     ],
     "color": "#e0531a",
     "baseExp": 150
+  },
+  {
+    "id": "roubau",
+    "name": "ローバウ",
+    "type": "金属",
+    "role": "ぼうぎょ型",
+    "description": "月面ローバーがアルモンになった犬型。忠実で健気に探査チームを待っている。",
+    "baseStats": {
+      "hp": 26,
+      "attack": 11,
+      "defense": 18,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 135,
+      "attack": 62,
+      "defense": 100,
+      "speed": 40
+    },
+    "evolution": {
+      "level": 32,
+      "to": "roubaag"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 6,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 12,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 18,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 26,
+        "moveId": "solar_charge"
+      }
+    ],
+    "color": "#d8c8a0",
+    "baseExp": 62
+  },
+  {
+    "id": "roubaag",
+    "name": "ローバーグ",
+    "type": "金属",
+    "role": "重装ぼうぎょ型",
+    "description": "長い年月でボディが強化された重装甲の探査獣。背中のハンバーググリルは動力源であり非常食でもある。",
+    "baseStats": {
+      "hp": 40,
+      "attack": 19,
+      "defense": 30,
+      "speed": 9
+    },
+    "statsAt50": {
+      "hp": 182,
+      "attack": 96,
+      "defense": 148,
+      "speed": 52
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 18,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 26,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 34,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#b89a6a",
+    "baseExp": 158
   }
 ]
