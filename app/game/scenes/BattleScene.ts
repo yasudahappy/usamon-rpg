@@ -567,21 +567,27 @@ export class BattleScene extends Phaser.Scene {
   // Per-species battle-size tweak (multiplies the fit-to-box scale). Used when a
   // monster should read smaller/larger than its raw art implies.
   private static MONSTER_SCALE: Record<string, number> = {
-    usamon: 0.7,
-    mochigori: 1.1,
-    gorimocchi: 1.2,
+    usamon: 0.77,
+    mochichi: 0.5,
+    mochigori: 1.265,
+    gorimocchi: 1.38,
     sunagani: 0.6,
     lobsner: 0.9,
     rairai: 0.5,
     ikarion: 0.85,
-    regonyas: 0.9,
+    regonyas: 0.63,
     sharisu: 0.95,
     sharian: 1.1,
-    meteko: 0.9,
+    meteko: 0.54,
     meteodon: 1.2,
     roubau: 0.6,
     shakurin: 0.5,
     shakuruton: 1.3,
+  };
+
+  // Species that hover above their platform (design px, scaled by sy).
+  private static MONSTER_LIFT: Record<string, number> = {
+    meteko: 14,
   };
 
   private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
@@ -592,6 +598,11 @@ export class BattleScene extends Phaser.Scene {
     const id = sprite.texture.key.replace(/^monster-/, "").replace(/-back$/, "");
     scale *= BattleScene.MONSTER_SCALE[id] ?? 1;
     sprite.setScale(scale);
+    // Apply a hover offset for floating species (baseline captured once, so
+    // repeated re-sizes don't compound the lift).
+    if (sprite.getData("groundY") === undefined) sprite.setData("groundY", sprite.y);
+    const lift = (BattleScene.MONSTER_LIFT[id] ?? 0) * this.sy;
+    sprite.y = (sprite.getData("groundY") as number) - lift;
   }
 
   // ---- HUD geometry (RSE status boxes) ----
