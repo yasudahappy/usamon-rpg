@@ -143,11 +143,15 @@ export class MapScene extends Phaser.Scene {
   private caveEntranceY = 26;
   private lastTrainerDefeated?: string;
 
-  // Moon-capsule field items scattered through the meteorite cave (heal items).
+  // Capsule field items (heal items etc.) scattered through the meteorite cave
+  // and the sandy routes. Picked up by facing the capsule and pressing A.
   private caveCapsuleSprites: Map<string, Phaser.GameObjects.Image> = new Map();
   private static CAVE_CAPSULES: { flag: string; mapKey: string; x: number; y: number; item: string; itemName: string }[] = [
     { flag: "cave_capsule_1", mapKey: "crater_cave", x: 10, y: 9, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
     { flag: "cave_capsule_2", mapKey: "crater_cave_b1", x: 10, y: 7, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "route2_cap_1", mapKey: "sand_route_2", x: 18, y: 2, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
+    { flag: "route2_cap_2", mapKey: "sand_route_2", x: 9, y: 8, item: "moon_sand", itemName: "つきのすな" },
+    { flag: "route2_cap_3", mapKey: "sand_route_2", x: 2, y: 17, item: "full_repair_gel", itemName: "フルリペアジェル" },
   ];
 
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
@@ -327,6 +331,11 @@ export class MapScene extends Phaser.Scene {
 
     // Meteorite cave: scatter the moon-capsule items; award the rival's dropped
     // debris fragment once イーゼン (the deepest boss) has been beaten.
+    // Sandy route 2: capsule field items (heal + moon sand).
+    if (this.currentMapKey === "sand_route_2") {
+      this.placeCaveCapsules();
+    }
+
     if (this.currentMapKey.startsWith("crater_cave")) {
       this.placeCaveCapsules();
       if (this.currentMapKey === "crater_cave_b2" && this.lastTrainerDefeated === "eezen") {

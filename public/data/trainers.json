@@ -219,5 +219,82 @@
     ],
     "battleSprite": "trainer-eezen",
     "overworldSprite": "eezen"
+  },
+  {
+    "id": "route2_sora",
+    "name": "たんけんか ソラ",
+    "mapKey": "sand_route_2",
+    "x": 2,
+    "y": 2,
+    "direction": "down",
+    "sightRange": 4,
+    "prizeMoneyBase": 400,
+    "dialogBefore": "この 迷路みたいな 砂場、\nワクワク するだろ？ 一緒に 探検しよう！",
+    "dialogWin": "うわ、道に まようより キミの ほうが 手強いや！",
+    "dialogLose": "へへ、まだまだ 探検は これからさ！",
+    "party": [
+      { "id": "rairai", "level": 18 },
+      { "id": "sunagani", "level": 19 }
+    ],
+    "battleSprite": "trainer-casual",
+    "overworldSprite": "char1"
+  },
+  {
+    "id": "route2_ren",
+    "name": "ムーンウォーカー レン",
+    "mapKey": "sand_route_2",
+    "x": 14,
+    "y": 1,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 450,
+    "dialogBefore": "月面を あるく コツは リズムだよ。\nさあ、ぼくの アルモンと おどろう！",
+    "dialogWin": "リズムが くるっちゃった…。まいったよ。",
+    "dialogLose": "ふふん、ステップは バッチリだね！",
+    "party": [
+      { "id": "ikarion", "level": 19 },
+      { "id": "meteko", "level": 20 }
+    ],
+    "battleSprite": "trainer-peace",
+    "overworldSprite": "char7"
+  },
+  {
+    "id": "route2_dou",
+    "name": "さいくつこう ドウ",
+    "mapKey": "sand_route_2",
+    "x": 21,
+    "y": 5,
+    "direction": "left",
+    "sightRange": 4,
+    "prizeMoneyBase": 500,
+    "dialogBefore": "この さきの 岩、かたそうだろ。\nうちの アルモンも まけずに かたいぞ！",
+    "dialogWin": "ぐぬぬ… 岩の かべも 破られたか。",
+    "dialogLose": "ほれ、まだまだ 掘りがいが あるな！",
+    "party": [
+      { "id": "lobsner", "level": 20 },
+      { "id": "roubau", "level": 20 }
+    ],
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "char2"
+  },
+  {
+    "id": "route2_mine",
+    "name": "ベテランたんけんか ミネ",
+    "mapKey": "sand_route_2",
+    "x": 12,
+    "y": 14,
+    "direction": "left",
+    "sightRange": 4,
+    "prizeMoneyBase": 650,
+    "dialogBefore": "この 砂場を 抜けた 者は まだ 少ない。\nわたしを 越えて いけるかな？",
+    "dialogWin": "みごとだ。きみなら この さきも 進めるだろう。",
+    "dialogLose": "経験の 差だ。また 鍛えて おいで。",
+    "party": [
+      { "id": "meteko", "level": 21 },
+      { "id": "ikarion", "level": 21 },
+      { "id": "sunagani", "level": 22 }
+    ],
+    "battleSprite": "trainer-suit",
+    "overworldSprite": "char9"
   }
 ]
