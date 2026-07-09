@@ -21,9 +21,29 @@ export class SetupScene extends Phaser.Scene {
   private instructionText!: Phaser.GameObjects.Text;
   private uiElements: Phaser.GameObjects.GameObject[] = [];
   private htmlInput: HTMLInputElement | null = null;
+  // When launched from the title screen's せってい, editing returns to the title
+  // and does NOT wipe the save or restart the prologue.
+  private settingsMode = false;
 
   constructor() {
     super({ key: "SetupScene" });
+  }
+
+  init(data: { settingsMode?: boolean }): void {
+    this.settingsMode = !!data?.settingsMode;
+    // Prefill the current character setup so せってい starts from existing values.
+    this.selectedGender = "boy";
+    this.selectedSuit = 0;
+    this.playerName = "";
+    if (this.settingsMode) {
+      try {
+        const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
+        if (setup.gender === "boy" || setup.gender === "girl") this.selectedGender = setup.gender;
+        const si = SUIT_COLORS.indexOf(setup.suitColor);
+        if (si >= 0) this.selectedSuit = si;
+        if (typeof setup.playerName === "string") this.playerName = setup.playerName;
+      } catch { /* ignore */ }
+    }
   }
 
   create(): void {
@@ -109,6 +129,18 @@ export class SetupScene extends Phaser.Scene {
         this.handleKeydown(event);
       });
     }
+  }
+
+  update(): void {
+    if (!this.settingsMode) return;
+    const gp = typeof window !== "undefined" ? (window as unknown as { __gamepad?: { bJust: boolean } }).__gamepad : null;
+    if (gp && gp.bJust) { gp.bJust = false; this.backToTitle(); }
+  }
+
+  private backToTitle(): void {
+    this.removeHtmlInput();
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("TitleScene"));
   }
 
   private clearUI(): void {
@@ -314,10 +346,10 @@ export class SetupScene extends Phaser.Scene {
     this.step = "name";
     this.clearUI();
     this.promptText.setText("なまえを いれてね");
-    this.instructionText.setText("タップして入力  けっていで確定");
-    this.playerName = "";
+    this.instructionText.setText(this.settingsMode ? "タップして入力  Bボタンでもどる" : "タップして入力  けっていで確定");
+    if (!this.settingsMode) this.playerName = "";
     this.nameText.setVisible(true);
-    this.nameText.setText("▌");
+    this.nameText.setText(this.playerName.length > 0 ? this.playerName : "▌");
 
     // Create HTML input for mobile keyboard support
     this.createHtmlInput();
@@ -376,6 +408,7 @@ export class SetupScene extends Phaser.Scene {
     input.autocomplete = "off";
     input.autocapitalize = "off";
     input.setAttribute("enterkeyhint", "done");
+    if (this.playerName) input.value = this.playerName;
 
     const H = this.scale.height;
     const nameYRatio = 0.40; // matches nameText position
@@ -463,6 +496,7 @@ export class SetupScene extends Phaser.Scene {
 
   // ---- Input ----
   private handleKeydown(event: KeyboardEvent): void {
+    if (this.settingsMode && event.key === "Escape") { this.backToTitle(); return; }
     if (this.step === "gender") {
       if (event.key === "ArrowLeft" || event.key === "a") {
         this.selectedGender = "boy";
@@ -509,11 +543,16 @@ export class SetupScene extends Phaser.Scene {
     // Generate player frames from selected suit
     this.generatePlayerFrames(setup.suitColor);
 
-    // Transition to game
+    // Transition
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
-      // Story starts in the player's own home with the wake-up cutscene (序章).
-      this.scene.start("MapScene", { mapKey: "player_home", intro: true });
+      if (this.settingsMode) {
+        // Just updating settings: return to the title screen, save intact.
+        this.scene.start("TitleScene");
+      } else {
+        // Story starts in the player's own home with the wake-up cutscene (序章).
+        this.scene.start("MapScene", { mapKey: "player_home", intro: true });
+      }
     });
   }
 

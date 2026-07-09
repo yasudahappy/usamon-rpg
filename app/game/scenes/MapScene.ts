@@ -31,6 +31,8 @@ export class MapScene extends Phaser.Scene {
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
   private animFrame = 0;
   private animTimer = 0;
+  // Sub-second carry for play-time accumulation (ms).
+  private playSecAccum = 0;
   // Tile animation
   private tileAnimTimer = 0;
   private tileAnimFrame = 0;
@@ -847,6 +849,17 @@ export class MapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // Accumulate play time while on the overworld (persisted on レポート/save,
+    // shown on the title screen's つづきから panel).
+    if (this.playerState) {
+      this.playSecAccum += delta;
+      if (this.playSecAccum >= 1000) {
+        const secs = Math.floor(this.playSecAccum / 1000);
+        this.playerState.playSeconds = (this.playerState.playSeconds || 0) + secs;
+        this.playSecAccum -= secs * 1000;
+      }
+    }
+
     if (this.isWarping || this.startingBattle || this.trainerApproaching) return;
 
     // --- Gamepad button reads ---
@@ -3554,6 +3567,7 @@ export class MapScene extends Phaser.Scene {
       items: [{ id: "moon_capsule", count: 5 }],
       money: 1000,
       defeatedTrainers: [],
+      playSeconds: 0,
     };
   }
 }

@@ -64,6 +64,7 @@ export interface PlayerState {
   money: number;
   defeatedTrainers: string[]; // trainer ids
   pickups?: string[]; // ids of one-time field items already collected
+  playSeconds?: number; // total accumulated play time (seconds)
 }
 
 // ---- Trainer data ----

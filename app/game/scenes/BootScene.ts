@@ -110,6 +110,9 @@ export class BootScene extends Phaser.Scene {
       this.load.image(`cast-eezen-${dir}`, `${base}/assets/characters/cast/eezen_${dir}.png`);
     });
 
+    // Title screen key art (continue / new-game menu)
+    this.load.image("title-art", `${base}/assets/ui/title.jpg`);
+
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
 
@@ -159,25 +162,20 @@ export class BootScene extends Phaser.Scene {
         }
       } catch (e) { /* ignore */ }
 
-      // Continue from a real save if one exists; otherwise (setup done but no
-      // progress yet) begin the prologue in the player's bedroom.
-      let sceneData: Record<string, unknown> = { mapKey: "player_home", intro: true };
+      // If a real save (レポート) exists, show the title / continue screen so the
+      // player can choose つづきから / さいしょから / せってい. Otherwise (setup done
+      // but no saved progress yet) drop straight into the wake-up prologue.
+      let hasProgress = false;
       try {
         const raw = localStorage.getItem("usamon-save-data");
-        if (raw) {
-          const save = JSON.parse(raw);
-          if (save.mapKey) {
-            sceneData = {
-              mapKey: save.mapKey,
-              playerX: save.gridX,
-              playerY: save.gridY,
-              playerState: save.playerState,
-            };
-          }
-        }
+        if (raw && JSON.parse(raw).mapKey) hasProgress = true;
       } catch (e) { /* ignore */ }
 
-      this.scene.start("MapScene", sceneData);
+      if (hasProgress) {
+        this.scene.start("TitleScene");
+      } else {
+        this.scene.start("MapScene", { mapKey: "player_home", intro: true });
+      }
     } else {
       this.scene.start("SetupScene");
     }
