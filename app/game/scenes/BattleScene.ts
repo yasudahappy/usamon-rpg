@@ -1,7 +1,6 @@
 import * as Phaser from "phaser";
 import { BattleMonster, BattleMove } from "../battle/types";
 import { calculateDamage } from "../battle/damage";
-import { Haptics } from "../haptics";
 import { TypeChart } from "../types";
 import {
   MonsterData,
@@ -1195,7 +1194,6 @@ export class BattleScene extends Phaser.Scene {
           totalDamage += damage;
         }
         target.currentHp = Math.max(0, target.currentHp - totalDamage);
-        Haptics[target === this.playerMon ? "medium" : "light"]();
         messages.push(`${hits}かい あたった！`);
 
         this.showMessages(messages, () => {
@@ -1212,7 +1210,6 @@ export class BattleScene extends Phaser.Scene {
 
       this.showMessages(messages, () => {
         target.currentHp = Math.max(0, target.currentHp - damage);
-        if (damage > 0) Haptics[target === this.playerMon ? "medium" : "light"]();
         this.syncHpToInstance(target);
 
         this.blinkSprite(targetSprite, () => {
@@ -1331,7 +1328,6 @@ export class BattleScene extends Phaser.Scene {
   private checkBattleEnd(): void {
     if (this.enemyMon.currentHp <= 0) {
       this.phase = "victory";
-      Haptics.heavy();
       this.tweens.add({
         targets: this.enemySprite,
         alpha: 0,
@@ -1354,7 +1350,6 @@ export class BattleScene extends Phaser.Scene {
       // Active monster fainted. Only black out when the WHOLE party is down;
       // otherwise send out the next healthy party member.
       this.phase = "defeat";
-      Haptics.heavy();
       this.playerInstance.currentHp = 0;
       this.tweens.add({
         targets: this.playerSprite,
@@ -1445,7 +1440,6 @@ export class BattleScene extends Phaser.Scene {
       this.playerLvText.setText(`Lv${this.playerInstance.level}`);
       this.refreshPlayerHp();
 
-      Haptics.success();
       this.showMessages(
         [`${playerData.name}は レベル${this.playerInstance.level}に なった！`],
         () => {
@@ -1827,7 +1821,6 @@ export class BattleScene extends Phaser.Scene {
 
     if (success) {
       msgs.push(`やった！ ${enemyData.name}を つかまえた！`);
-      Haptics.success();
 
       this.showMessages(msgs, () => {
         // Add to party or box
