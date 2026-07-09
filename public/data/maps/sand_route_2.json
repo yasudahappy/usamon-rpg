@@ -549,8 +549,8 @@
         1,
         1,
         1,
-        1,
-        1,
+        0,
+        0,
         1,
         1
       ],
@@ -1150,6 +1150,20 @@
       "targetMap": "crater_city",
       "targetX": 8,
       "targetY": 1
+    },
+    {
+      "x": 20,
+      "y": 0,
+      "targetMap": "nectar_town",
+      "targetX": 11,
+      "targetY": 20
+    },
+    {
+      "x": 21,
+      "y": 0,
+      "targetMap": "nectar_town",
+      "targetX": 12,
+      "targetY": 20
     }
   ]
 }

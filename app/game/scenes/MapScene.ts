@@ -60,13 +60,25 @@ export class MapScene extends Phaser.Scene {
     ryuma: ["genki", "kagen"],
   };
   private leaderGateNotified = false;
-  // Sealed exits: an opening drawn in the wall for a future area that is not yet
-  // reachable. Stepping toward these tiles shows a message and blocks passage.
-  private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; message: string }> = {
-    sand_route_2: {
-      tiles: [{ x: 20, y: 0 }, { x: 21, y: 0 }],
-      message: "この先は まだ 道が ひらけて\nいないようだ…。",
-    },
+  // Sealed exits/doors: openings that are not yet passable. Stepping toward one
+  // of its tiles shows the messages and blocks passage.
+  private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; messages: string[] }[]> = {
+    nectar_town: [
+      {
+        // North exit — the road to the next sea (未開放).
+        tiles: [{ x: 11, y: 0 }, { x: 12, y: 0 }],
+        messages: ["この先は まだ 道が ひらけて\nいないようだ…。"],
+      },
+      {
+        // Gym 2 door — frozen shut until the ⑦ ice-melt event (Phase 3).
+        tiles: [{ x: 11, y: 5 }, { x: 12, y: 5 }],
+        messages: [
+          "とびらが 分厚い こおりで\nとざされている…。",
+          "はりがみが ある。",
+          "『試練 その1。この とびらを\nとかして みせよ。\n——ネクタルジム リーダー シモネ』",
+        ],
+      },
+    ],
   };
 
   // Facing direction (for NPC interaction)
@@ -272,13 +284,13 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Place Nurse NPC in recovery pod
-    if (this.currentMapKey === "recovery_pod") {
+    if (this.currentMapKey.startsWith("recovery_pod")) {
       this.placeRecoveryPodDecor();
       this.placeNurseNpc();
     }
 
     // Place Shopkeeper NPC in planet shop
-    if (this.currentMapKey === "planet_shop") {
+    if (this.currentMapKey.startsWith("planet_shop")) {
       this.placePlanetShopDecor();
       this.placeShopkeeperNpc();
     }
@@ -834,11 +846,12 @@ export class MapScene extends Phaser.Scene {
         break;
     }
 
-    // Sealed exit (opening in the wall for a not-yet-available area): show a
-    // "can't go yet" message and turn the player back.
-    const sealed = MapScene.SEALED_EXITS[this.currentMapKey];
-    if (sealed && sealed.tiles.some(t => t.x === targetX && t.y === targetY)) {
-      if (!this.dialogActive) this.showDialog([sealed.message]);
+    // Sealed exits/doors (not-yet-available passages): show the messages and
+    // turn the player back.
+    const sealedList = MapScene.SEALED_EXITS[this.currentMapKey];
+    const sealed = sealedList?.find(s => s.tiles.some(t => t.x === targetX && t.y === targetY));
+    if (sealed) {
+      if (!this.dialogActive) this.showDialog(sealed.messages);
       return;
     }
 
@@ -2807,6 +2820,8 @@ export class MapScene extends Phaser.Scene {
     const cast: Record<string, string> = {
       house_1: "cast-char2-down", house_2: "cast-char7-down",
       house_3: "cast-char4-down", house_4: "cast-char8-down",
+      // ネクタルタウン (1人1テーマの教育会話: ネクタルタウン設計v1 §11-2)
+      house_5: "cast-char6-down", house_6: "cast-char3-down", house_7: "cast-char5-down",
     };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
@@ -2836,6 +2851,22 @@ export class MapScene extends Phaser.Scene {
         "月の 1日は とても 長くてね、\n昼も 夜も 地球の 2週間ずつ 続くの。",
         "だから 農園ドームの ライトで\n作物に ひかりを あげているのよ。",
         "水も 空気も 自分たちで つくる。\n月で 暮らすって そういうことね。",
+      ],
+      // ---- ネクタルタウン (テーマ別・設計書 §11-2) ----
+      house_5: [
+        "昔の 人はな、月の 黒い ところを\n『海』と 呼んだんじゃ。",
+        "じゃが ほんとうは 水じゃない。\n大むかしの 溶岩が 固まった\n平らな 大地なんじゃよ。",
+        "この 神酒の海も そのひとつ。\nとびきり 古い 海なんじゃ。",
+      ],
+      house_6: [
+        "月には 空気が ないから、日なたは\nやけるほど あつく、日かげは\nこおりつくほど 寒い。",
+        "だから この町の ジムは\n氷の アルモン使いなのさ。",
+        "なめてかかると こおるぞ〜。",
+      ],
+      house_7: [
+        "氷の ジムは 手ごわいよ。",
+        "ほのおや、はがねの ような\nアルモンが 心づよいね。",
+        "…そういえば ジムの とびら、\n分厚い 氷で とざされて いたねえ。\nあれも 試練の うちなんだって。",
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);

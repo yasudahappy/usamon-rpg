@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -570,6 +570,39 @@ export class BootScene extends Phaser.Scene {
         for (let ry = 4; ry < ts; ry += 8) ctx.fillRect(railL, ry, railR - railL, 3);
         ctx.fillStyle = "#a07d45";
         for (let ry = 4; ry < ts; ry += 8) ctx.fillRect(railL, ry, railR - railL, 1);
+      } else if (id === "90") {
+        // Frost regolith (ネクタルタウンの霜地面): pale blue-grey soil + frost specks
+        let s = 17;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#b6c2cf";
+        for (let i = 0; i < 44; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#e8f2fa";
+        for (let i = 0; i < 18; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // faint frost sparkles
+        ctx.fillStyle = "#ffffff";
+        for (const [fx, fy] of [[7, 21], [23, 10]] as [number, number][]) {
+          ctx.fillRect(fx, fy, 1, 1); ctx.fillRect(fx - 1, fy, 1, 1); ctx.fillRect(fx + 1, fy, 1, 1);
+          ctx.fillRect(fx, fy - 1, 1, 1); ctx.fillRect(fx, fy + 1, 1, 1);
+        }
+      } else if (id === "91") {
+        // Ice patch (こおりのまだら): glossy pale-blue sheet with cracks
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#cfe6f5"); grd.addColorStop(0.5, "#aacfe8"); grd.addColorStop(1, "#c4e0f2");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(4, 26); ctx.lineTo(13, 17); ctx.lineTo(11, 8); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(20, 28); ctx.lineTo(25, 18); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.fillRect(6, 5, 6, 2); ctx.fillRect(22, 12, 4, 2);
+      } else if (id === "92") {
+        // Frozen rock (凍った岩): bluish boulder face with icy top edge
+        ctx.fillStyle = "#8795a8"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#a8b8cc"; ctx.fillRect(0, 0, ts, 4);
+        ctx.fillStyle = "#6c7a8e"; ctx.fillRect(0, ts - 4, ts, 4);
+        ctx.fillStyle = "#98a8bc";
+        ctx.beginPath(); ctx.arc(10, 14, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(23, 20, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#dceafc"; ctx.fillRect(4, 2, 8, 2); ctx.fillRect(18, 3, 6, 2);
       }
 
       this.textures.addCanvas(key, canvas);
