@@ -2122,15 +2122,20 @@ export class MapScene extends Phaser.Scene {
     const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
     let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const cx = s / 2;
-    // A big stony meteorite resting on the ground: a rounded, cratered boulder
-    // (so it reads as a fallen space rock, not a volcano), lit from the upper-left.
-    // No painted soil around it — just a soft contact shadow to ground it.
-    const R = s * 0.37;
-    const cy = s * 0.50;              // rock sphere centre
+    // A big stony meteorite with its bottom third sunk into the ground: the rock
+    // is drawn large, and everything below the ground line is clipped away, so only
+    // the emerged top ~2/3 shows (reads as a fallen space rock, half-buried).
+    const R = s * 0.45;               // rock radius (enlarged)
+    const groundLine = s * 0.80;      // ground surface: nothing is drawn below it
+    const cy = groundLine - R / 3;    // centre placed so the bottom 1/3 is buried
 
-    // --- soft contact shadow (grounds the rock without any soil mound) ---
-    ctx.fillStyle = "rgba(18,14,12,0.4)";
-    ctx.beginPath(); ctx.ellipse(cx, cy + R * 0.9, R * 0.92, s * 0.05, 0, 0, Math.PI * 2); ctx.fill();
+    // --- soft contact shadow at the ground surface (no soil mound) ---
+    ctx.fillStyle = "rgba(16,12,10,0.42)";
+    ctx.beginPath(); ctx.ellipse(cx, groundLine, R * 1.0, s * 0.045, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Clip everything that follows to above the ground line (buries the base).
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, s, groundLine); ctx.clip();
 
     // --- meteorite body: a bumpy stone sphere ---
     const N = 40; const pts: [number, number][] = [];
@@ -2148,30 +2153,30 @@ export class MapScene extends Phaser.Scene {
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
     pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.fill();
 
-    // clip all surface detail to the rock silhouette
+    // clip surface detail to the rock silhouette (intersects the ground clip)
     ctx.save();
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
     pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.clip();
 
     // impact pockmarks: dark floor + a lower-rim highlight for depth
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 18; i++) {
       const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.82;
       const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr * 0.9;
-      const cr = 4 + rnd() * 14;
+      const cr = 4 + rnd() * 15;
       ctx.fillStyle = "rgba(20,16,13,0.72)";
       ctx.beginPath(); ctx.arc(px, py, cr, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = "rgba(150,138,124,0.4)"; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(px, py + cr * 0.25, cr * 0.85, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
     }
     // fine stony speckle
-    for (let i = 0; i < 130; i++) {
+    for (let i = 0; i < 150; i++) {
       const a = rnd() * Math.PI * 2, rr = rnd() * R;
       const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
       ctx.fillStyle = rnd() > 0.5 ? "rgba(162,150,136,0.22)" : "rgba(14,11,9,0.32)";
       ctx.fillRect(px, py, 2, 2);
     }
     // metallic sheen (upper-left)
-    const sheen = ctx.createRadialGradient(cx - R * 0.4, cy - R * 0.45, 2, cx - R * 0.4, cy - R * 0.45, R * 0.75);
+    const sheen = ctx.createRadialGradient(cx - R * 0.4, cy - R * 0.45, 2, cx - R * 0.4, cy - R * 0.45, R * 0.8);
     sheen.addColorStop(0, "rgba(210,200,186,0.5)");
     sheen.addColorStop(1, "rgba(210,200,186,0)");
     ctx.fillStyle = sheen; ctx.fillRect(0, 0, s, s);
@@ -2185,14 +2190,15 @@ export class MapScene extends Phaser.Scene {
     }
     ctx.stroke();
 
-    // --- faint residual heat, a thin ring hugging the rock's base ---
-    const baseY = cy + R * 0.86;
-    const glow = ctx.createLinearGradient(0, baseY - s * 0.05, 0, baseY + s * 0.03);
+    ctx.restore(); // end ground-line clip
+
+    // --- faint residual heat where the rock enters the ground ---
+    const glow = ctx.createLinearGradient(0, groundLine - s * 0.05, 0, groundLine + s * 0.02);
     glow.addColorStop(0, "rgba(255,120,50,0)");
-    glow.addColorStop(0.5, "rgba(255,120,50,0.22)");
+    glow.addColorStop(0.55, "rgba(255,120,50,0.22)");
     glow.addColorStop(1, "rgba(255,120,50,0)");
     ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.ellipse(cx, baseY, R * 0.8, s * 0.04, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx, groundLine - s * 0.01, R * 0.82, s * 0.04, 0, 0, Math.PI * 2); ctx.fill();
 
     this.textures.addCanvas("meteor-rock", c);
   }
