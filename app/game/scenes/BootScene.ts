@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -641,6 +641,42 @@ export class BootScene extends Phaser.Scene {
           ctx.fillRect(fx - 2, fy, 5, 1); ctx.fillRect(fx, fy - 2, 1, 5);
           ctx.fillRect(fx, fy, 1, 1);
         }
+      } else if (id === "96") {
+        // Shadow ice (かげのこおり): dark, solidly frozen lane — safe to walk.
+        ctx.fillStyle = "#3f5d7e"; ctx.fillRect(0, 0, ts, ts);
+        let s = 41;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#33506e";
+        for (let i = 0; i < 26; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.strokeStyle = "rgba(150,190,230,0.35)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(5, 25); ctx.lineTo(13, 17); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(19, 27); ctx.lineTo(24, 18); ctx.stroke();
+        ctx.fillStyle = "rgba(220,240,255,0.4)";
+        ctx.fillRect(8, 8, 2, 1); ctx.fillRect(24, 12, 2, 1);
+      } else if (id === "97") {
+        // Sunlit thin ice (ひなたのうすごおり): bright, glaring, half-melted — NOT safe.
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#e8f7ff"); grd.addColorStop(0.5, "#c2e6f8"); grd.addColorStop(1, "#e0f3fd");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
+        // strong sun glare stripe
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(14, 0); ctx.lineTo(0, 14); ctx.lineTo(0, 4);
+        ctx.closePath(); ctx.fill();
+        // meltwater cracks (visual "danger")
+        ctx.strokeStyle = "rgba(90,160,200,0.8)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(8, 28); ctx.lineTo(16, 18); ctx.lineTo(14, 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(24, 26); ctx.lineTo(27, 14); ctx.stroke();
+        ctx.fillStyle = "rgba(120,190,225,0.6)";
+        ctx.beginPath(); ctx.ellipse(22, 24, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+      } else if (id === "98") {
+        // Ice-gym floor (ジム床(氷)): pale blue tiles with frosty grid lines
+        ctx.fillStyle = "#dbe8f4"; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "#bcd0e2"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        ctx.fillStyle = "#c8dcec";
+        ctx.fillRect(ts / 2 - 1, ts / 2 - 1, 2, 2);
+        ctx.fillStyle = "rgba(255,255,255,0.65)";
+        ctx.fillRect(4, 4, 6, 1); ctx.fillRect(22, 24, 5, 1);
       }
 
       this.textures.addCanvas(key, canvas);

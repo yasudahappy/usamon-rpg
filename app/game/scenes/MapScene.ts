@@ -69,16 +69,15 @@ export class MapScene extends Phaser.Scene {
         tiles: [{ x: 8, y: 0 }, { x: 9, y: 0 }],
         messages: ["この先は まだ 道が ひらけて\nいないようだ…。"],
       },
-      {
-        // Gym 2 door — frozen shut until the ⑦ ice-melt event (Phase 3).
-        tiles: [{ x: 15, y: 6 }],
-        messages: [
-          "とびらが 分厚い こおりで\nとざされている…。",
-          "はりがみが ある。",
-          "『試練 その1。この とびらを\nとかして みせよ。\n——ネクタルジム リーダー シモネ』",
-        ],
-      },
+      // NOTE: The gym door (15,6) is handled dynamically (ice-melt trial ⑦),
+      // see tryMeltGymDoor().
     ],
+  };
+  // Nectar gym door: frozen shut until a fire/metal almon melts it (試練 その1).
+  private static NECTAR_GYM_DOOR = { x: 15, y: 6 };
+  private static NECTAR_DOOR_FLAG = "nectar_gym_door_melted";
+  private static DOOR_MELTERS: Record<string, "fire" | "metal"> = {
+    meteko: "fire", meteodon: "fire", roubau: "metal", roubaag: "metal",
   };
 
   // Facing direction (for NPC interaction)
@@ -224,6 +223,7 @@ export class MapScene extends Phaser.Scene {
     this.granny2Sprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
+    this.simoneSprite = undefined;
     this.shopOpen = false;
     if (data.playerState) {
       this.playerState = data.playerState;
@@ -322,6 +322,12 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "nectar_town") {
       this.placeNectarDecor();
       this.startSnowfall();
+      this.applyNectarGymDoorState();
+    }
+
+    // Nectar Gym — シモネ is not ready to battle yet (Phase 4 placeholder).
+    if (this.currentMapKey === "gym_2") {
+      this.placeSimonePreview();
     }
 
     // Farm dome interior — a researcher tending the plants
@@ -821,6 +827,7 @@ export class MapScene extends Phaser.Scene {
         y >= this.meteorY && y < this.meteorY + MapScene.METEOR_SIZE) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
+    if (this.simoneSprite && x === this.simoneX && y === this.simoneY) return true;
     // Uncollected cave capsules block their tile (pick up by facing + A).
     for (const c of MapScene.CAVE_CAPSULES) {
       if (c.mapKey === this.currentMapKey && c.x === x && c.y === y && this.caveCapsuleSprites.has(c.flag)) return true;
@@ -852,6 +859,15 @@ export class MapScene extends Phaser.Scene {
       case "right":
         targetX++;
         break;
+    }
+
+    // Nectar gym door: frozen until a fire/metal almon melts it (試練 その1 ⑦).
+    // Once melted the tile is a normal warp and this branch no longer fires.
+    if (this.currentMapKey === "nectar_town" &&
+        targetX === MapScene.NECTAR_GYM_DOOR.x && targetY === MapScene.NECTAR_GYM_DOOR.y &&
+        !(this.playerState?.pickups || []).includes(MapScene.NECTAR_DOOR_FLAG)) {
+      if (!this.dialogActive) this.tryMeltGymDoor();
+      return;
     }
 
     // Sealed exits/doors (not-yet-available passages): show the messages and
@@ -2137,6 +2153,10 @@ export class MapScene extends Phaser.Scene {
     }
     if (this.residentSprite && fx === this.residentNpcX && fy === this.residentNpcY) {
       this.triggerResidentEvent();
+      return;
+    }
+    if (this.simoneSprite && fx === this.simoneX && fy === this.simoneY) {
+      this.triggerSimoneEvent();
       return;
     }
     if ((this.granny1Sprite && fx === this.granny1X && fy === this.granny1Y) ||
@@ -3689,6 +3709,93 @@ export class MapScene extends Phaser.Scene {
     // Cold colour cast over the whole basin (subtle; below dialogs/UI).
     this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0x9fc8ff, 0.07)
       .setOrigin(0).setDepth(26);
+  }
+
+  /**
+   * Keep the nectar gym door's walkability/warp in sync with the melt flag.
+   * mapData comes from the (session-persistent) JSON cache, so this must be
+   * idempotent in BOTH directions — a new game must re-freeze the door.
+   */
+  private applyNectarGymDoorState(): void {
+    const { x, y } = MapScene.NECTAR_GYM_DOOR;
+    const melted = (this.playerState?.pickups || []).includes(MapScene.NECTAR_DOOR_FLAG);
+    const warps = this.mapData.warps || (this.mapData.warps = []);
+    const idx = warps.findIndex(w => w.x === x && w.y === y);
+    if (melted) {
+      this.mapData.layers.collision[y][x] = 0;
+      if (idx < 0) warps.push({ x, y, targetMap: "gym_2", targetX: 10, targetY: 24 });
+    } else {
+      this.mapData.layers.collision[y][x] = 1;
+      if (idx >= 0) warps.splice(idx, 1);
+    }
+  }
+
+  /** 試練 その1 (⑦): melt the frozen gym door with a fire/metal party member. */
+  private tryMeltGymDoor(): void {
+    const party = this.playerState?.party || [];
+    const melter = party.find(m => MapScene.DOOR_MELTERS[m.dataId]);
+    if (!melter) {
+      this.showDialog([
+        "とびらが 分厚い こおりで\nとざされている…。",
+        "はりがみが ある。",
+        "『試練 その1。この とびらを\nとかして みせよ。\n——ネクタルジム リーダー シモネ』",
+        "（ほのおか はがねの アルモンが\nいれば とかせるかも…）",
+      ]);
+      return;
+    }
+    const kind = MapScene.DOOR_MELTERS[melter.dataId];
+    const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    const name = allMonsters.find(m => m.id === melter.dataId)?.name || "アルモン";
+    const actionLine = kind === "fire"
+      ? `${name}が ほのおを ふきつけた！`
+      : `${name}が 体当たりで 氷を くだいた！`;
+    this.inCutscene = true;
+    this.showDialog([
+      "とびらが 分厚い こおりで\nとざされている…。",
+      "（手持ちの アルモンが 反応している…！）",
+      actionLine,
+      "こおりが パリンと われて、\nジムの とびらが ひらいた！",
+    ], () => {
+      this.inCutscene = false;
+      if (this.playerState) {
+        this.playerState.pickups = this.playerState.pickups || [];
+        if (!this.playerState.pickups.includes(MapScene.NECTAR_DOOR_FLAG)) {
+          this.playerState.pickups.push(MapScene.NECTAR_DOOR_FLAG);
+        }
+      }
+      this.applyNectarGymDoorState();
+      // a small white flash at the doorway to sell the crack
+      const ts = this.tileSize;
+      const flash = this.add.circle(
+        MapScene.NECTAR_GYM_DOOR.x * ts + ts / 2,
+        MapScene.NECTAR_GYM_DOOR.y * ts + ts / 2,
+        6, 0xffffff
+      ).setDepth(20);
+      this.tweens.add({ targets: flash, scale: 5, alpha: 0, duration: 420, ease: "Cubic.out",
+        onComplete: () => flash.destroy() });
+    });
+  }
+
+  // ---- Nectar Gym: シモネ placeholder (Phase 4 で本戦を実装するまでの会話のみ) ----
+  private simoneSprite?: Phaser.GameObjects.Image;
+  private simoneX = 9;
+  private simoneY = 3;
+
+  private placeSimonePreview(): void {
+    this.simoneSprite = this.add.image(
+      this.simoneX * this.tileSize + this.tileSize / 2,
+      this.simoneY * this.tileSize + this.tileSize / 2,
+      this.npcTex("cast-char7-down", "npc-mom")
+    ).setDepth(9);
+  }
+
+  private triggerSimoneEvent(): void {
+    this.showDialog([
+      "……ようこそ。わたしが ネクタルジムの\nリーダー、シモネ。",
+      "この こおりの 間を 越えてくるとは、\nいい 目を しているわ。",
+      "でも 勝負は もう少しだけ 待って。\nアルモンたちが 南極の 観測から\n帰ったばかりで、休んでいるの。",
+      "——そのあいだに、この ジムの 寒さに\nなれておくと いいわ。",
+    ]);
   }
 
   private startSnowfall(): void {
