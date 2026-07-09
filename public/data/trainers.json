@@ -1,37 +1,37 @@
 [
   {
     "id": "sui",
-    "name": "ちょうさいん シイナ",
+    "name": "たんけんか ミサキ",
     "mapKey": "sand_route_1",
     "x": 12,
     "y": 8,
     "direction": "right",
     "sightRange": 3,
     "prizeMoneyBase": 200,
-    "dialogBefore": "あ、トレーナーさんだ！この砂場のモンスター、かわいいでしょ？ちょっと勝負しよ！",
-    "dialogWin": "わー強い！キミのモンスター、すっごく懐いてるね。負けちゃった〜",
-    "dialogLose": "えへへ、調査のかたわら鍛えてるんだ！また挑戦してね",
+    "dialogBefore": "たんけんか の ミサキよ。この 砂場も りっぱな 探検の フィールド。ちょっと 勝負しましょ！",
+    "dialogWin": "まいったわ…。あなた、探検の センス あるわね。",
+    "dialogLose": "まだまだ！ 砂場の 探検は はじまったばかりよ。",
     "party": [
       {
         "id": "mochichi",
         "level": 4
       }
     ],
-    "battleSprite": "trainer-girl",
-    "overworldSprite": "char7"
+    "battleSprite": "trainer-peace",
+    "overworldSprite": "char5"
   },
   {
     "id": "yamaoka",
-    "name": "さいくつさぎょういん アラガキ",
+    "name": "たんけんか ゴウ",
     "mapKey": "sand_route_1",
     "x": 22,
     "y": 13,
     "direction": "left",
     "sightRange": 4,
     "prizeMoneyBase": 350,
-    "dialogBefore": "あ、あの…もし勝負してもらえるなら…その、お手やわらかに、ね？ウチのスナガニ、守りだけは得意なんです…",
-    "dialogWin": "あぁ、やっぱり強いなあ…でも、いい勝負ができて嬉しかったですよ。ありがとうね",
-    "dialogLose": "わ、勝てちゃった…！すみません、まぐれかもしれません…えへへ",
+    "dialogBefore": "この 砂場は おれの なわばりだ。とおりたければ おれを 倒してから いけ！",
+    "dialogWin": "…行け。この さきにも つよい トレーナーが 待ってるぞ。",
+    "dialogLose": "ここは 通さんぞ！",
     "party": [
       {
         "id": "sunagani",
@@ -42,8 +42,8 @@
         "level": 5
       }
     ],
-    "battleSprite": "trainer-worker",
-    "overworldSprite": "char2"
+    "battleSprite": "trainer-suit",
+    "overworldSprite": "char9"
   },
   {
     "id": "genki",
@@ -143,16 +143,16 @@
   },
   {
     "id": "explorer2",
-    "name": "たんけんか ミサキ",
+    "name": "ちょうさいん シイナ",
     "mapKey": "crater_cave_b1",
     "x": 6,
     "y": 8,
     "direction": "up",
     "sightRange": 3,
     "prizeMoneyBase": 600,
-    "dialogBefore": "ここは 地下1階。下に いくほど あなは せまく、熱く なるの。覚悟は いい？",
-    "dialogWin": "まいったわ…。奥の 人には 気を つけてね。",
-    "dialogLose": "まだまだ！ 探検は これからよ。",
+    "dialogBefore": "あ、トレーナーさんだ！この 地下の モンスター、かわいいでしょ？ちょっと 勝負しよ！",
+    "dialogWin": "わー強い！キミのモンスター、すっごく懐いてるね。負けちゃった〜",
+    "dialogLose": "えへへ、調査のかたわら鍛えてるんだ！また挑戦してね",
     "party": [
       {
         "id": "regonyas",
@@ -163,21 +163,21 @@
         "level": 11
       }
     ],
-    "battleSprite": "trainer-peace",
-    "overworldSprite": "char5"
+    "battleSprite": "trainer-girl",
+    "overworldSprite": "char7"
   },
   {
     "id": "explorer3",
-    "name": "たんけんか ゴウ",
+    "name": "さいくつさぎょういん アラガキ",
     "mapKey": "crater_cave_b2",
     "x": 1,
     "y": 4,
     "direction": "right",
     "sightRange": 3,
     "prizeMoneyBase": 700,
-    "dialogBefore": "最下層まで きたか…！ この さきには あの人が いる。おれを 倒してから いけ！",
-    "dialogWin": "…行け。あの人は 隕石の ことを 誰より 知っている。",
-    "dialogLose": "ここは 通さんぞ！",
+    "dialogBefore": "あ、あの…もし 勝負してもらえるなら…その、お手やわらかに、ね？ ウチの アルモン、守りだけは 得意なんです…",
+    "dialogWin": "あぁ、やっぱり強いなあ…でも、いい勝負ができて嬉しかったですよ。ありがとうね",
+    "dialogLose": "わ、勝てちゃった…！すみません、まぐれかもしれません…えへへ",
     "party": [
       {
         "id": "sharisu",
@@ -188,8 +188,8 @@
         "level": 12
       }
     ],
-    "battleSprite": "trainer-suit",
-    "overworldSprite": "char9"
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "char2"
   },
   {
     "id": "eezen",
