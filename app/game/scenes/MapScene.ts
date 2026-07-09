@@ -2122,87 +2122,106 @@ export class MapScene extends Phaser.Scene {
     const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
     let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const cx = s / 2;
-    // The rock is a big sphere sunk into the ground: its centre sits low so only
-    // the TOP THIRD emerges. Ground/soil line (where the rock disappears) ~0.42s.
-    const R = s * 0.40;
-    const rockCy = s * 0.68;          // sphere centre (mostly below ground)
-    const groundY = s * 0.42;         // where the buried soil mound crests
+    // A big stony meteorite half-buried in the ground: most of a rounded, cratered
+    // boulder is exposed (so it reads as a fallen space rock, not a volcano). It is
+    // lit from the upper-left; only a subtle scorch/heat ring marks the base.
+    const R = s * 0.37;
+    const cy = s * 0.50;              // rock sphere centre (mostly above ground)
+    const groundY = s * 0.74;         // where the rock meets the churned soil
 
-    // --- scorched impact crater on the ground (wide, dark, radiating) ---
-    ctx.fillStyle = "rgba(34,22,16,0.5)";
-    ctx.beginPath(); ctx.ellipse(cx, s * 0.72, s * 0.48, s * 0.20, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(58,38,26,0.5)";
-    ctx.beginPath(); ctx.ellipse(cx, s * 0.70, s * 0.38, s * 0.15, 0, 0, Math.PI * 2); ctx.fill();
+    // --- scorched impact ground: dark ejecta ring + debris flung outward ---
+    ctx.fillStyle = "rgba(26,20,17,0.55)";
+    ctx.beginPath(); ctx.ellipse(cx, groundY + s * 0.05, s * 0.47, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(66,55,48,0.45)";
+    ctx.beginPath(); ctx.ellipse(cx, groundY + s * 0.03, s * 0.36, s * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(38,30,25,0.85)";
+    for (let i = 0; i < 44; i++) {
+      const a = rnd() * Math.PI * 2;
+      const rr = R * (1.05 + rnd() * 0.95);
+      const x = cx + Math.cos(a) * rr;
+      const y = groundY + s * 0.03 + Math.sin(a) * s * 0.11;
+      if (y < groundY - s * 0.02) continue;   // keep debris on the ground
+      const sz = 1 + rnd() * 3;
+      ctx.fillRect(x, y, sz, sz);
+    }
 
-    // --- exposed rock crown (only the emerging cap) ---
-    const N = 20; const pts: [number, number][] = [];
+    // --- meteorite body: a bumpy stone sphere ---
+    const N = 40; const pts: [number, number][] = [];
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
-      const rr = R * (0.86 + rnd() * 0.2);
-      pts.push([cx + Math.cos(a) * rr, rockCy + Math.sin(a) * rr]);
+      const rr = R * (0.93 + rnd() * 0.12);     // gentle rocky bumps
+      pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
     }
-    const grd = ctx.createRadialGradient(cx - R * 0.3, groundY + R * 0.1, 8, cx, rockCy, R * 1.15);
-    grd.addColorStop(0, "#7a675c"); grd.addColorStop(0.5, "#463831"); grd.addColorStop(1, "#221913");
-    ctx.fillStyle = grd;
+    const body = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R * 1.15);
+    body.addColorStop(0, "#9a9088");
+    body.addColorStop(0.45, "#5c5249");
+    body.addColorStop(0.8, "#342c26");
+    body.addColorStop(1, "#1b1613");
+    ctx.fillStyle = body;
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
     pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.fill();
-    // surface craters on the exposed cap (kept above the soil line)
-    ctx.fillStyle = "#2a211c";
-    for (let i = 0; i < 9; i++) {
-      const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.75;
-      const px = cx + Math.cos(a) * rr, py = rockCy + Math.sin(a) * rr;
-      if (py > groundY - 6) continue;
-      ctx.beginPath(); ctx.arc(px, py, 5 + rnd() * 11, 0, Math.PI * 2); ctx.fill();
+
+    // clip all surface detail to the rock silhouette
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.clip();
+
+    // impact pockmarks: dark floor + a lower-rim highlight for depth
+    for (let i = 0; i < 16; i++) {
+      const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.82;
+      const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr * 0.9;
+      const cr = 4 + rnd() * 14;
+      ctx.fillStyle = "rgba(20,16,13,0.72)";
+      ctx.beginPath(); ctx.arc(px, py, cr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(150,138,124,0.4)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(px, py + cr * 0.25, cr * 0.85, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
     }
-    // top rim highlight (sun catching the crown)
-    ctx.strokeStyle = "rgba(168,146,128,0.75)"; ctx.lineWidth = 3;
+    // fine stony speckle
+    for (let i = 0; i < 130; i++) {
+      const a = rnd() * Math.PI * 2, rr = rnd() * R;
+      const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+      ctx.fillStyle = rnd() > 0.5 ? "rgba(162,150,136,0.22)" : "rgba(14,11,9,0.32)";
+      ctx.fillRect(px, py, 2, 2);
+    }
+    // metallic sheen (upper-left)
+    const sheen = ctx.createRadialGradient(cx - R * 0.4, cy - R * 0.45, 2, cx - R * 0.4, cy - R * 0.45, R * 0.75);
+    sheen.addColorStop(0, "rgba(210,200,186,0.5)");
+    sheen.addColorStop(1, "rgba(210,200,186,0)");
+    ctx.fillStyle = sheen; ctx.fillRect(0, 0, s, s);
+    ctx.restore();
+
+    // upper-left rim light on the silhouette
+    ctx.strokeStyle = "rgba(200,188,170,0.7)"; ctx.lineWidth = 3; ctx.lineCap = "round";
     ctx.beginPath();
-    for (let i = Math.round(N * 0.55); i <= Math.round(N * 0.95); i++) {
-      const p = pts[i % N]; if (i === Math.round(N * 0.55)) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    for (let i = Math.round(N * 0.5); i <= Math.round(N * 0.9); i++) {
+      const p = pts[i % N]; if (i === Math.round(N * 0.5)) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
     }
     ctx.stroke();
 
-    // --- buried soil mound: covers the lower 2/3 of the rock, so it looks sunk ---
-    ctx.fillStyle = "#3a2a1e";
+    // --- churned soil berm hiding the buried lower rim ---
+    ctx.fillStyle = "#2f271f";
     ctx.beginPath();
     ctx.moveTo(0, s);
-    ctx.lineTo(0, groundY + s * 0.06);
-    // berm rises to meet the rock on the left, dips under it, rises on the right
-    ctx.quadraticCurveTo(cx - R * 0.9, groundY - s * 0.02, cx - R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx, groundY + s * 0.12, cx + R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx + R * 0.9, groundY - s * 0.02, s, groundY + s * 0.06);
+    ctx.lineTo(0, groundY + s * 0.02);
+    ctx.quadraticCurveTo(cx - R * 0.7, groundY - s * 0.05, cx, groundY - s * 0.01);
+    ctx.quadraticCurveTo(cx + R * 0.7, groundY - s * 0.05, s, groundY + s * 0.02);
     ctx.lineTo(s, s); ctx.closePath(); ctx.fill();
-    // mound texture: lighter kicked-up soil highlight along the crest
-    ctx.strokeStyle = "#5a4230"; ctx.lineWidth = 3;
+    ctx.strokeStyle = "#4a3c2e"; ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, groundY + s * 0.06);
-    ctx.quadraticCurveTo(cx - R * 0.9, groundY - s * 0.02, cx - R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx, groundY + s * 0.12, cx + R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx + R * 0.9, groundY - s * 0.02, s, groundY + s * 0.06);
+    ctx.moveTo(0, groundY + s * 0.02);
+    ctx.quadraticCurveTo(cx - R * 0.7, groundY - s * 0.05, cx, groundY - s * 0.01);
+    ctx.quadraticCurveTo(cx + R * 0.7, groundY - s * 0.05, s, groundY + s * 0.02);
     ctx.stroke();
-    ctx.fillStyle = "#2c2016";
-    for (let i = 0; i < 60; i++) { const x = rnd() * s, y = groundY + s * 0.06 + rnd() * (s - groundY); ctx.fillRect(x, y, 2, 2); }
+    ctx.fillStyle = "#241a12";
+    for (let i = 0; i < 40; i++) { const x = rnd() * s, y = groundY + rnd() * (s - groundY); ctx.fillRect(x, y, 2, 2); }
 
-    // --- molten glow + cracks along the buried contact line ---
-    const glow = ctx.createLinearGradient(0, groundY - s * 0.05, 0, groundY + s * 0.14);
-    glow.addColorStop(0, "rgba(255,120,40,0)");
-    glow.addColorStop(0.5, "rgba(255,120,40,0.45)");
-    glow.addColorStop(1, "rgba(255,120,40,0)");
+    // --- faint residual heat, only a thin ring at the base contact ---
+    const glow = ctx.createLinearGradient(0, groundY - s * 0.04, 0, groundY + s * 0.06);
+    glow.addColorStop(0, "rgba(255,120,50,0)");
+    glow.addColorStop(0.5, "rgba(255,120,50,0.26)");
+    glow.addColorStop(1, "rgba(255,120,50,0)");
     ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.ellipse(cx, groundY + s * 0.05, R * 1.0, s * 0.09, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#ff6a1e"; ctx.lineWidth = 3; ctx.lineCap = "round";
-    for (const [x0, y0, x1, y1] of [
-      [cx - R * 0.6, groundY + 8, cx - R * 0.2, groundY - R * 0.25],
-      [cx + R * 0.1, groundY + 6, cx + R * 0.4, groundY - R * 0.3],
-      [cx - R * 0.05, groundY + 10, cx + R * 0.05, groundY - R * 0.1],
-    ] as [number, number, number, number][]) {
-      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-    }
-    // embers rising from the contact line
-    ctx.fillStyle = "#ffb347";
-    for (let i = 0; i < 8; i++) { const x = cx + (rnd() - 0.5) * R * 1.6, y = groundY - rnd() * R * 0.5; ctx.beginPath(); ctx.arc(x, y, 2 + rnd() * 2, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = "#ffe08a";
-    for (let i = 0; i < 5; i++) { const x = cx + (rnd() - 0.5) * R * 1.2, y = groundY + (rnd() - 0.5) * s * 0.06; ctx.fillRect(x, y, 2, 2); }
+    ctx.beginPath(); ctx.ellipse(cx, groundY, R * 0.95, s * 0.05, 0, 0, Math.PI * 2); ctx.fill();
 
     this.textures.addCanvas("meteor-rock", c);
   }
