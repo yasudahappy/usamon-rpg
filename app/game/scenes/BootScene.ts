@@ -604,17 +604,27 @@ export class BootScene extends Phaser.Scene {
         ctx.beginPath(); ctx.arc(23, 20, 4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "#dceafc"; ctx.fillRect(4, 2, 8, 2); ctx.fillRect(18, 3, 6, 2);
       } else if (id === "93") {
-        // Packed frost path (こおりみち): pale blue trodden snow with tread marks
-        ctx.fillStyle = "#dbe9f4"; ctx.fillRect(0, 0, ts, ts);
+        // Frost-stone road (こおりみち): cold blue-grey paving slabs with clear
+        // joints so the road pops against the pale frost ground.
+        ctx.fillStyle = "#b7c9db"; ctx.fillRect(0, 0, ts, ts);
+        // 2x2 slabs per tile, each with a top-left highlight and bottom shadow
+        const slab = (sx: number, sy: number, w: number, h: number) => {
+          ctx.fillStyle = "#c6d8e8"; ctx.fillRect(sx, sy, w, h);
+          ctx.fillStyle = "#d9e8f4"; ctx.fillRect(sx, sy, w, 2); ctx.fillRect(sx, sy, 2, h);
+          ctx.fillStyle = "#9fb3c8"; ctx.fillRect(sx, sy + h - 2, w, 2); ctx.fillRect(sx + w - 2, sy, 2, h);
+        };
+        slab(1, 1, 14, 14); slab(17, 1, 14, 14);
+        slab(1, 17, 14, 14); slab(17, 17, 14, 14);
+        // dark mortar joints (the cross between slabs + tile edges)
+        ctx.fillStyle = "#8ba0b6";
+        ctx.fillRect(0, 15, ts, 2); ctx.fillRect(15, 0, 2, ts);
+        ctx.fillRect(0, 0, ts, 1); ctx.fillRect(0, ts - 1, ts, 1);
+        ctx.fillRect(0, 0, 1, ts); ctx.fillRect(ts - 1, 0, 1, ts);
+        // light dusting of snow so it still belongs to the wintry town
         let s = 29;
         const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-        ctx.fillStyle = "#c3d7e8";
-        for (let i = 0; i < 30; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
-        ctx.fillStyle = "#eef7ff";
-        for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
-        // soft edge shading so paths read as pressed-down lanes
-        ctx.fillStyle = "rgba(150,175,200,0.5)";
-        ctx.fillRect(0, 0, ts, 2); ctx.fillRect(0, ts - 2, ts, 2);
+        ctx.fillStyle = "rgba(240,248,255,0.7)";
+        for (let i = 0; i < 8; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
       } else if (id === "94" || id === "95") {
         // Frost twinkle frames for tile 90 (animated via MapScene SPARKLE_MAP):
         // same frost base + bright cross-shaped glints at alternating spots.
