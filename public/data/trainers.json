@@ -163,7 +163,7 @@
         "level": 11
       }
     ],
-    "battleSprite": "trainer-girl",
+    "battleSprite": "trainer-shiina",
     "overworldSprite": "char7"
   },
   {
@@ -188,7 +188,7 @@
         "level": 12
       }
     ],
-    "battleSprite": "trainer-worker",
+    "battleSprite": "trainer-aragaki",
     "overworldSprite": "char2"
   },
   {
