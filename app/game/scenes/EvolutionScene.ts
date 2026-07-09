@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { Haptics } from "../haptics";
 import { MonsterData, MoveData, PlayerState } from "../data/types";
 import { applyEvolution, getNewMoveAtLevel } from "../data/levelSystem";
 
@@ -141,6 +142,7 @@ export class EvolutionScene extends Phaser.Scene {
               }
             }
 
+            Haptics.success();
             this.setMsg(`おめでとう！ ${fromData.name}は ${toData.name}に しんかした！`);
             this.time.delayedCall(2200, () => this.runEvolution(i + 1));
           }

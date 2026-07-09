@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { Haptics } from "../haptics";
 import { MapData } from "../types";
 import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData } from "../data/types";
 import { calculateStats, getExpForLevel } from "../data/levelSystem";
@@ -675,6 +676,7 @@ export class MapScene extends Phaser.Scene {
   // player is frozen, and the trainer walks up to the player before the battle.
   private beginTrainerApproach(trainer: TrainerData): void {
     this.trainerApproaching = true;
+    Haptics.light();
     this.moveQueue = null;
     const sprite = this.trainerSprites.get(trainer.id);
     if (!sprite) {
@@ -929,6 +931,8 @@ export class MapScene extends Phaser.Scene {
               this.tryMove(d);
               return;
             }
+            // skid to a stop against the obstacle
+            Haptics.light();
           }
         }
 
@@ -2451,6 +2455,7 @@ export class MapScene extends Phaser.Scene {
       this.playerState.pickups.push("gym1_quake");
     }
     this.inCutscene = true;
+    Haptics.quake();
     this.cameras.main.shake(1400, 0.012);
     this.time.delayedCall(1500, () => {
       this.showDialog([
@@ -3787,6 +3792,7 @@ export class MapScene extends Phaser.Scene {
         }
       }
       this.applyNectarGymDoorState();
+      Haptics.medium();
       // a small white flash at the doorway to sell the crack
       const ts = this.tileSize;
       const flash = this.add.circle(
