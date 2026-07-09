@@ -296,5 +296,61 @@
     ],
     "battleSprite": "trainer-suit",
     "overworldSprite": "char9"
+  },
+  {
+    "id": "rei",
+    "name": "スケーター レイ",
+    "mapKey": "gym_2",
+    "x": 14,
+    "y": 12,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 500,
+    "dialogBefore": "ここの 氷の床で ころんだ 回数なら\nジムいち！ …きみは 何回で 抜けた？\nさあ、すべりながら 勝負だ！",
+    "dialogWin": "うわっ、つるっと 負けた！\n次の 日かげの 道も 気をつけてな。",
+    "dialogLose": "すべって ばかりじゃ 勝てないぜ！",
+    "party": [
+      { "id": "shakurin", "level": 21 }
+    ],
+    "battleSprite": "trainer-casual",
+    "overworldSprite": "char8"
+  },
+  {
+    "id": "tsurara",
+    "name": "こおりつかい ツララ",
+    "mapKey": "gym_2",
+    "x": 9,
+    "y": 7,
+    "direction": "down",
+    "sightRange": 2,
+    "prizeMoneyBase": 550,
+    "dialogBefore": "日なたと 日かげで 100ど以上も\nちがう。それが 月。\n——冷たさの こわさ、教えてあげる！",
+    "dialogWin": "ひんやり…。まけたわ。\nリーダーの 冷気は こんなもの じゃないよ。",
+    "dialogLose": "日かげで 頭を ひやして きなさい！",
+    "party": [
+      { "id": "shakurin", "level": 19 },
+      { "id": "shakurin", "level": 22 }
+    ],
+    "battleSprite": "trainer-peace",
+    "overworldSprite": "char1"
+  },
+  {
+    "id": "simone",
+    "name": "ジムリーダー シモネ",
+    "mapKey": "gym_2",
+    "x": 9,
+    "y": 3,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 1400,
+    "dialogBefore": "ようこそ。ここは 影の 冷たさを 知る 場所。\n月の 夜は マイナス170ど。こごえる 静けさの 中でも アルモンは 生きている。\nあなたの 熱意——こおりの 上でも 燃えつづけるかしら。試させて。",
+    "dialogWin": "……みごと。あなたの 炎は、こおらなかった。\n『ネクタルバッジ』を さずけます。\n南極の 永久影には 氷——水が ねむっているの。その 水を さぐる 不審な 者たちの ウワサ…。旅を つづけるなら、気をつけて。",
+    "dialogLose": "まだ 芯まで 冷えきって いないようね。\nもういちど いらっしゃい。",
+    "party": [
+      { "id": "shakurin", "level": 23 },
+      { "id": "shakuros", "level": 26 }
+    ],
+    "battleSprite": "trainer-girl",
+    "overworldSprite": "char7"
   }
 ]

@@ -58,6 +58,7 @@ export class MapScene extends Phaser.Scene {
   // Gym-leader gates: leader id -> trainers that must be beaten first.
   private static GYM_LEADER_GATES: Record<string, string[]> = {
     ryuma: ["genki", "kagen"],
+    simone: ["rei", "tsurara"],
   };
   private leaderGateNotified = false;
   // Sealed exits/doors: openings that are not yet passable. Stepping toward one
@@ -223,7 +224,6 @@ export class MapScene extends Phaser.Scene {
     this.granny2Sprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
-    this.simoneSprite = undefined;
     this.nectarExam = [];
     this.quizAwaiting = null;
     this.shopOpen = false;
@@ -333,10 +333,6 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
-    // Nectar Gym — シモネ is not ready to battle yet (Phase 4 placeholder).
-    if (this.currentMapKey === "gym_2") {
-      this.placeSimonePreview();
-    }
 
     // Farm dome interior — a researcher tending the plants
     if (this.currentMapKey === "farm_dome") {
@@ -835,7 +831,6 @@ export class MapScene extends Phaser.Scene {
         y >= this.meteorY && y < this.meteorY + MapScene.METEOR_SIZE) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
-    if (this.simoneSprite && x === this.simoneX && y === this.simoneY) return true;
     if (this.nectarExam.some(e => e.x === x && e.y === y)) return true;
     // Uncollected cave capsules block their tile (pick up by facing + A).
     for (const c of MapScene.CAVE_CAPSULES) {
@@ -2171,10 +2166,6 @@ export class MapScene extends Phaser.Scene {
     }
     if (this.residentSprite && fx === this.residentNpcX && fy === this.residentNpcY) {
       this.triggerResidentEvent();
-      return;
-    }
-    if (this.simoneSprite && fx === this.simoneX && fy === this.simoneY) {
-      this.triggerSimoneEvent();
       return;
     }
     const exam = this.nectarExam.find(e => e.x === fx && e.y === fy);
@@ -3797,28 +3788,6 @@ export class MapScene extends Phaser.Scene {
       this.tweens.add({ targets: flash, scale: 5, alpha: 0, duration: 420, ease: "Cubic.out",
         onComplete: () => flash.destroy() });
     });
-  }
-
-  // ---- Nectar Gym: シモネ placeholder (Phase 4 で本戦を実装するまでの会話のみ) ----
-  private simoneSprite?: Phaser.GameObjects.Image;
-  private simoneX = 9;
-  private simoneY = 3;
-
-  private placeSimonePreview(): void {
-    this.simoneSprite = this.add.image(
-      this.simoneX * this.tileSize + this.tileSize / 2,
-      this.simoneY * this.tileSize + this.tileSize / 2,
-      this.npcTex("cast-char7-down", "npc-mom")
-    ).setDepth(9);
-  }
-
-  private triggerSimoneEvent(): void {
-    this.showDialog([
-      "……ようこそ。わたしが ネクタルジムの\nリーダー、シモネ。",
-      "この こおりの 間を 越えてくるとは、\nいい 目を しているわ。",
-      "でも 勝負は もう少しだけ 待って。\nアルモンたちが 南極の 観測から\n帰ったばかりで、休んでいるの。",
-      "——そのあいだに、この ジムの 寒さに\nなれておくと いいわ。",
-    ]);
   }
 
   // ---- Nectar Town education events (第5章 / 設計書 §11-§12) ----

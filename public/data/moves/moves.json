@@ -739,5 +739,70 @@
       "target": "self"
     },
     "description": "周囲を 走査して 全能力アップ"
+  },
+  {
+    "id": "koori_no_tsubute",
+    "name": "こおりのつぶて",
+    "type": "氷",
+    "power": 45,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "小さな 氷の かけらを ぶつける"
+  },
+  {
+    "id": "koori_no_veil",
+    "name": "こおりのベール",
+    "type": "氷",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "statChange",
+      "stat": "defense",
+      "multiplier": 1.5,
+      "target": "self"
+    },
+    "description": "氷の ベールで ぼうぎょアップ"
+  },
+  {
+    "id": "icicle_lance",
+    "name": "アイシクルランス",
+    "type": "氷",
+    "power": 75,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "氷の 槍で つらぬく 主力技"
+  },
+  {
+    "id": "fubuki",
+    "name": "ふぶき",
+    "type": "氷",
+    "power": 110,
+    "accuracy": 85,
+    "isSupport": false,
+    "effect": null,
+    "description": "はげしい 雪あらしで こうげきする"
+  },
+  {
+    "id": "eikyuukage_no_iki",
+    "name": "えいきゅうかげのいき",
+    "type": "氷",
+    "power": 95,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "永久影の 冷気を あびせる"
+  },
+  {
+    "id": "zettai_reido",
+    "name": "ぜったいれいど",
+    "type": "氷",
+    "power": 140,
+    "accuracy": 75,
+    "isSupport": false,
+    "effect": null,
+    "description": "きゅうきょくの 冷気で すべてを こおらせる"
   }
 ]
