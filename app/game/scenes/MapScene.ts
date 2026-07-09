@@ -221,9 +221,9 @@ export class MapScene extends Phaser.Scene {
     // Clear any transient touch/gamepad state that could linger across a scene
     // transition (e.g. a D-pad press that never received its touchend during
     // the intro→town warp), which would otherwise block/steal fresh input.
-    if (typeof window !== "undefined" && (window as unknown as { __gamepad?: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad) {
-      const gp = (window as unknown as { __gamepad: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
-      gp.dpad = null; gp.aJust = false; gp.bJust = false; gp.menuJust = false;
+    if (typeof window !== "undefined" && (window as unknown as { __gamepad?: { dpad: string | null; dpadJust: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad) {
+      const gp = (window as unknown as { __gamepad: { dpad: string | null; dpadJust: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
+      gp.dpad = null; gp.dpadJust = null; gp.aJust = false; gp.bJust = false; gp.menuJust = false;
     }
 
     this.mapData = this.cache.json.get(
@@ -852,10 +852,14 @@ export class MapScene extends Phaser.Scene {
     // --- Gamepad button reads ---
     const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
     let gpMenu = false, gpA = false, gpB = false;
+    let gpDpadJust: Direction | null = null;
     if (gp) {
       if (gp.menuJust) { gpMenu = true; gp.menuJust = false; }
       if (gp.aJust) { gpA = true; gp.aJust = false; }
       if (gp.bJust) { gpB = true; gp.bJust = false; }
+      // Consume the one-shot d-pad tap latch every frame so it never goes stale
+      // across a dialog/menu/cutscene; it's applied to movement below.
+      if (gp.dpadJust) { gpDpadJust = gp.dpadJust as Direction; gp.dpadJust = null; }
     }
     const kbMenu = this.mKey && Phaser.Input.Keyboard.JustDown(this.mKey);
     const kbEsc = this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey);
@@ -930,8 +934,11 @@ export class MapScene extends Phaser.Scene {
       });
     }
 
-    // Movement input
-    const dir = this.getInputDirection();
+    // Movement input. A quick d-pad tap is delivered via the one-shot latch
+    // (gpDpadJust) so it still moves one tile even if `dpad` was cleared before
+    // this frame; a held press falls through to the live-input read below and
+    // drives continuous movement.
+    const dir = gpDpadJust ?? this.getInputDirection();
     if (dir) {
       this.tryMove(dir);
     }
