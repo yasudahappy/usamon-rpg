@@ -1037,8 +1037,8 @@
         1,
         1,
         1,
-        1,
-        1,
+        0,
+        0,
         1,
         1,
         1,
@@ -2196,6 +2196,20 @@
       "targetMap": "house_7",
       "targetX": 5,
       "targetY": 6
+    },
+    {
+      "x": 8,
+      "y": 0,
+      "targetMap": "frost_route_1",
+      "targetX": 10,
+      "targetY": 18
+    },
+    {
+      "x": 9,
+      "y": 0,
+      "targetMap": "frost_route_1",
+      "targetX": 11,
+      "targetY": 18
     }
   ]
 }

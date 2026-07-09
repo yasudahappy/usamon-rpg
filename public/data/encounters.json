@@ -113,5 +113,28 @@
         "maxLevel": 20
       }
     ]
+  },
+  "frost_route_1": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "shakurin",
+        "weight": 45,
+        "minLevel": 18,
+        "maxLevel": 22
+      },
+      {
+        "id": "roubau",
+        "weight": 30,
+        "minLevel": 18,
+        "maxLevel": 21
+      },
+      {
+        "id": "mochichi",
+        "weight": 25,
+        "minLevel": 18,
+        "maxLevel": 21
+      }
+    ]
   }
 }

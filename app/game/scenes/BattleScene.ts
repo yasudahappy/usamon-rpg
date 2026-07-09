@@ -567,7 +567,8 @@ export class BattleScene extends Phaser.Scene {
   // Per-species battle-size tweak (multiplies the fit-to-box scale). Used when a
   // monster should read smaller/larger than its raw art implies.
   private static MONSTER_SCALE: Record<string, number> = {
-    roubau: 0.6,   // small dog-rover: 40% smaller than the fitted size
+    roubau: 0.6,     // small dog-rover: 40% smaller than the fitted size
+    shakurin: 0.5,   // tiny crystal penguin: 50% smaller
   };
 
   private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
@@ -1997,13 +1998,14 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private endBattleDefeat(): void {
-    // Blacked out: revive the whole party and restart at the Recovery Center.
+    // Blacked out: revive the whole party and restart at the recovery pod the
+    // player last healed at (fallback: the Crater City pod).
     this.playerState.party.forEach(m => { m.currentHp = m.maxHp; });
 
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       this.scene.start("MapScene", {
-        mapKey: "recovery_pod",
+        mapKey: this.playerState.lastRecoveryMap || "recovery_pod",
         playerState: this.playerState,
       });
     });

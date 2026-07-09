@@ -64,14 +64,14 @@ export class MapScene extends Phaser.Scene {
   // Sealed exits/doors: openings that are not yet passable. Stepping toward one
   // of its tiles shows the messages and blocks passage.
   private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; messages: string[] }[]> = {
-    nectar_town: [
+    // NOTE: nectar_town's gym door (15,6) is handled dynamically (ice-melt
+    // trial ⑦), see tryMeltGymDoor().
+    frost_route_1: [
       {
-        // North exit — the road to the next sea (未開放).
-        tiles: [{ x: 8, y: 0 }, { x: 9, y: 0 }],
+        // North exit — the road to the next sea (豊かの海方面・未開放).
+        tiles: [{ x: 10, y: 0 }, { x: 11, y: 0 }],
         messages: ["この先は まだ 道が ひらけて\nいないようだ…。"],
       },
-      // NOTE: The gym door (15,6) is handled dynamically (ice-melt trial ⑦),
-      // see tryMeltGymDoor().
     ],
   };
   // Nectar gym door: frozen shut until a fire/metal almon melts it (試練 その1).
@@ -331,6 +331,11 @@ export class MapScene extends Phaser.Scene {
       if (this.playerState && !pk.includes("nectar_arrival_seen")) {
         this.time.delayedCall(700, () => this.playNectarArrival());
       }
+    }
+
+    // Frost route (寒冷地): same snowy ambience as the town.
+    if (this.currentMapKey === "frost_route_1") {
+      this.startSnowfall();
     }
 
 
@@ -740,11 +745,12 @@ export class MapScene extends Phaser.Scene {
     const table = this.encounterData?.[this.currentMapKey];
     if (!table) return;
 
-    // Only roll encounters on "wild" ground: desert sand or cave floor.
+    // Only roll encounters on "wild" ground: desert sand, cave floor or frost.
     const { layers } = this.mapData;
     const tileId = layers.floor[this.gridY]?.[this.gridX];
     // Sand tiles: 5-12, 14-21 (edges), 32-36 (variants). 80 = cave floor.
-    const encounterTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36,80];
+    // 90 = frost regolith (ice tiles 91 stay encounter-free so slides feel good).
+    const encounterTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36,80,90];
     if (!encounterTiles.includes(tileId)) return;
 
     // Use encounter rate from data
@@ -3191,6 +3197,8 @@ export class MapScene extends Phaser.Scene {
       "アルモンを 回復しますね。\nしばらく おまちください…",
     ], () => {
       this.healParty();
+      // Remember this pod: blacking out respawns at the last pod used.
+      if (this.playerState) this.playerState.lastRecoveryMap = this.currentMapKey;
       this.showDialog([
         "おまちどうさま！\nアルモンたちは すっかり\n元気になりましたよ！",
         "またいつでも いらしてくださいね！",
