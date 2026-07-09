@@ -564,10 +564,19 @@ export class BattleScene extends Phaser.Scene {
 
   // Scale a monster sprite to fit within a target box (design units, ×sy),
   // preserving aspect so both wide and tall monsters read at a similar size.
+  // Per-species battle-size tweak (multiplies the fit-to-box scale). Used when a
+  // monster should read smaller/larger than its raw art implies.
+  private static MONSTER_SCALE: Record<string, number> = {
+    roubau: 0.6,   // small dog-rover: 40% smaller than the fitted size
+  };
+
   private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
     const w = sprite.width || 64;
     const h = sprite.height || 64;
-    const scale = Math.min((maxW * this.sy) / w, (maxH * this.sy) / h);
+    let scale = Math.min((maxW * this.sy) / w, (maxH * this.sy) / h);
+    // Derive the species id from the texture key ("monster-<id>" / "monster-<id>-back").
+    const id = sprite.texture.key.replace(/^monster-/, "").replace(/-back$/, "");
+    scale *= BattleScene.MONSTER_SCALE[id] ?? 1;
     sprite.setScale(scale);
   }
 

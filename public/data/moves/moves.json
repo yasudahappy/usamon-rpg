@@ -700,5 +700,44 @@
       "target": "self"
     },
     "description": "ソーラーパネルで HPを 回復"
+  },
+  {
+    "id": "tetsu_no_kiba",
+    "name": "てつのキバ",
+    "type": "金属",
+    "power": 70,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "鋼の キバで かみつく"
+  },
+  {
+    "id": "accel_drive",
+    "name": "かそくドライブ",
+    "type": "金属",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "statChange",
+      "stat": "speed",
+      "multiplier": 1.6,
+      "target": "self"
+    },
+    "description": "タイヤを 加速して すばやさアップ"
+  },
+  {
+    "id": "sonar_scan",
+    "name": "ソナースキャン",
+    "type": "金属",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "allStatsUp",
+      "multiplier": 1.2,
+      "target": "self"
+    },
+    "description": "周囲を 走査して 全能力アップ"
   }
 ]
