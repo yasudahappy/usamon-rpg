@@ -121,15 +121,18 @@ export class MapScene extends Phaser.Scene {
   private farmResY = 4;
 
   // Meteorite (appears at the Crater City outskirts after the gym is cleared).
-  // (meteorX,meteorY) is the TOP-LEFT of a 5x5 footprint; the cracked-open cave
-  // entrance sits just below its bottom-centre.
+  // (meteorX,meteorY) is the TOP-LEFT of a METEOR_SIZE x METEOR_SIZE footprint;
+  // the cracked-open cave entrance sits at its base.
   private meteorSprite?: Phaser.GameObjects.Image;
   private caveEntranceSprite?: Phaser.GameObjects.Image;
   private meteorX = 29;
   private meteorY = 21;
   private static METEOR_SIZE = 6;
-  private caveEntranceX = 31;
-  private caveEntranceY = 27;
+  // Cave entrance sits at the base of the meteor. It lives inside the meteor's
+  // 6x6 footprint, so it is explicitly excluded from the meteor's collision/
+  // interaction box (see isCollision / checkNpcInteraction) and drawn above it.
+  private caveEntranceX = 32;
+  private caveEntranceY = 26;
   private lastTrainerDefeated?: string;
 
   // Moon-capsule field items scattered through the meteorite cave (heal items).
@@ -776,6 +779,7 @@ export class MapScene extends Phaser.Scene {
     if (this.granny2Sprite && x === this.granny2X && y === this.granny2Y) return true;
     if (this.farmResSprite && x === this.farmResX && y === this.farmResY) return true;
     if (this.meteorSprite &&
+        !(x === this.caveEntranceX && y === this.caveEntranceY) &&
         x >= this.meteorX && x < this.meteorX + MapScene.METEOR_SIZE &&
         y >= this.meteorY && y < this.meteorY + MapScene.METEOR_SIZE) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
@@ -2034,6 +2038,7 @@ export class MapScene extends Phaser.Scene {
     }
     // Meteorite investigation (Crater City outskirts): facing any of its tiles
     if (this.meteorSprite &&
+        !(fx === this.caveEntranceX && fy === this.caveEntranceY) &&
         fx >= this.meteorX && fx < this.meteorX + MapScene.METEOR_SIZE &&
         fy >= this.meteorY && fy < this.meteorY + MapScene.METEOR_SIZE) {
       this.triggerMeteorEvent();
@@ -2233,12 +2238,13 @@ export class MapScene extends Phaser.Scene {
       (this.meteorY + n / 2) * ts,
       "meteor-rock"
     ).setDepth(9).setDisplaySize(ts * n, ts * n);
-    // Cracked-open cave entrance just below the meteor's bottom-centre.
+    // Cracked-open cave entrance at the meteor's base. Depth 9.5 keeps the hole
+    // visible above the meteor (depth 9) but below the player (depth 10).
     this.caveEntranceSprite = this.add.image(
       this.caveEntranceX * ts + ts / 2,
       this.caveEntranceY * ts + ts / 2,
       "cave-entrance"
-    ).setDepth(8).setDisplaySize(ts, ts);
+    ).setDepth(9.5).setDisplaySize(ts, ts);
     // Register the warp into the cave (idempotent).
     const warps = this.mapData.warps || (this.mapData.warps = []);
     if (!warps.some(w => w.x === this.caveEntranceX && w.y === this.caveEntranceY)) {
