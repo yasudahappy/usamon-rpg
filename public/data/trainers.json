@@ -268,7 +268,7 @@
       }
     ],
     "battleSprite": "trainer-masaki",
-    "overworldSprite": "char7"
+    "overworldSprite": "masaki"
   },
   {
     "id": "route2_dou",
@@ -322,7 +322,7 @@
       }
     ],
     "battleSprite": "trainer-takehana",
-    "overworldSprite": "char9"
+    "overworldSprite": "elder"
   },
   {
     "id": "rei",
@@ -393,6 +393,6 @@
       }
     ],
     "battleSprite": "trainer-kojima",
-    "overworldSprite": "char7"
+    "overworldSprite": "kojima"
   }
 ]
