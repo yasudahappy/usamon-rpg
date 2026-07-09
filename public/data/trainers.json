@@ -68,14 +68,14 @@
   },
   {
     "id": "kagen",
-    "name": "ムーンウォーカー タツオミ",
+    "name": "ムーンウォーカー シン",
     "mapKey": "gym_1",
     "x": 8,
     "y": 17,
     "direction": "left",
     "sightRange": 4,
     "prizeMoneyBase": 450,
-    "dialogBefore": "マリコの あいぼう、タツオミさ。この おくには リーダーが 待つ。\nおれの ムーンウォークを 抜けてから 行きな！",
+    "dialogBefore": "マリコの あいぼう、シンさ。この おくには リーダーが 待つ。\nおれの ムーンウォークを 抜けてから 行きな！",
     "dialogWin": "ステップが みだれた…。\nリーダーの もとへ 行くがいい。",
     "dialogLose": "月の 上では おれの ステップが 最強さ！",
     "party": [
@@ -84,7 +84,7 @@
         "level": 6
       }
     ],
-    "battleSprite": "trainer-hoodie",
+    "battleSprite": "trainer-shin",
     "overworldSprite": "char3"
   },
   {
