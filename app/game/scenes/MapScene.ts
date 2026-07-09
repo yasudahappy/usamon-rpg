@@ -2452,9 +2452,9 @@ export class MapScene extends Phaser.Scene {
     this.time.delayedCall(1500, () => {
       this.showDialog([
         "ゴゴゴ…！ 地面が 大きく ゆれた！",
-        "リューマ「なんだ…！？ 今の 揺れは…！」",
-        "リューマ「街の はずれに 何かが\n落ちたようだ。」",
-        "リューマ「きみ、様子を 見てきて\nくれ ないか。」",
+        "エモ「なんだ…！？ 今の 揺れは…！」",
+        "エモ「街の はずれに 何かが\n落ちたようだ。」",
+        "エモ「きみ、様子を 見てきて\nくれ ないか。」",
       ], () => { this.inCutscene = false; });
     });
   }
@@ -2695,7 +2695,7 @@ export class MapScene extends Phaser.Scene {
     ring.lineTo(bcx, bcy + 0.7 * ts); ring.lineTo(bcx - 0.55 * ts, bcy);
     ring.closePath(); ring.fill();
 
-    // (3) Leader's dais glow (around the central device where リューマ stands).
+    // (3) Leader's dais glow (around the central device where エモ stands).
     const dais = this.add.graphics().setDepth(2);
     const dcx = 9 * ts + ts / 2, dcy = 6.5 * ts + ts / 2;
     dais.fillStyle(0x8f74d6, 0.22); dais.fillEllipse(dcx, dcy, 4.6 * ts, 3.0 * ts);
@@ -3760,7 +3760,7 @@ export class MapScene extends Phaser.Scene {
       this.showDialog([
         "とびらが 分厚い こおりで\nとざされている…。",
         "はりがみが ある。",
-        "『試練 その1。この とびらを\nとかして みせよ。\n——ネクタルジム リーダー シモネ』",
+        "『試練 その1。この とびらを\nとかして みせよ。\n——ネクタルジム リーダー コジマ』",
         "（ほのおか はがねの アルモンが\nいれば とかせるかも…）",
       ]);
       return;
@@ -3949,7 +3949,7 @@ export class MapScene extends Phaser.Scene {
       "神酒の海の ほとりの 開拓地。\nようこそ！",
     ]), -4);
     put("nectar-sign", 13, 7, () => this.showDialog([
-      "『ネクタルジム』\nリーダー：シモネ（氷）",
+      "『ネクタルジム』\nリーダー：コジマ（氷）",
       "極低温の こおりを あやつる。\n——とびらの 氷を とかせた者だけ\n挑戦を ゆるされる。",
     ]), -4);
   }
