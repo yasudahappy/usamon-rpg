@@ -17,7 +17,7 @@
         "level": 4
       }
     ],
-    "battleSprite": "trainer-peace",
+    "battleSprite": "trainer-girl",
     "overworldSprite": "char5"
   },
   {
@@ -42,7 +42,7 @@
         "level": 5
       }
     ],
-    "battleSprite": "trainer-suit",
+    "battleSprite": "trainer-astronaut",
     "overworldSprite": "char9"
   },
   {
@@ -138,7 +138,7 @@
         "level": 9
       }
     ],
-    "battleSprite": "trainer-casual",
+    "battleSprite": "trainer-astronaut",
     "overworldSprite": "char6"
   },
   {
