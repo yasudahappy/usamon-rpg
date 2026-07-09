@@ -60,6 +60,14 @@ export class MapScene extends Phaser.Scene {
     ryuma: ["genki", "kagen"],
   };
   private leaderGateNotified = false;
+  // Sealed exits: an opening drawn in the wall for a future area that is not yet
+  // reachable. Stepping toward these tiles shows a message and blocks passage.
+  private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; message: string }> = {
+    sand_route_2: {
+      tiles: [{ x: 20, y: 0 }, { x: 21, y: 0 }],
+      message: "この先は まだ 道が ひらけて\nいないようだ…。",
+    },
+  };
 
   // Facing direction (for NPC interaction)
   private facingDirection: Direction = "down";
@@ -815,6 +823,14 @@ export class MapScene extends Phaser.Scene {
       case "right":
         targetX++;
         break;
+    }
+
+    // Sealed exit (opening in the wall for a not-yet-available area): show a
+    // "can't go yet" message and turn the player back.
+    const sealed = MapScene.SEALED_EXITS[this.currentMapKey];
+    if (sealed && sealed.tiles.some(t => t.x === targetX && t.y === targetY)) {
+      if (!this.dialogActive) this.showDialog([sealed.message]);
+      return;
     }
 
     if (this.isCollision(targetX, targetY)) return;
