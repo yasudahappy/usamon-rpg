@@ -111,6 +111,12 @@ export class BootScene extends Phaser.Scene {
     ["down", "up", "left", "right"].forEach(dir => {
       this.load.image(`cast-eezen-${dir}`, `${base}/assets/characters/cast/eezen_${dir}.png`);
     });
+    // ヴォイス幹部 overworld NPC sprites (4 directions each)
+    ["shinobu", "kiyohara"].forEach(who => {
+      ["down", "up", "left", "right"].forEach(dir => {
+        this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
+      });
+    });
 
     // Title screen key art (continue / new-game menu)
     this.load.image("title-art", `${base}/assets/ui/title.jpg`);
