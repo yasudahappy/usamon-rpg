@@ -2122,28 +2122,15 @@ export class MapScene extends Phaser.Scene {
     const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
     let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const cx = s / 2;
-    // A big stony meteorite half-buried in the ground: most of a rounded, cratered
-    // boulder is exposed (so it reads as a fallen space rock, not a volcano). It is
-    // lit from the upper-left; only a subtle scorch/heat ring marks the base.
+    // A big stony meteorite resting on the ground: a rounded, cratered boulder
+    // (so it reads as a fallen space rock, not a volcano), lit from the upper-left.
+    // No painted soil around it — just a soft contact shadow to ground it.
     const R = s * 0.37;
-    const cy = s * 0.50;              // rock sphere centre (mostly above ground)
-    const groundY = s * 0.74;         // where the rock meets the churned soil
+    const cy = s * 0.50;              // rock sphere centre
 
-    // --- scorched impact ground: dark ejecta ring + debris flung outward ---
-    ctx.fillStyle = "rgba(26,20,17,0.55)";
-    ctx.beginPath(); ctx.ellipse(cx, groundY + s * 0.05, s * 0.47, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(66,55,48,0.45)";
-    ctx.beginPath(); ctx.ellipse(cx, groundY + s * 0.03, s * 0.36, s * 0.12, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(38,30,25,0.85)";
-    for (let i = 0; i < 44; i++) {
-      const a = rnd() * Math.PI * 2;
-      const rr = R * (1.05 + rnd() * 0.95);
-      const x = cx + Math.cos(a) * rr;
-      const y = groundY + s * 0.03 + Math.sin(a) * s * 0.11;
-      if (y < groundY - s * 0.02) continue;   // keep debris on the ground
-      const sz = 1 + rnd() * 3;
-      ctx.fillRect(x, y, sz, sz);
-    }
+    // --- soft contact shadow (grounds the rock without any soil mound) ---
+    ctx.fillStyle = "rgba(18,14,12,0.4)";
+    ctx.beginPath(); ctx.ellipse(cx, cy + R * 0.9, R * 0.92, s * 0.05, 0, 0, Math.PI * 2); ctx.fill();
 
     // --- meteorite body: a bumpy stone sphere ---
     const N = 40; const pts: [number, number][] = [];
@@ -2198,30 +2185,14 @@ export class MapScene extends Phaser.Scene {
     }
     ctx.stroke();
 
-    // --- churned soil berm hiding the buried lower rim ---
-    ctx.fillStyle = "#2f271f";
-    ctx.beginPath();
-    ctx.moveTo(0, s);
-    ctx.lineTo(0, groundY + s * 0.02);
-    ctx.quadraticCurveTo(cx - R * 0.7, groundY - s * 0.05, cx, groundY - s * 0.01);
-    ctx.quadraticCurveTo(cx + R * 0.7, groundY - s * 0.05, s, groundY + s * 0.02);
-    ctx.lineTo(s, s); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = "#4a3c2e"; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, groundY + s * 0.02);
-    ctx.quadraticCurveTo(cx - R * 0.7, groundY - s * 0.05, cx, groundY - s * 0.01);
-    ctx.quadraticCurveTo(cx + R * 0.7, groundY - s * 0.05, s, groundY + s * 0.02);
-    ctx.stroke();
-    ctx.fillStyle = "#241a12";
-    for (let i = 0; i < 40; i++) { const x = rnd() * s, y = groundY + rnd() * (s - groundY); ctx.fillRect(x, y, 2, 2); }
-
-    // --- faint residual heat, only a thin ring at the base contact ---
-    const glow = ctx.createLinearGradient(0, groundY - s * 0.04, 0, groundY + s * 0.06);
+    // --- faint residual heat, a thin ring hugging the rock's base ---
+    const baseY = cy + R * 0.86;
+    const glow = ctx.createLinearGradient(0, baseY - s * 0.05, 0, baseY + s * 0.03);
     glow.addColorStop(0, "rgba(255,120,50,0)");
-    glow.addColorStop(0.5, "rgba(255,120,50,0.26)");
+    glow.addColorStop(0.5, "rgba(255,120,50,0.22)");
     glow.addColorStop(1, "rgba(255,120,50,0)");
     ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.ellipse(cx, groundY, R * 0.95, s * 0.05, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx, baseY, R * 0.8, s * 0.04, 0, 0, Math.PI * 2); ctx.fill();
 
     this.textures.addCanvas("meteor-rock", c);
   }
