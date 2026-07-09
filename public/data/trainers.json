@@ -242,7 +242,7 @@
         "level": 19
       }
     ],
-    "battleSprite": "trainer-casual",
+    "battleSprite": "trainer-sunaga",
     "overworldSprite": "char1"
   },
   {
@@ -321,7 +321,7 @@
         "level": 22
       }
     ],
-    "battleSprite": "trainer-suit",
+    "battleSprite": "trainer-takehana",
     "overworldSprite": "char9"
   },
   {
@@ -342,7 +342,7 @@
         "level": 21
       }
     ],
-    "battleSprite": "trainer-casual",
+    "battleSprite": "trainer-bikyaku",
     "overworldSprite": "char8"
   },
   {
@@ -367,7 +367,7 @@
         "level": 22
       }
     ],
-    "battleSprite": "trainer-peace",
+    "battleSprite": "trainer-bikyaku",
     "overworldSprite": "char1"
   },
   {
