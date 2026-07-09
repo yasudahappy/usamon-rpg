@@ -2229,9 +2229,13 @@ export class MapScene extends Phaser.Scene {
     this.genCaveEntranceTexture();
     const ts = this.tileSize;
     const n = MapScene.METEOR_SIZE;
+    // Drop the rock's artwork one tile lower than its collision box so it sits
+    // deeper on screen. Collision / entrance / warp stay put (the tiles below are
+    // walls, so the entrance must remain reachable from (caveEntranceX, +1)).
+    const visualDropY = ts;
     this.meteorSprite = this.add.image(
       (this.meteorX + n / 2) * ts,
-      (this.meteorY + n / 2) * ts,
+      (this.meteorY + n / 2) * ts + visualDropY,
       "meteor-rock"
     ).setDepth(9).setDisplaySize(ts * n, ts * n);
     // Cracked-open cave entrance at the meteor's base. Depth 9.5 keeps the hole
