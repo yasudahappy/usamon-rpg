@@ -603,6 +603,18 @@ export class BootScene extends Phaser.Scene {
         ctx.beginPath(); ctx.arc(10, 14, 5, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(23, 20, 4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "#dceafc"; ctx.fillRect(4, 2, 8, 2); ctx.fillRect(18, 3, 6, 2);
+      } else if (id === "93") {
+        // Packed frost path (こおりみち): pale blue trodden snow with tread marks
+        ctx.fillStyle = "#dbe9f4"; ctx.fillRect(0, 0, ts, ts);
+        let s = 29;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#c3d7e8";
+        for (let i = 0; i < 30; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.fillStyle = "#eef7ff";
+        for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // soft edge shading so paths read as pressed-down lanes
+        ctx.fillStyle = "rgba(150,175,200,0.5)";
+        ctx.fillRect(0, 0, ts, 2); ctx.fillRect(0, ts - 2, ts, 2);
       }
 
       this.textures.addCanvas(key, canvas);

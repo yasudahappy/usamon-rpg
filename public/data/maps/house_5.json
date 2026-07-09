@@ -228,15 +228,15 @@
       "x": 4,
       "y": 7,
       "targetMap": "nectar_town",
-      "targetX": 4,
-      "targetY": 12
+      "targetX": 6,
+      "targetY": 22
     },
     {
       "x": 5,
       "y": 7,
       "targetMap": "nectar_town",
-      "targetX": 4,
-      "targetY": 12
+      "targetX": 6,
+      "targetY": 22
     }
   ]
 }

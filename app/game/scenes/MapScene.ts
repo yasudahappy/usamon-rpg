@@ -66,12 +66,12 @@ export class MapScene extends Phaser.Scene {
     nectar_town: [
       {
         // North exit — the road to the next sea (未開放).
-        tiles: [{ x: 11, y: 0 }, { x: 12, y: 0 }],
+        tiles: [{ x: 8, y: 0 }, { x: 9, y: 0 }],
         messages: ["この先は まだ 道が ひらけて\nいないようだ…。"],
       },
       {
         // Gym 2 door — frozen shut until the ⑦ ice-melt event (Phase 3).
-        tiles: [{ x: 11, y: 5 }, { x: 12, y: 5 }],
+        tiles: [{ x: 15, y: 6 }],
         messages: [
           "とびらが 分厚い こおりで\nとざされている…。",
           "はりがみが ある。",
