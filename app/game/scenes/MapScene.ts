@@ -223,6 +223,13 @@ export class MapScene extends Phaser.Scene {
     this.granny2Sprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
+    // Medical Center / Moonbase lab researchers: reset so a stale reference
+    // (Phaser reuses the scene instance across restart) can't fire the wrong
+    // map's dialog or block tiles in another map.
+    this.researcher1Sprite = undefined;
+    this.researcher2Sprite = undefined;
+    this.labRes1Sprite = undefined;
+    this.labRes2Sprite = undefined;
     this.nectarExam = [];
     this.quizAwaiting = null;
     this.shopOpen = false;

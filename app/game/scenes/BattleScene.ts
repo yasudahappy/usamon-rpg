@@ -29,6 +29,7 @@ type BattlePhase =
   | "defeat"
   | "exp_gain"
   | "learn_move"
+  | "switch_mon"
   | "evolution";
 
 interface CommandSlot {
@@ -1085,6 +1086,46 @@ export class BattleScene extends Phaser.Scene {
       if (confirm) {
         this.handleMoveLearnChoice(this.selectedCommand);
       }
+    } else if (this.phase === "switch_mon") {
+      // Party-switch selection (2-column grid of alive members + もどる).
+      const aliveParty = this.playerState.party.filter(
+        (m) => m.currentHp > 0 && m !== this.playerInstance
+      );
+      const maxSlots = Math.min(this.commandSlots.length, 6);
+      if (justUp && this.selectedCommand >= 2) {
+        this.selectedCommand -= 2;
+        this.highlightLearnSlots(this.selectedCommand);
+      }
+      if (justDown && this.selectedCommand + 2 < maxSlots) {
+        this.selectedCommand += 2;
+        this.highlightLearnSlots(this.selectedCommand);
+      }
+      if (justLeft && this.selectedCommand % 2 === 1) {
+        this.selectedCommand -= 1;
+        this.highlightLearnSlots(this.selectedCommand);
+      }
+      if (justRight && this.selectedCommand % 2 === 0 && this.selectedCommand + 1 < maxSlots) {
+        this.selectedCommand += 1;
+        this.highlightLearnSlots(this.selectedCommand);
+      }
+      if (confirm) {
+        if (this.selectedCommand === aliveParty.length) {
+          // もどる: back to the command window
+          this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+          this.commandSlots = [];
+          this.rebuildCommandWindow();
+          this.phase = "command";
+          this.showCommandWindow();
+        } else if (aliveParty[this.selectedCommand]) {
+          this.doSwitch(aliveParty[this.selectedCommand]);
+        }
+      } else if (kbEsc || gpB) {
+        this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+        this.commandSlots = [];
+        this.rebuildCommandWindow();
+        this.phase = "command";
+        this.showCommandWindow();
+      }
     }
   }
 
@@ -1931,7 +1972,7 @@ export class BattleScene extends Phaser.Scene {
       "もどる",
     ];
 
-    this.phase = "learn_move"; // Reuse for selection
+    this.phase = "switch_mon";
     this.selectedCommand = 0;
 
     for (let i = 0; i < options.length; i++) {

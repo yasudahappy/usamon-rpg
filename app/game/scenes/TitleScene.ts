@@ -93,7 +93,7 @@ export class TitleScene extends Phaser.Scene {
     this.els.push(btn);
 
     this.mkText(W / 2, by + bh / 2, "▶ スタート", 24, "#ffffff", 0.5).setStyle({ fontStyle: "bold" });
-    const hint = this.mkText(W / 2, by + bh + 26, "おして はじめる", 13, "#cfe0f5", 0.5);
+    const hint = this.mkText(W / 2, by + bh + 26, "Aボタンを 押して はじめる", 13, "#cfe0f5", 0.5);
     this.tweens.add({ targets: hint, alpha: 0.25, duration: 750, yoyo: true, repeat: -1, ease: "Sine.inOut" });
 
     const zone = this.add.zone(bx, by, bw, bh).setOrigin(0, 0).setInteractive().setDepth(12);
