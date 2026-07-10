@@ -66,6 +66,8 @@ export interface PlayerState {
   pickups?: string[]; // ids of one-time field items already collected
   playSeconds?: number; // total accumulated play time (seconds)
   lastRecoveryMap?: string; // recovery pod the player last healed at (blackout respawn)
+  seen?: string[]; // ずかん: dataIds the player has encountered (みつけた)
+  caught?: string[]; // ずかん: dataIds the player has owned/caught (つかまえた)
 }
 
 // ---- Trainer data ----

@@ -183,7 +183,7 @@ export class MapScene extends Phaser.Scene {
 
   // Menu system
   private menuOpen = false;
-  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" = "none";
+  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" = "none";
   private menuSelectedIndex = 0;
   private menuElements: Phaser.GameObjects.GameObject[] = [];
   private menuGpPrevDpad: string | null = null;
@@ -198,6 +198,10 @@ export class MapScene extends Phaser.Scene {
   private bagTargetIndex = 0;
   private bagGpPrevDpad: string | null = null;
   private bagMessage = "";
+  // Zukan (ずかん) screen state
+  private zukanSelIndex = 0;
+  private zukanScrollTop = 0;
+  private zukanGpPrevDpad: string | null = null;
 
   constructor() {
     super({ key: "MapScene" });
@@ -1220,6 +1224,7 @@ export class MapScene extends Phaser.Scene {
     if (this.menuSubScreen !== "none") {
       if (this.menuSubScreen === "party") { this.updatePartyScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "bag" || this.menuSubScreen === "bag_target") { this.updateBagScreen(a, b, menu, dpad); return; }
+      if (this.menuSubScreen === "zukan" || this.menuSubScreen === "zukan_detail") { this.updateZukanScreen(a, b, menu, dpad); return; }
       if (b || menu) { this.closeSubScreen(); return; }
       // Sub-screen specific: save confirm
       if (this.menuSubScreen === "save" && a) { this.doSave(); return; }
@@ -1297,7 +1302,7 @@ export class MapScene extends Phaser.Scene {
 
   private selectMenuItem(): void {
     switch (this.menuSelectedIndex) {
-      case 0: this.showStubScreen("ずかん"); break;
+      case 0: this.showZukanScreen(); break;
       case 1: this.showPartyScreen(); break;
       case 2: this.showBagScreen(); break;
       case 3: this.showPlayerInfoScreen(); break;
@@ -1660,6 +1665,224 @@ export class MapScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
     this.applyTextResolution(this.menuElements);
+  }
+
+  // ---- Zukan (ずかん) Screen ----
+  private static ZUKAN_TYPE_COLOR: Record<string, number> = {
+    "光": 0xffe066, "影": 0x9b7bd0, "炎": 0xff7a4d, "氷": 0x7fdfff,
+    "ガス": 0xa6d96a, "砂": 0xe0c088, "電": 0xffd23f, "金属": 0xb8c0cc,
+  };
+
+  /** Union of explicit ずかん records with currently-owned monsters. */
+  private dexSets(): { seen: Set<string>; caught: Set<string> } {
+    const ps = this.playerState;
+    const caught = new Set<string>(ps?.caught || []);
+    (ps?.party || []).forEach(m => caught.add(m.dataId));
+    (ps?.box || []).forEach(m => caught.add(m.dataId));
+    const seen = new Set<string>([...(ps?.seen || []), ...caught]);
+    return { seen, caught };
+  }
+
+  private showZukanScreen(): void {
+    this.zukanSelIndex = 0;
+    this.zukanScrollTop = 0;
+    this.zukanGpPrevDpad = null;
+    this.drawZukanScreen();
+  }
+
+  private drawTypeBadge(cx: number, cy: number, type: string): void {
+    const F = "'DotGothic16', monospace";
+    const col = MapScene.ZUKAN_TYPE_COLOR[type] ?? 0x778899;
+    const w = 52, h = 22;
+    const g = this.add.graphics().setScrollFactor(0).setDepth(202);
+    g.fillStyle(col, 0.9); g.fillRoundedRect(this.uiX(cx - w / 2), this.uiY(cy - h / 2), this.uiS(w), this.uiS(h), 6);
+    this.menuElements.push(g);
+    const t = this.add.text(this.uiX(cx), this.uiY(cy), type, {
+      fontSize: `${this.uiS(12)}px`, color: "#101820", fontFamily: F, fontStyle: "bold",
+    }).setScrollFactor(0).setDepth(203).setOrigin(0.5);
+    this.menuElements.push(t);
+  }
+
+  private drawZukanScreen(): void {
+    this.menuSubScreen = "zukan";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const { seen, caught } = this.dexSets();
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    const title = this.add.text(this.uiX(W / 2), this.uiY(24), "ずかん", {
+      fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    const counts = this.add.text(this.uiX(W / 2), this.uiY(48), `みつけた ${seen.size}   つかまえた ${caught.size} / ${all.length}`, {
+      fontSize: `${this.uiS(12)}px`, color: "#c9d8ec", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title, counts);
+
+    const rowH = 34, listTop = 70;
+    const visible = Math.max(4, Math.floor((H - listTop - 44) / rowH));
+    if (this.zukanSelIndex < this.zukanScrollTop) this.zukanScrollTop = this.zukanSelIndex;
+    if (this.zukanSelIndex >= this.zukanScrollTop + visible) this.zukanScrollTop = this.zukanSelIndex - visible + 1;
+
+    for (let r = 0; r < visible; r++) {
+      const idx = this.zukanScrollTop + r;
+      if (idx >= all.length) break;
+      const m = all[idx];
+      const y = listTop + r * rowH;
+      const on = idx === this.zukanSelIndex;
+      const isSeen = seen.has(m.id);
+      const isCaught = caught.has(m.id);
+      if (on) {
+        const hl = this.add.graphics().setScrollFactor(0).setDepth(201);
+        hl.fillStyle(0x1b3a63, 0.9); hl.fillRoundedRect(this.uiX(24), this.uiY(y - 4), this.uiS(W - 48), this.uiS(rowH - 4), 6);
+        this.menuElements.push(hl);
+      }
+      const mark = isCaught ? "●" : (isSeen ? "◦" : "　");
+      const num = String(idx + 1).padStart(3, "0");
+      const label = `${mark} No.${num}  ${isSeen ? m.name : "？？？？"}`;
+      const row = this.add.text(this.uiX(40), this.uiY(y), label, {
+        fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : (isSeen ? "#ccddee" : "#66788c"), fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(row);
+      if (isSeen) this.drawTypeBadge(W - 60, y + 8, m.type);
+    }
+
+    // Scroll hints
+    if (this.zukanScrollTop > 0) {
+      const up = this.add.text(this.uiX(W / 2), this.uiY(listTop - 14), "▲", { fontSize: `${this.uiS(12)}px`, color: "#8fd0ff", fontFamily: F }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+      this.menuElements.push(up);
+    }
+    if (this.zukanScrollTop + visible < all.length) {
+      const dn = this.add.text(this.uiX(W / 2), this.uiY(listTop + visible * rowH - 6), "▼", { fontSize: `${this.uiS(12)}px`, color: "#8fd0ff", fontFamily: F }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+      this.menuElements.push(dn);
+    }
+
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 26), "A:くわしく   Bボタンでもどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private drawZukanDetail(): void {
+    this.menuSubScreen = "zukan_detail";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const m = all[this.zukanSelIndex];
+    const { seen } = this.dexSets();
+    const isSeen = seen.has(m.id);
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.98); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    const num = String(this.zukanSelIndex + 1).padStart(3, "0");
+    const header = this.add.text(this.uiX(24), this.uiY(24), `No.${num}`, {
+      fontSize: `${this.uiS(15)}px`, color: "#8fb4dc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201);
+    this.menuElements.push(header);
+
+    if (!isSeen) {
+      const q = this.add.text(this.uiX(W / 2), this.uiY(H / 2 - 20), "？？？？", {
+        fontSize: `${this.uiS(24)}px`, color: "#66788c", fontFamily: F, fontStyle: "bold",
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      const note = this.add.text(this.uiX(W / 2), this.uiY(H / 2 + 16), "まだ みつけていない。", {
+        fontSize: `${this.uiS(13)}px`, color: "#8899aa", fontFamily: F,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      this.menuElements.push(q, note);
+    } else {
+      const name = this.add.text(this.uiX(W / 2), this.uiY(28), m.name, {
+        fontSize: `${this.uiS(22)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      this.menuElements.push(name);
+      this.drawTypeBadge(W / 2, 58, m.type);
+
+      // Sprite
+      const key = `monster-${m.id}`;
+      if (this.textures.exists(key)) {
+        const src = this.textures.get(key).getSourceImage() as { width: number; height: number };
+        const img = this.add.image(this.uiX(W / 2), this.uiY(150), key).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+        const target = this.uiS(120);
+        img.setScale(target / Math.max(src.width, src.height));
+        this.menuElements.push(img);
+      }
+
+      const role = this.add.text(this.uiX(W / 2), this.uiY(222), `タイプ: ${m.type}  /  ${m.role}`, {
+        fontSize: `${this.uiS(13)}px`, color: "#c9d8ec", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      this.menuElements.push(role);
+
+      // Description box
+      const descY = 248;
+      const box = this.add.graphics().setScrollFactor(0).setDepth(201);
+      box.fillStyle(0x061020, 0.95); box.fillRoundedRect(this.uiX(24), this.uiY(descY), this.uiS(W - 48), this.uiS(70), 8);
+      box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(24), this.uiY(descY), this.uiS(W - 48), this.uiS(70), 8);
+      this.menuElements.push(box);
+      const desc = this.add.text(this.uiX(38), this.uiY(descY + 12), m.description || "", {
+        fontSize: `${this.uiS(13)}px`, color: "#e0ecff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        wordWrap: { width: this.uiS(W - 76) }, lineSpacing: 4,
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(desc);
+
+      // Stats (statsAt50) + evolution hint
+      const s = m.statsAt50;
+      if (s) {
+        const statY = descY + 84;
+        const statLine = `Lv50  HP ${s.hp}  こう ${s.attack}  ぼう ${s.defense}  すば ${s.speed}`;
+        const st = this.add.text(this.uiX(W / 2), this.uiY(statY), statLine, {
+          fontSize: `${this.uiS(12)}px`, color: "#aabbcc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+        this.menuElements.push(st);
+      }
+      if (m.evolution) {
+        const evoTo = all.find(x => x.id === m.evolution!.to);
+        const evo = this.add.text(this.uiX(W / 2), this.uiY(descY + 106),
+          `Lv${m.evolution.level}で ${seen.has(m.evolution.to) && evoTo ? evoTo.name : "？？？"}に しんか`, {
+          fontSize: `${this.uiS(12)}px`, color: "#88ccaa", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+        this.menuElements.push(evo);
+      }
+    }
+
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 24), "↑↓:きりかえ   Bボタンでもどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private updateZukanScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const justUp = dpad === "up" && this.zukanGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.zukanGpPrevDpad !== "down";
+    let kbUp = false, kbDown = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+    }
+    this.zukanGpPrevDpad = dpad;
+
+    if (this.menuSubScreen === "zukan_detail") {
+      if (b || menu) { this.drawZukanScreen(); return; }
+      if (justUp || kbUp) { this.zukanSelIndex = (this.zukanSelIndex - 1 + all.length) % all.length; this.drawZukanDetail(); return; }
+      if (justDown || kbDown) { this.zukanSelIndex = (this.zukanSelIndex + 1) % all.length; this.drawZukanDetail(); return; }
+      return;
+    }
+
+    // list
+    if (b || menu) { this.closeSubScreen(); return; }
+    if (justUp || kbUp) { this.zukanSelIndex = (this.zukanSelIndex - 1 + all.length) % all.length; this.drawZukanScreen(); return; }
+    if (justDown || kbDown) { this.zukanSelIndex = (this.zukanSelIndex + 1) % all.length; this.drawZukanScreen(); return; }
+    if (a) {
+      const { seen } = this.dexSets();
+      if (seen.has(all[this.zukanSelIndex].id)) this.drawZukanDetail();
+    }
   }
 
   // ---- Bag (どうぐ) Screen ----
@@ -4483,6 +4706,8 @@ export class MapScene extends Phaser.Scene {
       money: 1000,
       defeatedTrainers: [],
       playSeconds: 0,
+      seen: ["usamon"],
+      caught: ["usamon"],
     };
   }
 }
