@@ -10,6 +10,7 @@ import {
   TrainerData,
 } from "../data/types";
 import { attemptCapture } from "../data/encounterSystem";
+import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
   getExpForLevel,
@@ -282,6 +283,10 @@ export class BattleScene extends Phaser.Scene {
 
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
     this.enemyMon = this.instanceToBattleMonster(this.enemyInstance);
+
+    // ずかん: the opponent is now "seen"; the party is "caught".
+    markSeen(this.playerState, this.enemyInstance.dataId);
+    this.playerState?.party.forEach(m => markCaught(this.playerState, m.dataId));
 
     this.drawBackground();
     this.drawMonsters();
@@ -1896,6 +1901,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (success) {
       msgs.push(`やった！ ${enemyData.name}を つかまえた！`);
+      markCaught(this.playerState, this.enemyInstance.dataId);
 
       this.showMessages(msgs, () => {
         // Add to party or box

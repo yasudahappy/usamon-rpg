@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { MonsterData, MoveData, PlayerState } from "../data/types";
 import { applyEvolution, getNewMoveAtLevel } from "../data/levelSystem";
+import { markCaught } from "../data/dex";
 
 interface EvoItem {
   partyIndex: number;
@@ -135,6 +136,8 @@ export class EvolutionScene extends Phaser.Scene {
             const inst = this.evoData.playerState.party[evo.partyIndex];
             if (inst) {
               applyEvolution(inst, evo.toId, this.allMonsters, this.allMoves);
+              markCaught(this.evoData.playerState, evo.toId); // ずかん: register the evolved form
+
               const mv = getNewMoveAtLevel(toData, inst.level);
               if (mv && !inst.moves.includes(mv) && inst.moves.length < 4) {
                 inst.moves.push(mv);
