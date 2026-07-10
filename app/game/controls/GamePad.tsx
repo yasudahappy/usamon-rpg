@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Direction } from "../gamepad";
+import { loadSettings, SETTINGS_EVENT } from "../data/settings";
 
 // Initialize global gamepad state early
 if (typeof window !== "undefined") {
@@ -15,6 +16,16 @@ if (typeof window !== "undefined") {
 }
 
 export default function GamePad() {
+  // Left-handed layout swaps the D-pad and A/B sides. Re-read whenever the
+  // setting changes (toggled from the in-game せってい screen).
+  const [leftHanded, setLeftHanded] = useState(false);
+  useEffect(() => {
+    setLeftHanded(loadSettings().leftHanded);
+    const onChange = () => setLeftHanded(loadSettings().leftHanded);
+    window.addEventListener(SETTINGS_EVENT, onChange);
+    return () => window.removeEventListener(SETTINGS_EVENT, onChange);
+  }, []);
+
   const setDpad = useCallback((dir: Direction | null) => {
     if (typeof window !== "undefined" && (window as any).__gamepad) {
       const gp = (window as any).__gamepad;
@@ -43,6 +54,84 @@ export default function GamePad() {
     }
   }, []);
 
+  const dpadGroup = (
+    <div
+      key="dpad"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
+      <DpadBtn dir="up" label="▲" onPress={setDpad} />
+      <div style={{ display: "flex", gap: 2 }}>
+        <DpadBtn dir="left" label="◀" onPress={setDpad} />
+        <div
+          style={{
+            width: 52,
+            height: 52,
+            backgroundColor: "#3d3d55",
+            borderRadius: 4,
+          }}
+        />
+        <DpadBtn dir="right" label="▶" onPress={setDpad} />
+      </div>
+      <DpadBtn dir="down" label="▼" onPress={setDpad} />
+    </div>
+  );
+
+  const menuGroup = (
+    <div key="menu" style={{ display: "flex", alignItems: "center" }}>
+      <div
+        style={{
+          padding: "10px 22px",
+          fontSize: 13,
+          fontFamily: "monospace",
+          fontWeight: "bold",
+          color: "#aabbcc",
+          backgroundColor: "#3d3d55",
+          border: "1px solid #555577",
+          borderRadius: 20,
+          cursor: "pointer",
+          touchAction: "manipulation",
+          letterSpacing: 2,
+        }}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          pressMenu();
+        }}
+      >
+        MENU
+      </div>
+    </div>
+  );
+
+  // A/B group. Internal order mirrors with the layout so the primary button (A)
+  // stays on the outer edge (nearest the acting thumb).
+  const actionGroup = (
+    <div
+      key="actions"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+      }}
+    >
+      {leftHanded ? (
+        <>
+          <ActionBtn label="A" color="#cc3344" onPress={pressA} style={{ marginTop: -12 }} />
+          <ActionBtn label="B" color="#445588" onPress={pressB} style={{ marginTop: 20 }} />
+        </>
+      ) : (
+        <>
+          <ActionBtn label="B" color="#445588" onPress={pressB} style={{ marginTop: 20 }} />
+          <ActionBtn label="A" color="#cc3344" onPress={pressA} style={{ marginTop: -12 }} />
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -61,77 +150,9 @@ export default function GamePad() {
       } as React.CSSProperties}
       onTouchMove={(e) => e.preventDefault()}
     >
-      {/* D-Pad */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 2,
-        }}
-      >
-        <DpadBtn dir="up" label="▲" onPress={setDpad} />
-        <div style={{ display: "flex", gap: 2 }}>
-          <DpadBtn dir="left" label="◀" onPress={setDpad} />
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              backgroundColor: "#3d3d55",
-              borderRadius: 4,
-            }}
-          />
-          <DpadBtn dir="right" label="▶" onPress={setDpad} />
-        </div>
-        <DpadBtn dir="down" label="▼" onPress={setDpad} />
-      </div>
-
-      {/* MENU */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <div
-          style={{
-            padding: "10px 22px",
-            fontSize: 13,
-            fontFamily: "monospace",
-            fontWeight: "bold",
-            color: "#aabbcc",
-            backgroundColor: "#3d3d55",
-            border: "1px solid #555577",
-            borderRadius: 20,
-            cursor: "pointer",
-            touchAction: "manipulation",
-            letterSpacing: 2,
-          }}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            pressMenu();
-          }}
-        >
-          MENU
-        </div>
-      </div>
-
-      {/* A & B buttons */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-        }}
-      >
-        <ActionBtn
-          label="B"
-          color="#445588"
-          onPress={pressB}
-          style={{ marginTop: 20 }}
-        />
-        <ActionBtn
-          label="A"
-          color="#cc3344"
-          onPress={pressA}
-          style={{ marginTop: -12 }}
-        />
-      </div>
+      {leftHanded
+        ? [actionGroup, menuGroup, dpadGroup]
+        : [dpadGroup, menuGroup, actionGroup]}
     </div>
   );
 }

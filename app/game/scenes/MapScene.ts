@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData } from "../data/types";
+import { loadSettings, saveSettings, GameSettings } from "../data/settings";
 import { calculateStats, getExpForLevel } from "../data/levelSystem";
 
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
@@ -202,6 +203,9 @@ export class MapScene extends Phaser.Scene {
   private zukanSelIndex = 0;
   private zukanScrollTop = 0;
   private zukanGpPrevDpad: string | null = null;
+  // Settings (せってい) screen state
+  private settingsSelIndex = 0;
+  private settingsGpPrevDpad: string | null = null;
 
   constructor() {
     super({ key: "MapScene" });
@@ -1225,11 +1229,10 @@ export class MapScene extends Phaser.Scene {
       if (this.menuSubScreen === "party") { this.updatePartyScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "bag" || this.menuSubScreen === "bag_target") { this.updateBagScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "zukan" || this.menuSubScreen === "zukan_detail") { this.updateZukanScreen(a, b, menu, dpad); return; }
+      if (this.menuSubScreen === "settings") { this.updateSettingsScreen(a, b, menu, dpad); return; }
       if (b || menu) { this.closeSubScreen(); return; }
       // Sub-screen specific: save confirm
       if (this.menuSubScreen === "save" && a) { this.doSave(); return; }
-      // Settings: A on "はじめからはじめる" opens a confirm
-      if (this.menuSubScreen === "settings" && a) { this.showRestartConfirm(); return; }
       // Restart confirm: A wipes the save and starts a brand-new game
       if (this.menuSubScreen === "restart-confirm" && a) { this.doRestartGame(); return; }
       return;
@@ -2193,7 +2196,26 @@ export class MapScene extends Phaser.Scene {
   }
 
   // ---- Settings Screen ----
+  // せってい rows: character edits, toggles, and the restart action.
+  private settingsRows(): { label: string; kind: "action" | "toggle" | "danger"; value?: boolean }[] {
+    const s = loadSettings();
+    return [
+      { label: "せいべつを かえる", kind: "action" },
+      { label: "なまえを かえる", kind: "action" },
+      { label: "ひだりきき モード", kind: "toggle", value: s.leftHanded },
+      { label: "BGM", kind: "toggle", value: s.bgm },
+      { label: "こうかおん", kind: "toggle", value: s.se },
+      { label: "さいしょから はじめる", kind: "danger" },
+    ];
+  }
+
   private showSettingsScreen(): void {
+    this.settingsSelIndex = 0;
+    this.settingsGpPrevDpad = null;
+    this.drawSettingsScreen();
+  }
+
+  private drawSettingsScreen(): void {
     this.menuSubScreen = "settings";
     this.clearMenuElements();
     const W = this.scale.width, H = this.scale.height;
@@ -2203,34 +2225,95 @@ export class MapScene extends Phaser.Scene {
     bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
-    this.menuElements.push(
-      this.add.text(this.uiX(W/2), this.uiY(40), "せってい", {
-        fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold",
-        stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(201).setOrigin(0.5)
-    );
+    const title = this.add.text(this.uiX(W / 2), this.uiY(34), "せってい", {
+      fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title);
 
-    // Option row (single option for now)
-    const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
-    panel.fillStyle(0x1a3366, 0.9);
-    panel.fillRoundedRect(this.uiX(W/2 - 170), this.uiY(H/2 - 24), this.uiS(340), this.uiS(48), this.uiS(8));
-    panel.lineStyle(2, 0x3366aa);
-    panel.strokeRoundedRect(this.uiX(W/2 - 170), this.uiY(H/2 - 24), this.uiS(340), this.uiS(48), this.uiS(8));
-    this.menuElements.push(panel);
-    this.menuElements.push(
-      this.add.text(this.uiX(W/2), this.uiY(H/2), "▶ はじめから はじめる", {
-        fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F,
-        stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(202).setOrigin(0.5)
-    );
+    const rows = this.settingsRows();
+    const rowH = 52, top = 78;
+    rows.forEach((row, i) => {
+      const y = top + i * rowH;
+      const on = i === this.settingsSelIndex;
+      const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+      panel.fillStyle(on ? 0x1b3a63 : 0x0d1a33, on ? 0.95 : 0.85);
+      panel.fillRoundedRect(this.uiX(28), this.uiY(y), this.uiS(W - 56), this.uiS(rowH - 10), 8);
+      panel.lineStyle(on ? 3 : 2, row.kind === "danger" ? 0xaa5566 : (on ? 0x8fd0ff : 0x3a5680));
+      panel.strokeRoundedRect(this.uiX(28), this.uiY(y), this.uiS(W - 56), this.uiS(rowH - 10), 8);
+      this.menuElements.push(panel);
 
-    this.menuElements.push(
-      this.add.text(this.uiX(W/2), this.uiY(H - 30), "Aボタン: えらぶ  /  Bボタン: もどる", {
-        fontSize: `${this.uiS(12)}px`, color: "#88aacc", fontFamily: F,
-        stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(201).setOrigin(0.5)
-    );
+      const color = row.kind === "danger" ? "#ff9fb0" : "#ffffff";
+      const label = this.add.text(this.uiX(48), this.uiY(y + (rowH - 10) / 2), `${on ? "▶ " : "  "}${row.label}`, {
+        fontSize: `${this.uiS(16)}px`, color, fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0, 0.5);
+      this.menuElements.push(label);
+
+      if (row.kind === "toggle") {
+        const onOff = row.value ? "ON" : "OFF";
+        const tg = this.add.text(this.uiX(W - 48), this.uiY(y + (rowH - 10) / 2), onOff, {
+          fontSize: `${this.uiS(16)}px`, color: row.value ? "#7fe0a0" : "#889", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0.5);
+        this.menuElements.push(tg);
+      }
+
+      // Tap support
+      const zone = this.add.zone(this.uiX(W / 2), this.uiY(y + (rowH - 10) / 2), this.uiS(W - 56), this.uiS(rowH - 10))
+        .setScrollFactor(0).setInteractive().setDepth(203).setOrigin(0.5);
+      zone.on("pointerdown", () => { this.settingsSelIndex = i; this.activateSettingsRow(); });
+      this.menuElements.push(zone);
+    });
+
+    const bgmNote = this.add.text(this.uiX(W / 2), this.uiY(top + rows.length * rowH + 6), "※BGM・こうかおんは じゅんびちゅう", {
+      fontSize: `${this.uiS(10)}px`, color: "#66788c", fontFamily: F,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(bgmNote);
+
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 28), "A:えらぶ/きりかえ   Bボタンでもどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
     this.applyTextResolution(this.menuElements);
+  }
+
+  private activateSettingsRow(): void {
+    const i = this.settingsSelIndex;
+    if (i === 0 || i === 1) {
+      // Character edit: hand off to SetupScene in settings-mode, then resume here.
+      const resume = { mapKey: this.currentMapKey, playerX: this.gridX, playerY: this.gridY, playerState: this.playerState };
+      this.closeMenu();
+      this.cameras.main.fadeOut(200, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.start("SetupScene", { settingsMode: true, startStep: i === 1 ? "name" : "gender", resume });
+      });
+      return;
+    }
+    if (i >= 2 && i <= 4) {
+      const s: GameSettings = loadSettings();
+      if (i === 2) s.leftHanded = !s.leftHanded;
+      else if (i === 3) s.bgm = !s.bgm;
+      else if (i === 4) s.se = !s.se;
+      saveSettings(s);
+      this.drawSettingsScreen();
+      return;
+    }
+    if (i === 5) this.showRestartConfirm();
+  }
+
+  private updateSettingsScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    const rows = this.settingsRows();
+    const justUp = dpad === "up" && this.settingsGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.settingsGpPrevDpad !== "down";
+    let kbUp = false, kbDown = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+    }
+    this.settingsGpPrevDpad = dpad;
+
+    if (b || menu) { this.closeSubScreen(); return; }
+    if (justUp || kbUp) { this.settingsSelIndex = (this.settingsSelIndex - 1 + rows.length) % rows.length; this.drawSettingsScreen(); return; }
+    if (justDown || kbDown) { this.settingsSelIndex = (this.settingsSelIndex + 1) % rows.length; this.drawSettingsScreen(); return; }
+    if (a) this.activateSettingsRow();
   }
 
   private showRestartConfirm(): void {
