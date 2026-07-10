@@ -9,6 +9,28 @@ export default function PhaserGame() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Suppress mobile-browser double-tap-to-zoom and pinch-zoom. iOS Safari
+  // ignores the viewport `user-scalable=no` / `maximum-scale=1`, so the page
+  // could get stuck zoomed after a stray double-tap. These document-level
+  // guards kill the gesture without blocking the game's own pointer input.
+  useEffect(() => {
+    let lastTouchEnd = 0;
+    const onTouchEnd = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) e.preventDefault(); // second rapid tap → no zoom
+      lastTouchEnd = now;
+    };
+    const onGesture = (e: Event) => e.preventDefault(); // iOS pinch-zoom
+    document.addEventListener("touchend", onTouchEnd, { passive: false });
+    document.addEventListener("gesturestart", onGesture as EventListener);
+    document.addEventListener("gesturechange", onGesture as EventListener);
+    return () => {
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("gesturestart", onGesture as EventListener);
+      document.removeEventListener("gesturechange", onGesture as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
 
