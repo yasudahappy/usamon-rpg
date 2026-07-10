@@ -876,6 +876,10 @@ export class MapScene extends Phaser.Scene {
   }
 
   private tryMove(dir: Direction): void {
+    // A spotted-by-trainer approach (incl. mid-ice-slide) freezes the player:
+    // otherwise ice would keep sliding them away from the approaching trainer,
+    // who then overshoots and the battle never triggers.
+    if (this.trainerApproaching || this.startingBattle) return;
     this.facingDirection = dir;
     if (this.isMoving || this.isWarping) {
       // Do not buffer input while moving: a single tap = a single tile.
