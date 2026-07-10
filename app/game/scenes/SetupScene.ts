@@ -103,6 +103,9 @@ export class SetupScene extends Phaser.Scene {
   // When launched from the title screen's せってい, editing returns to the title
   // and does NOT wipe the save or restart the prologue.
   private settingsMode = false;
+  // In-game せってい: which step to open on, and where to return afterwards.
+  private startStep: "gender" | "name" = "gender";
+  private resume?: { mapKey: string; playerX: number; playerY: number; playerState: unknown };
 
   // Gamepad polling state
   private prevDpad: string | null = null;
@@ -121,8 +124,10 @@ export class SetupScene extends Phaser.Scene {
     super({ key: "SetupScene" });
   }
 
-  init(data: { settingsMode?: boolean }): void {
+  init(data: { settingsMode?: boolean; startStep?: "gender" | "name"; resume?: { mapKey: string; playerX: number; playerY: number; playerState: unknown } }): void {
     this.settingsMode = !!data?.settingsMode;
+    this.startStep = data?.startStep === "name" ? "name" : "gender";
+    this.resume = data?.resume;
     // Prefill the current character setup so せってい starts from existing values.
     this.selectedGender = "boy";
     this.selectedSuit = 0;
@@ -223,7 +228,8 @@ export class SetupScene extends Phaser.Scene {
     this.dpadHeldMs = 0;
     this.finished = false;
 
-    this.showGenderStep();
+    if (this.startStep === "name") this.showNameStep();
+    else this.showGenderStep();
 
     // Keyboard input
     if (this.input.keyboard) {
@@ -277,7 +283,10 @@ export class SetupScene extends Phaser.Scene {
 
   private backToTitle(): void {
     this.cameras.main.fadeOut(250, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("TitleScene"));
+    this.cameras.main.once("camerafadeoutcomplete", () => {
+      if (this.resume) this.scene.start("MapScene", this.resume);
+      else this.scene.start("TitleScene");
+    });
   }
 
   private clearUI(): void {
@@ -665,8 +674,10 @@ export class SetupScene extends Phaser.Scene {
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       if (this.settingsMode) {
-        // Just updating settings: return to the title screen, save intact.
-        this.scene.start("TitleScene");
+        // Just updating settings: return to where we came from (the in-game
+        // menu resumes the map; the title screen's せってい returns to title).
+        if (this.resume) this.scene.start("MapScene", this.resume);
+        else this.scene.start("TitleScene");
       } else {
         // Story starts in the player's own home with the wake-up cutscene (序章).
         this.scene.start("MapScene", { mapKey: "player_home", intro: true });
