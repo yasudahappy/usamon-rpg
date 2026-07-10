@@ -10,6 +10,81 @@ const SUIT_COLORS = ["white", "blue", "orange", "pink", "black"];
 const SUIT_LABELS = ["ホワイト", "ブルー", "オレンジ", "ピンク", "ブラック"];
 const SUIT_HEX = ["#e0e0e8", "#6488d0", "#e8a850", "#e0a0c0", "#505058"];
 
+const MAX_NAME_LENGTH = 8;
+
+// Name-input character pages (Pokémon style): ひらがな / カタカナ / 英数字
+interface KanaPage {
+  label: string; // shown on the mode-switch cell as「→ラベル」
+  rows: string[][];
+}
+const KANA_PAGES: KanaPage[] = [
+  {
+    label: "かな",
+    rows: [
+      ["あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ"],
+      ["さ", "し", "す", "せ", "そ", "た", "ち", "つ", "て", "と"],
+      ["な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "へ", "ほ"],
+      ["ま", "み", "む", "め", "も", "や", "ゆ", "よ", "ら", "り"],
+      ["る", "れ", "ろ", "わ", "を", "ん", "ー", "・", "", ""],
+    ],
+  },
+  {
+    label: "カナ",
+    rows: [
+      ["ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ"],
+      ["サ", "シ", "ス", "セ", "ソ", "タ", "チ", "ツ", "テ", "ト"],
+      ["ナ", "ニ", "ヌ", "ネ", "ノ", "ハ", "ヒ", "フ", "ヘ", "ホ"],
+      ["マ", "ミ", "ム", "メ", "モ", "ヤ", "ユ", "ヨ", "ラ", "リ"],
+      ["ル", "レ", "ロ", "ワ", "ヲ", "ン", "ー", "・", "", ""],
+    ],
+  },
+  {
+    label: "英数",
+    rows: [
+      ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+      ["K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"],
+      ["U", "V", "W", "X", "Y", "Z", "!", "?", "-", "."],
+      ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    ],
+  },
+];
+// Control row:「小」is also the case toggle (A↔a) on the 英数 page,
+// and「モード」cycles pages (its label shows the NEXT page, e.g.「→カナ」)
+const CONTROL_ROW = ["゛", "゜", "小", "けす", "モード", "おわり"];
+const CTRL_MODE = 4;
+
+// Toggle maps for diacritics / small kana (applied to the last input char)
+const DAKUTEN_MAP: Record<string, string> = {
+  か: "が", き: "ぎ", く: "ぐ", け: "げ", こ: "ご",
+  さ: "ざ", し: "じ", す: "ず", せ: "ぜ", そ: "ぞ",
+  た: "だ", ち: "ぢ", つ: "づ", て: "で", と: "ど",
+  は: "ば", ひ: "び", ふ: "ぶ", へ: "べ", ほ: "ぼ",
+  う: "ゔ",
+  カ: "ガ", キ: "ギ", ク: "グ", ケ: "ゲ", コ: "ゴ",
+  サ: "ザ", シ: "ジ", ス: "ズ", セ: "ゼ", ソ: "ゾ",
+  タ: "ダ", チ: "ヂ", ツ: "ヅ", テ: "デ", ト: "ド",
+  ハ: "バ", ヒ: "ビ", フ: "ブ", ヘ: "ベ", ホ: "ボ",
+  ウ: "ヴ",
+};
+const HANDAKUTEN_MAP: Record<string, string> = {
+  は: "ぱ", ひ: "ぴ", ふ: "ぷ", へ: "ぺ", ほ: "ぽ",
+  ハ: "パ", ヒ: "ピ", フ: "プ", ヘ: "ペ", ホ: "ポ",
+};
+const SMALL_MAP: Record<string, string> = {
+  あ: "ぁ", い: "ぃ", う: "ぅ", え: "ぇ", お: "ぉ",
+  や: "ゃ", ゆ: "ゅ", よ: "ょ", つ: "っ", わ: "ゎ",
+  ア: "ァ", イ: "ィ", ウ: "ゥ", エ: "ェ", オ: "ォ",
+  ヤ: "ャ", ユ: "ュ", ヨ: "ョ", ツ: "ッ", ワ: "ヮ",
+};
+
+function toggleByMap(ch: string, map: Record<string, string>): string | null {
+  if (map[ch]) return map[ch];
+  for (const [plain, marked] of Object.entries(map)) {
+    if (marked === ch) return plain;
+  }
+  return null;
+}
+
 export class SetupScene extends Phaser.Scene {
   private step: "gender" | "name" = "gender";
   private selectedGender: "boy" | "girl" = "boy";
@@ -20,12 +95,27 @@ export class SetupScene extends Phaser.Scene {
   private promptText!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
   private uiElements: Phaser.GameObjects.GameObject[] = [];
+
+  // Gender step: 5-頭身 illustrations
   private genderImgs: Phaser.GameObjects.Image[] = [];
   private genderFrames: Phaser.GameObjects.Graphics[] = [];
-  private htmlInput: HTMLInputElement | null = null;
+
   // When launched from the title screen's せってい, editing returns to the title
   // and does NOT wipe the save or restart the prologue.
   private settingsMode = false;
+
+  // Gamepad polling state
+  private prevDpad: string | null = null;
+  private dpadHeldMs = 0;
+
+  private finished = false;
+
+  // Kana grid state (name step)
+  private kanaPage = 0;
+  private kanaCursorRow = 0;
+  private kanaCursorCol = 0;
+  private kanaCursorGfx: Phaser.GameObjects.Graphics | null = null;
+  private kanaCellPos: { x: number; y: number; w: number; h: number }[][] = [];
 
   constructor() {
     super({ key: "SetupScene" });
@@ -104,7 +194,8 @@ export class SetupScene extends Phaser.Scene {
       stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(10);
 
-    // Character preview (center)
+    // Character preview (center) — hidden during the gender step (illustrations
+    // replace it) and the name step (kana grid needs the room).
     this.previewSprite = this.add.image(
       w / 2,
       Math.round(H * 0.28),
@@ -123,6 +214,15 @@ export class SetupScene extends Phaser.Scene {
       padding: { x: 16, y: 8 },
     }).setOrigin(0.5).setDepth(10).setVisible(false);
 
+    // Clear stale gamepad presses carried over from a previous scene
+    if (typeof window !== "undefined" && (window as unknown as { __gamepad?: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad) {
+      const gp = (window as unknown as { __gamepad: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
+      gp.aJust = false; gp.bJust = false; gp.menuJust = false;
+    }
+    this.prevDpad = null;
+    this.dpadHeldMs = 0;
+    this.finished = false;
+
     this.showGenderStep();
 
     // Keyboard input
@@ -133,14 +233,49 @@ export class SetupScene extends Phaser.Scene {
     }
   }
 
-  update(): void {
-    if (!this.settingsMode) return;
-    const gp = typeof window !== "undefined" ? (window as unknown as { __gamepad?: { bJust: boolean } }).__gamepad : null;
-    if (gp && gp.bJust) { gp.bJust = false; this.backToTitle(); }
+  // Poll the on-screen gamepad every frame (same pattern as MapScene)
+  update(_time: number, delta: number): void {
+    if (this.finished) return;
+    if (typeof window === "undefined") return;
+    const gp = (window as unknown as { __gamepad?: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
+    if (!gp) return;
+
+    let a = false;
+    let b = false;
+    if (gp.aJust) { a = true; gp.aJust = false; }
+    if (gp.bJust) { b = true; gp.bJust = false; }
+
+    // D-pad edge detection + hold-to-repeat (for the kana grid)
+    let dir: string | null = null;
+    if (gp.dpad) {
+      if (gp.dpad !== this.prevDpad) {
+        dir = gp.dpad;
+        this.dpadHeldMs = 0;
+      } else {
+        this.dpadHeldMs += delta;
+        if (this.dpadHeldMs > 350) {
+          dir = gp.dpad;
+          this.dpadHeldMs = 350 - 130; // repeat every ~130ms
+        }
+      }
+    } else {
+      this.dpadHeldMs = 0;
+    }
+    this.prevDpad = gp.dpad;
+
+    if (this.step === "gender") {
+      if (dir === "left") { this.selectedGender = "boy"; this.highlightGender(); }
+      else if (dir === "right") { this.selectedGender = "girl"; this.highlightGender(); }
+      if (a) this.showNameStep();
+      else if (b && this.settingsMode) this.backToTitle();
+    } else if (this.step === "name") {
+      if (dir) this.moveKanaCursor(dir);
+      if (a) this.activateKanaCell();
+      else if (b) this.deleteNameChar();
+    }
   }
 
   private backToTitle(): void {
-    this.removeHtmlInput();
     this.cameras.main.fadeOut(250, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("TitleScene"));
   }
@@ -155,7 +290,7 @@ export class SetupScene extends Phaser.Scene {
     this.step = "gender";
     this.clearUI();
     this.promptText.setText("せいべつを えらんでね");
-    this.instructionText.setText("← → で選択  けってい で決定");
+    this.instructionText.setText(this.settingsMode ? "←→で えらんで A:けってい B:もどる" : "←→で えらんで Aボタンで けってい");
     this.nameText.setVisible(false);
     this.previewSprite.setVisible(false);
 
@@ -233,157 +368,247 @@ export class SetupScene extends Phaser.Scene {
     });
   }
 
-  // ---- Step 3: Name ----
+  // ---- Step 2: Name (kana grid, Pokémon style) ----
   private showNameStep(): void {
     this.step = "name";
     this.clearUI();
     this.promptText.setText("なまえを いれてね");
-    this.instructionText.setText(this.settingsMode ? "タップして入力  Bボタンでもどる" : "タップして入力  けっていで確定");
+    this.instructionText.setText("十字キーで えらぶ A:いれる B:けす");
+    this.previewSprite.setVisible(false);
     if (!this.settingsMode) this.playerName = "";
     this.nameText.setVisible(true);
-    this.nameText.setText(this.playerName.length > 0 ? this.playerName : "▌");
+    this.updateNameDisplay();
 
-    // Create HTML input for mobile keyboard support
-    this.createHtmlInput();
-
-    const w = this.scale.width;
-    const H = this.scale.height;
-    const nameY = Math.round(H * 0.40);
-    const confirmY = Math.round(H * 0.50);
-
-    // Tap on name text area to focus the HTML input
-    const tapZone = this.add.zone(w / 2, nameY, 240, 50)
-      .setInteractive().setDepth(12).setOrigin(0.5);
-    tapZone.on("pointerdown", () => {
-      if (this.htmlInput) this.htmlInput.focus();
-    });
-    this.uiElements.push(tapZone);
-
-    // Confirm button
-    const okBg = this.add.graphics().setDepth(10);
-    okBg.fillStyle(0x2255aa, 0.9);
-    okBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
-    okBg.lineStyle(2, 0x66aaff);
-    okBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
-
-    const okText = this.add.text(w / 2, confirmY, "けってい", {
-      fontSize: "16px",
-      color: "#ffffff",
-      fontFamily: "'DotGothic16', monospace",
-      stroke: "#000000", strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(11);
-
-    const okZone = this.add.zone(w / 2, confirmY, 120, 40)
-      .setInteractive().setDepth(12).setOrigin(0.5);
-    okZone.on("pointerdown", () => {
-      if (this.playerName.length > 0) {
-        this.removeHtmlInput();
-        this.finishSetup();
-      }
-    });
-
-    this.uiElements.push(okBg, okText, okZone);
+    this.kanaPage = 0;
+    this.kanaCursorRow = 0;
+    this.kanaCursorCol = 0;
+    this.buildKanaGrid();
+    this.drawKanaCursor();
   }
 
-  // ---- HTML Input for mobile keyboard ----
-  private createHtmlInput(): void {
-    this.removeHtmlInput();
-
-    const canvas = this.game.canvas;
-    const parent = canvas.parentElement;
-    if (!parent) return;
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.maxLength = 8;
-    input.placeholder = "なまえ";
-    input.autocomplete = "off";
-    input.autocapitalize = "off";
-    input.setAttribute("enterkeyhint", "done");
-    if (this.playerName) input.value = this.playerName;
-
-    const H = this.scale.height;
-    const nameYRatio = 0.40; // matches nameText position
-
-    // Position over the name text area in the canvas
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = rect.width / this.scale.width;
-    const scaleY = rect.height / H;
-    const inputW = 220 * scaleX;
-    const inputH = 44 * scaleY;
-    const inputX = rect.left + (this.scale.width / 2) * scaleX - inputW / 2;
-    const inputY = rect.top + (H * nameYRatio) * scaleY - inputH / 2;
-
-    Object.assign(input.style, {
-      position: "fixed",
-      left: `${inputX}px`,
-      top: `${inputY}px`,
-      width: `${inputW}px`,
-      height: `${inputH}px`,
-      fontSize: `${Math.max(16, 20 * scaleY)}px`,
-      textAlign: "center",
-      background: "rgba(34, 51, 68, 0.95)",
-      color: "#ffffff",
-      border: "2px solid #66aaff",
-      borderRadius: "8px",
-      outline: "none",
-      fontFamily: "'DotGothic16', monospace",
-      zIndex: "1000",
-      caretColor: "#ffffff",
-      padding: "0 8px",
-      boxSizing: "border-box",
-    });
-
-    // Sync input to Phaser text
-    input.addEventListener("input", () => {
-      this.playerName = input.value.slice(0, 8);
-      input.value = this.playerName;
-      this.nameText.setText(this.playerName.length > 0 ? this.playerName : "▌");
-    });
-
-    // Enter key = confirm
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && this.playerName.length > 0) {
-        this.removeHtmlInput();
-        this.finishSetup();
-      }
-    });
-
-    // Reposition on resize
-    const reposition = () => {
-      const r = canvas.getBoundingClientRect();
-      const sx = r.width / this.scale.width;
-      const sy2 = r.height / H;
-      const w2 = 220 * sx;
-      const h2 = 44 * sy2;
-      input.style.left = `${r.left + (this.scale.width / 2) * sx - w2 / 2}px`;
-      input.style.top = `${r.top + (H * nameYRatio) * sy2 - h2 / 2}px`;
-      input.style.width = `${w2}px`;
-      input.style.height = `${h2}px`;
-      input.style.fontSize = `${Math.max(16, 20 * sy2)}px`;
-    };
-    window.addEventListener("resize", reposition);
-    (input as unknown as Record<string, unknown>).__resizeHandler = reposition;
-
-    document.body.appendChild(input);
-    this.htmlInput = input;
-
-    // Hide Phaser name text (HTML input replaces it visually)
-    this.nameText.setVisible(false);
-
-    // Auto-focus after a short delay (helps on mobile)
-    setTimeout(() => input.focus(), 150);
+  private pageRows(): string[][] {
+    return KANA_PAGES[this.kanaPage].rows;
   }
 
-  private removeHtmlInput(): void {
-    if (this.htmlInput) {
-      const handler = (this.htmlInput as unknown as Record<string, unknown>).__resizeHandler;
-      if (typeof handler === "function") {
-        window.removeEventListener("resize", handler as EventListener);
+  private buildKanaGrid(): void {
+    const w = this.scale.width;   // 640
+    const H = this.scale.height;
+
+    this.kanaCellPos = [];
+
+    const gridTop = Math.round(H * 0.46);
+    const cellW = 56;
+    const cellH = Math.max(40, Math.min(52, Math.round(H * 0.055)));
+    const startX = (w - cellW * 10) / 2;
+    const rows = this.pageRows();
+
+    // Character rows (10 cols x 4-5 rows depending on page)
+    rows.forEach((row, r) => {
+      const rowPos: { x: number; y: number; w: number; h: number }[] = [];
+      row.forEach((ch, c) => {
+        const cx = startX + c * cellW + cellW / 2;
+        const cy = gridTop + r * cellH + cellH / 2;
+        rowPos.push({ x: cx, y: cy, w: cellW, h: cellH });
+        if (ch === "") return;
+
+        const bg = this.add.graphics().setDepth(10);
+        bg.fillStyle(0x223344, 0.7);
+        bg.fillRoundedRect(cx - cellW / 2 + 2, cy - cellH / 2 + 2, cellW - 4, cellH - 4, 6);
+        const text = this.add.text(cx, cy, ch, {
+          fontSize: "20px",
+          color: "#ffffff",
+          fontFamily: "'DotGothic16', monospace",
+          stroke: "#000000", strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(11);
+
+        // Tapping a cell also works: move cursor there and input
+        const zone = this.add.zone(cx, cy, cellW, cellH)
+          .setInteractive().setDepth(12).setOrigin(0.5);
+        zone.on("pointerdown", () => {
+          this.kanaCursorRow = r;
+          this.kanaCursorCol = c;
+          this.drawKanaCursor();
+          this.activateKanaCell();
+        });
+        this.uiElements.push(bg, text, zone);
+      });
+      this.kanaCellPos.push(rowPos);
+    });
+
+    // Control row (6 wide cells)
+    const ctrlW = 100;
+    const ctrlStartX = (w - ctrlW * CONTROL_ROW.length) / 2;
+    const ctrlY = gridTop + rows.length * cellH + Math.round(cellH * 0.25) + cellH / 2;
+    const ctrlPos: { x: number; y: number; w: number; h: number }[] = [];
+    const nextPageLabel = KANA_PAGES[(this.kanaPage + 1) % KANA_PAGES.length].label;
+    CONTROL_ROW.forEach((label, c) => {
+      const cx = ctrlStartX + c * ctrlW + ctrlW / 2;
+      ctrlPos.push({ x: cx, y: ctrlY, w: ctrlW, h: cellH });
+
+      const isDone = label === "おわり";
+      const isMode = c === CTRL_MODE;
+      const display = isMode ? `→${nextPageLabel}` : label;
+      const bg = this.add.graphics().setDepth(10);
+      bg.fillStyle(isDone ? 0x2255aa : isMode ? 0x225544 : 0x223344, isDone || isMode ? 0.9 : 0.7);
+      bg.fillRoundedRect(cx - ctrlW / 2 + 3, ctrlY - cellH / 2 + 2, ctrlW - 6, cellH - 4, 6);
+      if (isDone) {
+        bg.lineStyle(2, 0x66aaff);
+        bg.strokeRoundedRect(cx - ctrlW / 2 + 3, ctrlY - cellH / 2 + 2, ctrlW - 6, cellH - 4, 6);
+      } else if (isMode) {
+        bg.lineStyle(2, 0x66ccaa);
+        bg.strokeRoundedRect(cx - ctrlW / 2 + 3, ctrlY - cellH / 2 + 2, ctrlW - 6, cellH - 4, 6);
       }
-      this.htmlInput.remove();
-      this.htmlInput = null;
+      const text = this.add.text(cx, ctrlY, display, {
+        fontSize: "16px",
+        color: "#ffffff",
+        fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(11);
+
+      const zone = this.add.zone(cx, ctrlY, ctrlW, cellH)
+        .setInteractive().setDepth(12).setOrigin(0.5);
+      zone.on("pointerdown", () => {
+        this.kanaCursorRow = rows.length;
+        this.kanaCursorCol = c;
+        this.drawKanaCursor();
+        this.activateKanaCell();
+      });
+      this.uiElements.push(bg, text, zone);
+    });
+    this.kanaCellPos.push(ctrlPos);
+
+    // Cursor graphics (drawn on top of cells)
+    this.kanaCursorGfx = this.add.graphics().setDepth(13);
+    this.uiElements.push(this.kanaCursorGfx);
+  }
+
+  private drawKanaCursor(): void {
+    if (!this.kanaCursorGfx) return;
+    const pos = this.kanaCellPos[this.kanaCursorRow]?.[this.kanaCursorCol];
+    if (!pos) return;
+    this.kanaCursorGfx.clear();
+    this.kanaCursorGfx.lineStyle(3, 0xffdd44);
+    this.kanaCursorGfx.strokeRoundedRect(
+      pos.x - pos.w / 2 + 1, pos.y - pos.h / 2 + 1, pos.w - 2, pos.h - 2, 6
+    );
+  }
+
+  private isEmptyKanaCell(row: number, col: number): boolean {
+    const rows = this.pageRows();
+    return row < rows.length && (rows[row][col] ?? "") === "";
+  }
+
+  /** Step left from col until a non-empty cell is found */
+  private snapToFilled(row: number, col: number): number {
+    let c = col;
+    while (c > 0 && this.isEmptyKanaCell(row, c)) c--;
+    return c;
+  }
+
+  private moveKanaCursor(dir: string): void {
+    const rows = this.pageRows();
+    const lastKanaRow = rows.length - 1;
+    const ctrlRow = rows.length;
+    const ctrlCols = CONTROL_ROW.length;
+    let r = this.kanaCursorRow;
+    let c = this.kanaCursorCol;
+
+    if (dir === "left" || dir === "right") {
+      const cols = r === ctrlRow ? ctrlCols : 10;
+      const step = dir === "left" ? -1 : 1;
+      do {
+        c = (c + step + cols) % cols;
+      } while (this.isEmptyKanaCell(r, c));
+    } else if (dir === "up") {
+      if (r === ctrlRow) {
+        // Control row → bottom kana row (map wide cells onto 10 cols)
+        r = lastKanaRow;
+        c = this.snapToFilled(r, Math.min(9, Math.floor((c * 10) / ctrlCols)));
+      } else if (r > 0) {
+        r--;
+        c = this.snapToFilled(r, c);
+      } else {
+        r = ctrlRow;
+        c = Math.min(ctrlCols - 1, Math.floor((c * ctrlCols) / 10));
+      }
+    } else if (dir === "down") {
+      if (r === ctrlRow) {
+        r = 0;
+        c = this.snapToFilled(r, c === 0 ? 0 : Math.min(9, Math.floor((c * 10) / ctrlCols)));
+      } else if (r < lastKanaRow) {
+        r++;
+        c = this.snapToFilled(r, c);
+      } else {
+        r = ctrlRow;
+        c = Math.min(ctrlCols - 1, Math.floor((c * ctrlCols) / 10));
+      }
     }
+
+    this.kanaCursorRow = r;
+    this.kanaCursorCol = c;
+    this.drawKanaCursor();
+  }
+
+  private switchKanaPage(): void {
+    this.kanaPage = (this.kanaPage + 1) % KANA_PAGES.length;
+    // Rebuild the grid; keep the cursor on the mode cell so repeated
+    // presses cycle pages comfortably
+    this.clearUI();
+    this.buildKanaGrid();
+    this.kanaCursorRow = this.pageRows().length;
+    this.kanaCursorCol = CTRL_MODE;
+    this.drawKanaCursor();
+  }
+
+  private activateKanaCell(): void {
+    const rows = this.pageRows();
+    const r = this.kanaCursorRow;
+    const c = this.kanaCursorCol;
+
+    if (r < rows.length) {
+      const ch = rows[r][c];
+      if (ch && this.playerName.length < MAX_NAME_LENGTH) {
+        this.playerName += ch;
+        this.updateNameDisplay();
+      }
+      return;
+    }
+
+    // Control row
+    const action = CONTROL_ROW[Math.min(c, CONTROL_ROW.length - 1)];
+    if (action === "゛" || action === "゜" || action === "小") {
+      if (this.playerName.length === 0) return;
+      const last = this.playerName[this.playerName.length - 1];
+      let replaced: string | null = null;
+      if (action === "小" && /[A-Za-z]/.test(last)) {
+        // On the alphanumeric page,「小」toggles letter case
+        replaced = last === last.toLowerCase() ? last.toUpperCase() : last.toLowerCase();
+      } else {
+        const map = action === "゛" ? DAKUTEN_MAP : action === "゜" ? HANDAKUTEN_MAP : SMALL_MAP;
+        replaced = toggleByMap(last, map);
+      }
+      if (replaced) {
+        this.playerName = this.playerName.slice(0, -1) + replaced;
+        this.updateNameDisplay();
+      }
+    } else if (action === "けす") {
+      this.deleteNameChar();
+    } else if (action === "モード") {
+      this.switchKanaPage();
+    } else if (action === "おわり") {
+      if (this.playerName.length > 0) this.finishSetup();
+    }
+  }
+
+  private deleteNameChar(): void {
+    if (this.playerName.length > 0) {
+      this.playerName = this.playerName.slice(0, -1);
+      this.updateNameDisplay();
+    }
+  }
+
+  private updateNameDisplay(): void {
+    this.nameText.setText(this.playerName.length > 0 ? this.playerName : "▌");
   }
 
   // ---- Input ----
@@ -400,13 +625,24 @@ export class SetupScene extends Phaser.Scene {
         this.showNameStep();
       }
     } else if (this.step === "name") {
-      // Name input is handled by the HTML input element
+      if (event.key === "ArrowLeft") this.moveKanaCursor("left");
+      else if (event.key === "ArrowRight") this.moveKanaCursor("right");
+      else if (event.key === "ArrowUp") this.moveKanaCursor("up");
+      else if (event.key === "ArrowDown") this.moveKanaCursor("down");
+      else if (event.key === "Enter" || event.key === " ") this.activateKanaCell();
+      else if (event.key === "Backspace") this.deleteNameChar();
+      else if (/^[A-Za-z0-9!?.-]$/.test(event.key) && this.playerName.length < MAX_NAME_LENGTH) {
+        // Direct typing of alphanumerics from a physical keyboard
+        this.playerName += event.key;
+        this.updateNameDisplay();
+      }
     }
   }
 
   // ---- Finish ----
   private finishSetup(): void {
-    this.removeHtmlInput();
+    if (this.finished) return;
+    this.finished = true;
     const setup: PlayerSetup = {
       gender: this.selectedGender,
       // Suit-colour selection was removed; the boy uses a fixed white suit and
