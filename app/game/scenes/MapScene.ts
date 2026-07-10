@@ -31,6 +31,8 @@ export class MapScene extends Phaser.Scene {
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
   private animFrame = 0;
   private animTimer = 0;
+  // Sub-second carry for play-time accumulation (ms).
+  private playSecAccum = 0;
   // Tile animation
   private tileAnimTimer = 0;
   private tileAnimFrame = 0;
@@ -56,8 +58,27 @@ export class MapScene extends Phaser.Scene {
   // Gym-leader gates: leader id -> trainers that must be beaten first.
   private static GYM_LEADER_GATES: Record<string, string[]> = {
     ryuma: ["genki", "kagen"],
+    simone: ["rei", "tsurara"],
   };
-  private leaderGateNotified = false;
+  // Sealed exits/doors: openings that are not yet passable. Stepping toward one
+  // of its tiles shows the messages and blocks passage.
+  private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; messages: string[] }[]> = {
+    // NOTE: nectar_town's gym door (15,6) is handled dynamically (ice-melt
+    // trial ⑦), see tryMeltGymDoor().
+    frost_route_1: [
+      {
+        // North exit — the road to the next sea (豊かの海方面・未開放).
+        tiles: [{ x: 10, y: 0 }, { x: 11, y: 0 }],
+        messages: ["この先は まだ 道が ひらけて\nいないようだ…。"],
+      },
+    ],
+  };
+  // Nectar gym door: frozen shut until a fire/metal almon melts it (試練 その1).
+  private static NECTAR_GYM_DOOR = { x: 15, y: 6 };
+  private static NECTAR_DOOR_FLAG = "nectar_gym_door_melted";
+  private static DOOR_MELTERS: Record<string, "fire" | "metal"> = {
+    meteko: "fire", meteodon: "fire", roubau: "metal", roubaag: "metal",
+  };
 
   // Facing direction (for NPC interaction)
   private facingDirection: Direction = "down";
@@ -119,22 +140,29 @@ export class MapScene extends Phaser.Scene {
   private farmResY = 4;
 
   // Meteorite (appears at the Crater City outskirts after the gym is cleared).
-  // (meteorX,meteorY) is the TOP-LEFT of a 5x5 footprint; the cracked-open cave
-  // entrance sits just below its bottom-centre.
+  // (meteorX,meteorY) is the TOP-LEFT of a METEOR_SIZE x METEOR_SIZE footprint;
+  // the cracked-open cave entrance sits at its base.
   private meteorSprite?: Phaser.GameObjects.Image;
   private caveEntranceSprite?: Phaser.GameObjects.Image;
   private meteorX = 29;
   private meteorY = 21;
   private static METEOR_SIZE = 6;
-  private caveEntranceX = 31;
-  private caveEntranceY = 27;
+  // Cave entrance sits at the base of the meteor. It lives inside the meteor's
+  // 6x6 footprint, so it is explicitly excluded from the meteor's collision/
+  // interaction box (see isCollision / checkNpcInteraction) and drawn above it.
+  private caveEntranceX = 32;
+  private caveEntranceY = 26;
   private lastTrainerDefeated?: string;
 
-  // Moon-capsule field items scattered through the meteorite cave (heal items).
+  // Capsule field items (heal items etc.) scattered through the meteorite cave
+  // and the sandy routes. Picked up by facing the capsule and pressing A.
   private caveCapsuleSprites: Map<string, Phaser.GameObjects.Image> = new Map();
   private static CAVE_CAPSULES: { flag: string; mapKey: string; x: number; y: number; item: string; itemName: string }[] = [
     { flag: "cave_capsule_1", mapKey: "crater_cave", x: 10, y: 9, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
     { flag: "cave_capsule_2", mapKey: "crater_cave_b1", x: 10, y: 7, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "route2_cap_1", mapKey: "sand_route_2", x: 18, y: 2, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
+    { flag: "route2_cap_2", mapKey: "sand_route_2", x: 9, y: 8, item: "moon_sand", itemName: "つきのすな" },
+    { flag: "route2_cap_3", mapKey: "sand_route_2", x: 2, y: 17, item: "full_repair_gel", itemName: "フルリペアジェル" },
   ];
 
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
@@ -195,6 +223,8 @@ export class MapScene extends Phaser.Scene {
     this.granny2Sprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
+    this.nectarExam = [];
+    this.quizAwaiting = null;
     this.shopOpen = false;
     if (data.playerState) {
       this.playerState = data.playerState;
@@ -221,9 +251,9 @@ export class MapScene extends Phaser.Scene {
     // Clear any transient touch/gamepad state that could linger across a scene
     // transition (e.g. a D-pad press that never received its touchend during
     // the intro→town warp), which would otherwise block/steal fresh input.
-    if (typeof window !== "undefined" && (window as unknown as { __gamepad?: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad) {
-      const gp = (window as unknown as { __gamepad: { dpad: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
-      gp.dpad = null; gp.aJust = false; gp.bJust = false; gp.menuJust = false;
+    if (typeof window !== "undefined" && (window as unknown as { __gamepad?: { dpad: string | null; dpadJust: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad) {
+      const gp = (window as unknown as { __gamepad: { dpad: string | null; dpadJust: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad;
+      gp.dpad = null; gp.dpadJust = null; gp.aJust = false; gp.bJust = false; gp.menuJust = false;
     }
 
     this.mapData = this.cache.json.get(
@@ -255,13 +285,13 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Place Nurse NPC in recovery pod
-    if (this.currentMapKey === "recovery_pod") {
+    if (this.currentMapKey.startsWith("recovery_pod")) {
       this.placeRecoveryPodDecor();
       this.placeNurseNpc();
     }
 
     // Place Shopkeeper NPC in planet shop
-    if (this.currentMapKey === "planet_shop") {
+    if (this.currentMapKey.startsWith("planet_shop")) {
       this.placePlanetShopDecor();
       this.placeShopkeeperNpc();
     }
@@ -287,6 +317,26 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "gym_1") {
       this.placeGymDecor();
     }
+
+    // Nectar Town — frozen basin ambience: ice crystals, a playing almon on the
+    // pond, falling snow and a cold colour cast. Plus the town's education
+    // events (第5章 / ネクタルタウン設計v1 §11-§12).
+    if (this.currentMapKey === "nectar_town") {
+      this.placeNectarDecor();
+      this.startSnowfall();
+      this.applyNectarGymDoorState();
+      this.placeNectarEvents();
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("nectar_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playNectarArrival());
+      }
+    }
+
+    // Frost route (寒冷地): same snowy ambience as the town.
+    if (this.currentMapKey === "frost_route_1") {
+      this.startSnowfall();
+    }
+
 
     // Farm dome interior — a researcher tending the plants
     if (this.currentMapKey === "farm_dome") {
@@ -314,6 +364,11 @@ export class MapScene extends Phaser.Scene {
 
     // Meteorite cave: scatter the moon-capsule items; award the rival's dropped
     // debris fragment once イーゼン (the deepest boss) has been beaten.
+    // Sandy route 2: capsule field items (heal + moon sand).
+    if (this.currentMapKey === "sand_route_2") {
+      this.placeCaveCapsules();
+    }
+
     if (this.currentMapKey.startsWith("crater_cave")) {
       this.placeCaveCapsules();
       if (this.currentMapKey === "crater_cave_b2" && this.lastTrainerDefeated === "eezen") {
@@ -338,15 +393,16 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  // Animated tile base IDs (sand sparkle + farm crops). 70 = farm crop bed.
-  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70];
+  // Animated tile base IDs (sand sparkle + farm crops + frost twinkle).
+  // 70 = farm crop bed, 90 = frost regolith (ネクタルタウン).
+  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70, 90];
   // Base tile -> [frame A, frame B] cycled every 800ms (base -> A -> B).
-  // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72.
+  // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72. Frost: 90 -> 94/95.
   private static SPARKLE_MAP: Record<number, [number, number]> = {
     5: [41, 49], 6: [42, 50], 7: [43, 51], 8: [44, 52],
     9: [45, 53], 10: [46, 54], 11: [47, 55], 12: [48, 56],
     32: [41, 49], 33: [42, 50], 34: [43, 51], 35: [44, 52],
-    36: [45, 53], 70: [71, 72],
+    36: [45, 53], 70: [71, 72], 90: [94, 95],
   };
 
   private drawMap(): void {
@@ -545,8 +601,10 @@ export class MapScene extends Phaser.Scene {
     );
 
     for (const trainer of mapTrainers) {
-      // Skip defeated trainers
-      if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
+      // Defeated trainers stay on the map. If a side tile is free they step
+      // aside (staying solid) so the path opens; otherwise they remain on their
+      // tile and become passable (see isCollision / trainerTile).
+      const pos = this.trainerTile(trainer);
 
       // Use the trainer's hand-drawn NPC sprite (facing their set direction);
       // fall back to the old red-tinted marker only if that texture is missing.
@@ -555,13 +613,38 @@ export class MapScene extends Phaser.Scene {
       const castKey = owKey ? `cast-${owKey}-${dir}` : "";
       const useCast = !!castKey && this.textures.exists(castKey);
       const sprite = this.add.image(
-        trainer.x * this.tileSize + this.tileSize / 2,
-        trainer.y * this.tileSize + this.tileSize / 2,
+        pos.x * this.tileSize + this.tileSize / 2,
+        pos.y * this.tileSize + this.tileSize / 2,
         useCast ? castKey : "player-frame-0"
       ).setDepth(9);
       if (!useCast) sprite.setTint(0xff6644);
       this.trainerSprites.set(trainer.id, sprite);
     }
+  }
+
+  /** Where a trainer currently stands and whether it's solid.
+   *  Live: on its post (solid). Defeated: steps to a free perpendicular side
+   *  tile (solid) so the path clears; if both sides are walls it stays put and
+   *  becomes passable. */
+  private trainerTile(t: TrainerData): { x: number; y: number; solid: boolean } {
+    if (!this.playerState?.defeatedTrainers.includes(t.id)) {
+      return { x: t.x, y: t.y, solid: true };
+    }
+    const aside = this.defeatedAside(t);
+    return aside ? { x: aside.x, y: aside.y, solid: true } : { x: t.x, y: t.y, solid: false };
+  }
+
+  /** A free tile perpendicular to the trainer's facing (the axis the player
+   *  walks past on), or null if both perpendicular neighbours are walls. */
+  private defeatedAside(t: TrainerData): { x: number; y: number } | null {
+    const vertical = t.direction === "up" || t.direction === "down";
+    const cands = vertical
+      ? [{ x: t.x - 1, y: t.y }, { x: t.x + 1, y: t.y }]
+      : [{ x: t.x, y: t.y - 1 }, { x: t.x, y: t.y + 1 }];
+    for (const c of cands) {
+      if (this.mapData.layers.collision[c.y]?.[c.x] === 0) return c;
+    }
+    return null;
   }
 
   private checkTrainerSight(): void {
@@ -570,49 +653,45 @@ export class MapScene extends Phaser.Scene {
       t => t.mapKey === this.currentMapKey
     );
 
-    let leaderBlockedInSight = false;
+    const RANGE = 6;   // all trainers see 6 tiles ahead (blocked by walls)
     for (const trainer of mapTrainers) {
       if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
+      // Gym leaders battle only when the player talks to them (checkNpcInteraction).
+      if (MapScene.GYM_LEADER_GATES[trainer.id]) continue;
 
       let inSight = false;
       const dx = this.gridX - trainer.x;
       const dy = this.gridY - trainer.y;
 
       switch (trainer.direction) {
-        case "down":
-          inSight = dx === 0 && dy > 0 && dy <= trainer.sightRange;
-          break;
-        case "up":
-          inSight = dx === 0 && dy < 0 && Math.abs(dy) <= trainer.sightRange;
-          break;
-        case "left":
-          inSight = dy === 0 && dx < 0 && Math.abs(dx) <= trainer.sightRange;
-          break;
-        case "right":
-          inSight = dy === 0 && dx > 0 && dx <= trainer.sightRange;
-          break;
+        case "down":  inSight = dx === 0 && dy > 0 && dy <= RANGE; break;
+        case "up":    inSight = dx === 0 && dy < 0 && Math.abs(dy) <= RANGE; break;
+        case "left":  inSight = dy === 0 && dx < 0 && Math.abs(dx) <= RANGE; break;
+        case "right": inSight = dy === 0 && dx > 0 && dx <= RANGE; break;
       }
 
+      // A wall between the trainer and the player blocks the line of sight.
+      if (inSight && !this.sightLineClear(trainer)) inSight = false;
+
       if (inSight) {
-        // Gym-leader gate: block the battle until the required trainers are beaten.
-        const gate = MapScene.GYM_LEADER_GATES[trainer.id];
-        if (gate && !gate.every(id => this.playerState?.defeatedTrainers.includes(id))) {
-          if (!this.leaderGateNotified) {
-            this.leaderGateNotified = true;
-            this.showDialog([
-              "……まだ 早い。",
-              "このジムの トレーナー2人を\n倒してから 挑むがいい。",
-            ]);
-          }
-          leaderBlockedInSight = true;
-          continue;
-        }
         this.beginTrainerApproach(trainer);
         return;
       }
     }
-    // Re-arm the leader gate message once the player leaves the leader's sight.
-    if (!leaderBlockedInSight) this.leaderGateNotified = false;
+  }
+
+  /** True when no wall tile lies between the trainer and the player (along the
+   *  trainer's facing axis). Used so 6-tile sight can't pierce walls. */
+  private sightLineClear(trainer: TrainerData): boolean {
+    const stepX = trainer.direction === "left" ? -1 : trainer.direction === "right" ? 1 : 0;
+    const stepY = trainer.direction === "up" ? -1 : trainer.direction === "down" ? 1 : 0;
+    const dist = Math.abs(this.gridX - trainer.x) + Math.abs(this.gridY - trainer.y);
+    for (let k = 1; k < dist; k++) {
+      const x = trainer.x + stepX * k;
+      const y = trainer.y + stepY * k;
+      if (this.mapData.layers.collision[y]?.[x] === 1) return false;
+    }
+    return true;
   }
 
   // Ruby/Sapphire-style: on being spotted, a "！" pops over the trainer, the
@@ -688,11 +767,12 @@ export class MapScene extends Phaser.Scene {
     const table = this.encounterData?.[this.currentMapKey];
     if (!table) return;
 
-    // Only roll encounters on "wild" ground: desert sand or cave floor.
+    // Only roll encounters on "wild" ground: desert sand, cave floor or frost.
     const { layers } = this.mapData;
     const tileId = layers.floor[this.gridY]?.[this.gridX];
     // Sand tiles: 5-12, 14-21 (edges), 32-36 (variants). 80 = cave floor.
-    const encounterTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36,80];
+    // 90 = frost regolith (ice tiles 91 stay encounter-free so slides feel good).
+    const encounterTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36,80,90];
     if (!encounterTiles.includes(tileId)) return;
 
     // Use encounter rate from data
@@ -774,18 +854,32 @@ export class MapScene extends Phaser.Scene {
     if (this.granny2Sprite && x === this.granny2X && y === this.granny2Y) return true;
     if (this.farmResSprite && x === this.farmResX && y === this.farmResY) return true;
     if (this.meteorSprite &&
+        !(x === this.caveEntranceX && y === this.caveEntranceY) &&
         x >= this.meteorX && x < this.meteorX + MapScene.METEOR_SIZE &&
         y >= this.meteorY && y < this.meteorY + MapScene.METEOR_SIZE) return true;
     if (this.labRes1Sprite && x === this.labRes1X && y === this.labRes1Y) return true;
     if (this.labRes2Sprite && x === this.labRes2X && y === this.labRes2Y) return true;
+    if (this.nectarExam.some(e => e.x === x && e.y === y)) return true;
     // Uncollected cave capsules block their tile (pick up by facing + A).
     for (const c of MapScene.CAVE_CAPSULES) {
       if (c.mapKey === this.currentMapKey && c.x === x && c.y === y && this.caveCapsuleSprites.has(c.flag)) return true;
+    }
+    // Trainers block their current tile: live ones on their post, defeated ones
+    // on the side tile they stepped to (defeated with no side tile are passable).
+    for (const t of this.allTrainers) {
+      if (t.mapKey !== this.currentMapKey) continue;
+      if (!this.trainerSprites.has(t.id)) continue;
+      const pos = this.trainerTile(t);
+      if (pos.solid && pos.x === x && pos.y === y) return true;
     }
     return false;
   }
 
   private tryMove(dir: Direction): void {
+    // A spotted-by-trainer approach (incl. mid-ice-slide) freezes the player:
+    // otherwise ice would keep sliding them away from the approaching trainer,
+    // who then overshoots and the battle never triggers.
+    if (this.trainerApproaching || this.startingBattle) return;
     this.facingDirection = dir;
     if (this.isMoving || this.isWarping) {
       // Do not buffer input while moving: a single tap = a single tile.
@@ -809,6 +903,24 @@ export class MapScene extends Phaser.Scene {
       case "right":
         targetX++;
         break;
+    }
+
+    // Nectar gym door: frozen until a fire/metal almon melts it (試練 その1 ⑦).
+    // Once melted the tile is a normal warp and this branch no longer fires.
+    if (this.currentMapKey === "nectar_town" &&
+        targetX === MapScene.NECTAR_GYM_DOOR.x && targetY === MapScene.NECTAR_GYM_DOOR.y &&
+        !(this.playerState?.pickups || []).includes(MapScene.NECTAR_DOOR_FLAG)) {
+      if (!this.dialogActive) this.tryMeltGymDoor();
+      return;
+    }
+
+    // Sealed exits/doors (not-yet-available passages): show the messages and
+    // turn the player back.
+    const sealedList = MapScene.SEALED_EXITS[this.currentMapKey];
+    const sealed = sealedList?.find(s => s.tiles.some(t => t.x === targetX && t.y === targetY));
+    if (sealed) {
+      if (!this.dialogActive) this.showDialog(sealed.messages);
+      return;
     }
 
     if (this.isCollision(targetX, targetY)) return;
@@ -835,6 +947,26 @@ export class MapScene extends Phaser.Scene {
         // Check random encounter
         this.checkRandomEncounter();
 
+        // Nectar Town step-on triggers (overlook / eavesdrop cutscenes)
+        this.checkNectarStepTriggers();
+
+        // Ice (tile 91): keep sliding in the same direction until something
+        // blocks the way (RSE-style skating — ネクタルタウンの凍った池 etc.).
+        if (!this.isWarping && !this.startingBattle) {
+          const hereId = this.mapData.layers.floor[this.gridY]?.[this.gridX];
+          if (hereId === 91) {
+            const d = this.facingDirection;
+            const nx = this.gridX + (d === "right" ? 1 : d === "left" ? -1 : 0);
+            const ny = this.gridY + (d === "down" ? 1 : d === "up" ? -1 : 0);
+            const sealedHere = MapScene.SEALED_EXITS[this.currentMapKey]
+              ?.some(s => s.tiles.some(t => t.x === nx && t.y === ny));
+            if (!sealedHere && !this.isCollision(nx, ny)) {
+              this.tryMove(d);
+              return;
+            }
+          }
+        }
+
         // Continue moving only while a direction is still held at completion
         // time: a quick tap moves exactly one tile, a long press keeps moving
         // (gapless, since the tween chains straight into the next one).
@@ -847,15 +979,30 @@ export class MapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // Accumulate play time while on the overworld (persisted on レポート/save,
+    // shown on the title screen's つづきから panel).
+    if (this.playerState) {
+      this.playSecAccum += delta;
+      if (this.playSecAccum >= 1000) {
+        const secs = Math.floor(this.playSecAccum / 1000);
+        this.playerState.playSeconds = (this.playerState.playSeconds || 0) + secs;
+        this.playSecAccum -= secs * 1000;
+      }
+    }
+
     if (this.isWarping || this.startingBattle || this.trainerApproaching) return;
 
     // --- Gamepad button reads ---
     const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
     let gpMenu = false, gpA = false, gpB = false;
+    let gpDpadJust: Direction | null = null;
     if (gp) {
       if (gp.menuJust) { gpMenu = true; gp.menuJust = false; }
       if (gp.aJust) { gpA = true; gp.aJust = false; }
       if (gp.bJust) { gpB = true; gp.bJust = false; }
+      // Consume the one-shot d-pad tap latch every frame so it never goes stale
+      // across a dialog/menu/cutscene; it's applied to movement below.
+      if (gp.dpadJust) { gpDpadJust = gp.dpadJust as Direction; gp.dpadJust = null; }
     }
     const kbMenu = this.mKey && Phaser.Input.Keyboard.JustDown(this.mKey);
     const kbEsc = this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey);
@@ -868,6 +1015,12 @@ export class MapScene extends Phaser.Scene {
 
     // --- Cutscene: block player control (movement is scripted); dialog above still advances ---
     if (this.inCutscene) return;
+
+    // --- Moon-quiz answer (Aボタン=はい / Bボタン=いいえ) ---
+    if (this.quizAwaiting && (gpA || gpB)) {
+      this.resolveQuiz(gpA ? "A" : "B");
+      return;
+    }
 
     // --- Shop ---
     if (this.shopOpen) {
@@ -930,8 +1083,11 @@ export class MapScene extends Phaser.Scene {
       });
     }
 
-    // Movement input
-    const dir = this.getInputDirection();
+    // Movement input. A quick d-pad tap is delivered via the one-shot latch
+    // (gpDpadJust) so it still moves one tile even if `dpad` was cleared before
+    // this frame; a held press falls through to the live-input read below and
+    // drives continuous movement.
+    const dir = gpDpadJust ?? this.getInputDirection();
     if (dir) {
       this.tryMove(dir);
     }
@@ -1999,6 +2155,27 @@ export class MapScene extends Phaser.Scene {
       case "left": fx--; break;
       case "right": fx++; break;
     }
+    // Gym leaders battle only when talked to (not by sight). Requires beating
+    // the gym's gate trainers first.
+    const leader = this.allTrainers.find(t =>
+      t.mapKey === this.currentMapKey &&
+      MapScene.GYM_LEADER_GATES[t.id] &&
+      t.x === fx && t.y === fy &&
+      this.trainerSprites.has(t.id) &&
+      !this.playerState?.defeatedTrainers.includes(t.id)
+    );
+    if (leader) {
+      const gate = MapScene.GYM_LEADER_GATES[leader.id];
+      if (gate && !gate.every(id => this.playerState?.defeatedTrainers.includes(id))) {
+        this.showDialog([
+          "……まだ 早い。",
+          "このジムの トレーナー2人を\n倒してから 挑むがいい。",
+        ]);
+      } else {
+        this.startBattle(undefined, undefined, leader);
+      }
+      return;
+    }
     // Moon-sand deposit: crater at the south edge of Crater City (23,33)
     if (this.currentMapKey === "crater_city" && fx === 23 && fy === 33) {
       this.tryPickMoonSand();
@@ -2014,6 +2191,7 @@ export class MapScene extends Phaser.Scene {
     }
     // Meteorite investigation (Crater City outskirts): facing any of its tiles
     if (this.meteorSprite &&
+        !(fx === this.caveEntranceX && fy === this.caveEntranceY) &&
         fx >= this.meteorX && fx < this.meteorX + MapScene.METEOR_SIZE &&
         fy >= this.meteorY && fy < this.meteorY + MapScene.METEOR_SIZE) {
       this.triggerMeteorEvent();
@@ -2049,6 +2227,11 @@ export class MapScene extends Phaser.Scene {
     }
     if (this.residentSprite && fx === this.residentNpcX && fy === this.residentNpcY) {
       this.triggerResidentEvent();
+      return;
+    }
+    const exam = this.nectarExam.find(e => e.x === fx && e.y === fy);
+    if (exam) {
+      exam.fn();
       return;
     }
     if ((this.granny1Sprite && fx === this.granny1X && fy === this.granny1Y) ||
@@ -2097,87 +2280,83 @@ export class MapScene extends Phaser.Scene {
     const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
     let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const cx = s / 2;
-    // The rock is a big sphere sunk into the ground: its centre sits low so only
-    // the TOP THIRD emerges. Ground/soil line (where the rock disappears) ~0.42s.
-    const R = s * 0.40;
-    const rockCy = s * 0.68;          // sphere centre (mostly below ground)
-    const groundY = s * 0.42;         // where the buried soil mound crests
+    // A big stony meteorite with its bottom third sunk into the ground: the rock
+    // is drawn large, and everything below the ground line is clipped away, so only
+    // the emerged top ~2/3 shows (reads as a fallen space rock, half-buried).
+    const R = s * 0.45;               // rock radius (enlarged)
+    const groundLine = s * 0.80;      // ground surface: nothing is drawn below it
+    const cy = groundLine - R / 3;    // centre placed so the bottom 1/3 is buried
 
-    // --- scorched impact crater on the ground (wide, dark, radiating) ---
-    ctx.fillStyle = "rgba(34,22,16,0.5)";
-    ctx.beginPath(); ctx.ellipse(cx, s * 0.72, s * 0.48, s * 0.20, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(58,38,26,0.5)";
-    ctx.beginPath(); ctx.ellipse(cx, s * 0.70, s * 0.38, s * 0.15, 0, 0, Math.PI * 2); ctx.fill();
+    // --- soft contact shadow at the ground surface (no soil mound) ---
+    ctx.fillStyle = "rgba(16,12,10,0.42)";
+    ctx.beginPath(); ctx.ellipse(cx, groundLine, R * 1.0, s * 0.045, 0, 0, Math.PI * 2); ctx.fill();
 
-    // --- exposed rock crown (only the emerging cap) ---
-    const N = 20; const pts: [number, number][] = [];
+    // Clip everything that follows to above the ground line (buries the base).
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, s, groundLine); ctx.clip();
+
+    // --- meteorite body: a bumpy stone sphere ---
+    const N = 40; const pts: [number, number][] = [];
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
-      const rr = R * (0.86 + rnd() * 0.2);
-      pts.push([cx + Math.cos(a) * rr, rockCy + Math.sin(a) * rr]);
+      const rr = R * (0.93 + rnd() * 0.12);     // gentle rocky bumps
+      pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
     }
-    const grd = ctx.createRadialGradient(cx - R * 0.3, groundY + R * 0.1, 8, cx, rockCy, R * 1.15);
-    grd.addColorStop(0, "#7a675c"); grd.addColorStop(0.5, "#463831"); grd.addColorStop(1, "#221913");
-    ctx.fillStyle = grd;
+    const body = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R * 1.15);
+    body.addColorStop(0, "#9a9088");
+    body.addColorStop(0.45, "#5c5249");
+    body.addColorStop(0.8, "#342c26");
+    body.addColorStop(1, "#1b1613");
+    ctx.fillStyle = body;
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
     pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.fill();
-    // surface craters on the exposed cap (kept above the soil line)
-    ctx.fillStyle = "#2a211c";
-    for (let i = 0; i < 9; i++) {
-      const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.75;
-      const px = cx + Math.cos(a) * rr, py = rockCy + Math.sin(a) * rr;
-      if (py > groundY - 6) continue;
-      ctx.beginPath(); ctx.arc(px, py, 5 + rnd() * 11, 0, Math.PI * 2); ctx.fill();
+
+    // clip surface detail to the rock silhouette (intersects the ground clip)
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    pts.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.clip();
+
+    // impact pockmarks: dark floor + a lower-rim highlight for depth
+    for (let i = 0; i < 18; i++) {
+      const a = rnd() * Math.PI * 2, rr = rnd() * R * 0.82;
+      const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr * 0.9;
+      const cr = 4 + rnd() * 15;
+      ctx.fillStyle = "rgba(20,16,13,0.72)";
+      ctx.beginPath(); ctx.arc(px, py, cr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(150,138,124,0.4)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(px, py + cr * 0.25, cr * 0.85, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
     }
-    // top rim highlight (sun catching the crown)
-    ctx.strokeStyle = "rgba(168,146,128,0.75)"; ctx.lineWidth = 3;
+    // fine stony speckle
+    for (let i = 0; i < 150; i++) {
+      const a = rnd() * Math.PI * 2, rr = rnd() * R;
+      const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+      ctx.fillStyle = rnd() > 0.5 ? "rgba(162,150,136,0.22)" : "rgba(14,11,9,0.32)";
+      ctx.fillRect(px, py, 2, 2);
+    }
+    // metallic sheen (upper-left)
+    const sheen = ctx.createRadialGradient(cx - R * 0.4, cy - R * 0.45, 2, cx - R * 0.4, cy - R * 0.45, R * 0.8);
+    sheen.addColorStop(0, "rgba(210,200,186,0.5)");
+    sheen.addColorStop(1, "rgba(210,200,186,0)");
+    ctx.fillStyle = sheen; ctx.fillRect(0, 0, s, s);
+    ctx.restore();
+
+    // upper-left rim light on the silhouette
+    ctx.strokeStyle = "rgba(200,188,170,0.7)"; ctx.lineWidth = 3; ctx.lineCap = "round";
     ctx.beginPath();
-    for (let i = Math.round(N * 0.55); i <= Math.round(N * 0.95); i++) {
-      const p = pts[i % N]; if (i === Math.round(N * 0.55)) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    for (let i = Math.round(N * 0.5); i <= Math.round(N * 0.9); i++) {
+      const p = pts[i % N]; if (i === Math.round(N * 0.5)) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
     }
     ctx.stroke();
 
-    // --- buried soil mound: covers the lower 2/3 of the rock, so it looks sunk ---
-    ctx.fillStyle = "#3a2a1e";
-    ctx.beginPath();
-    ctx.moveTo(0, s);
-    ctx.lineTo(0, groundY + s * 0.06);
-    // berm rises to meet the rock on the left, dips under it, rises on the right
-    ctx.quadraticCurveTo(cx - R * 0.9, groundY - s * 0.02, cx - R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx, groundY + s * 0.12, cx + R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx + R * 0.9, groundY - s * 0.02, s, groundY + s * 0.06);
-    ctx.lineTo(s, s); ctx.closePath(); ctx.fill();
-    // mound texture: lighter kicked-up soil highlight along the crest
-    ctx.strokeStyle = "#5a4230"; ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, groundY + s * 0.06);
-    ctx.quadraticCurveTo(cx - R * 0.9, groundY - s * 0.02, cx - R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx, groundY + s * 0.12, cx + R * 0.5, groundY + s * 0.03);
-    ctx.quadraticCurveTo(cx + R * 0.9, groundY - s * 0.02, s, groundY + s * 0.06);
-    ctx.stroke();
-    ctx.fillStyle = "#2c2016";
-    for (let i = 0; i < 60; i++) { const x = rnd() * s, y = groundY + s * 0.06 + rnd() * (s - groundY); ctx.fillRect(x, y, 2, 2); }
+    ctx.restore(); // end ground-line clip
 
-    // --- molten glow + cracks along the buried contact line ---
-    const glow = ctx.createLinearGradient(0, groundY - s * 0.05, 0, groundY + s * 0.14);
-    glow.addColorStop(0, "rgba(255,120,40,0)");
-    glow.addColorStop(0.5, "rgba(255,120,40,0.45)");
-    glow.addColorStop(1, "rgba(255,120,40,0)");
+    // --- faint residual heat where the rock enters the ground ---
+    const glow = ctx.createLinearGradient(0, groundLine - s * 0.05, 0, groundLine + s * 0.02);
+    glow.addColorStop(0, "rgba(255,120,50,0)");
+    glow.addColorStop(0.55, "rgba(255,120,50,0.22)");
+    glow.addColorStop(1, "rgba(255,120,50,0)");
     ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.ellipse(cx, groundY + s * 0.05, R * 1.0, s * 0.09, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#ff6a1e"; ctx.lineWidth = 3; ctx.lineCap = "round";
-    for (const [x0, y0, x1, y1] of [
-      [cx - R * 0.6, groundY + 8, cx - R * 0.2, groundY - R * 0.25],
-      [cx + R * 0.1, groundY + 6, cx + R * 0.4, groundY - R * 0.3],
-      [cx - R * 0.05, groundY + 10, cx + R * 0.05, groundY - R * 0.1],
-    ] as [number, number, number, number][]) {
-      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-    }
-    // embers rising from the contact line
-    ctx.fillStyle = "#ffb347";
-    for (let i = 0; i < 8; i++) { const x = cx + (rnd() - 0.5) * R * 1.6, y = groundY - rnd() * R * 0.5; ctx.beginPath(); ctx.arc(x, y, 2 + rnd() * 2, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = "#ffe08a";
-    for (let i = 0; i < 5; i++) { const x = cx + (rnd() - 0.5) * R * 1.2, y = groundY + (rnd() - 0.5) * s * 0.06; ctx.fillRect(x, y, 2, 2); }
+    ctx.beginPath(); ctx.ellipse(cx, groundLine - s * 0.01, R * 0.82, s * 0.04, 0, 0, Math.PI * 2); ctx.fill();
 
     this.textures.addCanvas("meteor-rock", c);
   }
@@ -2208,17 +2387,22 @@ export class MapScene extends Phaser.Scene {
     this.genCaveEntranceTexture();
     const ts = this.tileSize;
     const n = MapScene.METEOR_SIZE;
+    // Drop the rock's artwork one tile lower than its collision box so it sits
+    // deeper on screen. Collision / entrance / warp stay put (the tiles below are
+    // walls, so the entrance must remain reachable from (caveEntranceX, +1)).
+    const visualDropY = ts;
     this.meteorSprite = this.add.image(
       (this.meteorX + n / 2) * ts,
-      (this.meteorY + n / 2) * ts,
+      (this.meteorY + n / 2) * ts + visualDropY,
       "meteor-rock"
     ).setDepth(9).setDisplaySize(ts * n, ts * n);
-    // Cracked-open cave entrance just below the meteor's bottom-centre.
+    // Cracked-open cave entrance at the meteor's base. Depth 9.5 keeps the hole
+    // visible above the meteor (depth 9) but below the player (depth 10).
     this.caveEntranceSprite = this.add.image(
       this.caveEntranceX * ts + ts / 2,
       this.caveEntranceY * ts + ts / 2,
       "cave-entrance"
-    ).setDepth(8).setDisplaySize(ts, ts);
+    ).setDepth(9.5).setDisplaySize(ts, ts);
     // Register the warp into the cave (idempotent).
     const warps = this.mapData.warps || (this.mapData.warps = []);
     if (!warps.some(w => w.x === this.caveEntranceX && w.y === this.caveEntranceY)) {
@@ -2323,9 +2507,9 @@ export class MapScene extends Phaser.Scene {
     this.time.delayedCall(1500, () => {
       this.showDialog([
         "ゴゴゴ…！ 地面が 大きく ゆれた！",
-        "リューマ「なんだ…！？ 今の 揺れは…！」",
-        "リューマ「街の はずれに 何かが\n落ちたようだ。」",
-        "リューマ「きみ、様子を 見てきて\nくれ ないか。」",
+        "エモ「なんだ…！？ 今の 揺れは…！」",
+        "エモ「街の はずれに 何かが\n落ちたようだ。」",
+        "エモ「きみ、様子を 見てきて\nくれ ないか。」",
       ], () => { this.inCutscene = false; });
     });
   }
@@ -2411,6 +2595,13 @@ export class MapScene extends Phaser.Scene {
       ctx.fillStyle = "#ffffff"; this.roundRect(ctx, 8, 13, 24, 10, 3); ctx.fill();        // pillow
       ctx.strokeStyle = "#3a5a90"; ctx.lineWidth = 2; this.roundRect(ctx, 2, 10, 36, 50, 4); ctx.stroke();
     });
+    // Duvet drawn OVER the sleeping player during the prologue so the hero
+    // looks tucked in (only head/pillow shows). Removed on wake-up.
+    mk("home-bed-cover", 40, 40, (ctx) => {
+      ctx.fillStyle = "#5f8ad0"; this.roundRect(ctx, 3, 6, 34, 32, 5); ctx.fill();         // blanket body
+      ctx.fillStyle = "#7aa4e4"; this.roundRect(ctx, 3, 6, 34, 8, 5); ctx.fill();          // turned-down fold
+      ctx.strokeStyle = "#3a5a90"; ctx.lineWidth = 2; this.roundRect(ctx, 3, 6, 34, 32, 5); ctx.stroke();
+    });
   }
 
   private placeMomNpc(): void {
@@ -2433,7 +2624,7 @@ export class MapScene extends Phaser.Scene {
     this.momSprite = this.add.image(
       this.momNpcX * this.tileSize + this.tileSize / 2,
       this.momNpcY * this.tileSize + this.tileSize / 2,
-      this.npcTex("cast-char5-down", "npc-mom")
+      this.npcTex("cast-mom2-down", "npc-mom")
     ).setDepth(9);
   }
 
@@ -2566,7 +2757,7 @@ export class MapScene extends Phaser.Scene {
     ring.lineTo(bcx, bcy + 0.7 * ts); ring.lineTo(bcx - 0.55 * ts, bcy);
     ring.closePath(); ring.fill();
 
-    // (3) Leader's dais glow (around the central device where リューマ stands).
+    // (3) Leader's dais glow (around the central device where エモ stands).
     const dais = this.add.graphics().setDepth(2);
     const dcx = 9 * ts + ts / 2, dcy = 6.5 * ts + ts / 2;
     dais.fillStyle(0x8f74d6, 0.22); dais.fillEllipse(dcx, dcy, 4.6 * ts, 3.0 * ts);
@@ -2721,10 +2912,12 @@ export class MapScene extends Phaser.Scene {
   private playIntroCutscene(): void {
     this.inCutscene = true;
     const ts = this.tileSize;
-    // Start the player in bed (top-left) fast asleep.
+    // Start the player in bed (top-left) fast asleep, tucked under the duvet
+    // (the cover sits above the player so only the head/pillow shows).
     this.gridX = 1; this.gridY = 4;
     this.player.setPosition(1 * ts + ts / 2, 4 * ts + ts / 2);
     this.setPlayerFacing("down");
+    const bedCover = this.add.image(1 * ts + ts / 2, Math.round(5.0 * ts), "home-bed-cover").setDepth(12);
     let emote = this.showEmote("zzz");
 
     this.time.delayedCall(1300, () => {
@@ -2734,6 +2927,7 @@ export class MapScene extends Phaser.Scene {
         "今日から 月面探査が 始まるんでしょ？\n遅刻しないで 行きなさいね！",
       ], () => {
         emote.forEach(o => o.destroy());
+        bedCover.destroy();                    // throw off the covers on waking
         emote = this.showEmote("!");           // startled
         this.time.delayedCall(650, () => {
           this.showDialog([
@@ -2756,6 +2950,8 @@ export class MapScene extends Phaser.Scene {
     const cast: Record<string, string> = {
       house_1: "cast-char2-down", house_2: "cast-char7-down",
       house_3: "cast-char4-down", house_4: "cast-char8-down",
+      // ネクタルタウン (1人1テーマの教育会話: ネクタルタウン設計v1 §11-2)
+      house_5: "cast-char6-down", house_6: "cast-char3-down", house_7: "cast-char5-down",
     };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
@@ -2785,6 +2981,22 @@ export class MapScene extends Phaser.Scene {
         "月の 1日は とても 長くてね、\n昼も 夜も 地球の 2週間ずつ 続くの。",
         "だから 農園ドームの ライトで\n作物に ひかりを あげているのよ。",
         "水も 空気も 自分たちで つくる。\n月で 暮らすって そういうことね。",
+      ],
+      // ---- ネクタルタウン (テーマ別・設計書 §11-2) ----
+      house_5: [
+        "昔の 人はな、月の 黒い ところを\n『海』と 呼んだんじゃ。",
+        "じゃが ほんとうは 水じゃない。\n大むかしの 溶岩が 固まった\n平らな 大地なんじゃよ。",
+        "この 神酒の海も そのひとつ。\nとびきり 古い 海なんじゃ。",
+      ],
+      house_6: [
+        "月には 空気が ないから、日なたは\nやけるほど あつく、日かげは\nこおりつくほど 寒い。",
+        "だから この町の ジムは\n氷の アルモン使いなのさ。",
+        "なめてかかると こおるぞ〜。",
+      ],
+      house_7: [
+        "氷の ジムは 手ごわいよ。",
+        "ほのおや、はがねの ような\nアルモンが 心づよいね。",
+        "…そういえば ジムの とびら、\n分厚い 氷で とざされて いたねえ。\nあれも 試練の うちなんだって。",
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
@@ -3050,6 +3262,8 @@ export class MapScene extends Phaser.Scene {
       "アルモンを 回復しますね。\nしばらく おまちください…",
     ], () => {
       this.healParty();
+      // Remember this pod: blacking out respawns at the last pod used.
+      if (this.playerState) this.playerState.lastRecoveryMap = this.currentMapKey;
       this.showDialog([
         "おまちどうさま！\nアルモンたちは すっかり\n元気になりましたよ！",
         "またいつでも いらしてくださいね！",
@@ -3508,11 +3722,11 @@ export class MapScene extends Phaser.Scene {
       const cb = this.dialogCallback;
       this.dialogCallback = undefined;
       this.clearDialogElements();
-      if (cb) {
-        cb();
-      } else {
-        this.dialogActive = false;
-      }
+      // Close BEFORE invoking the callback: a chained callback that opens the
+      // next dialog re-sets dialogActive itself, and a non-chaining callback
+      // must not leave a phantom "open" dialog (it used to eat one extra A).
+      this.dialogActive = false;
+      if (cb) cb();
       return;
     }
     this.drawDialogMessage();
@@ -3524,6 +3738,470 @@ export class MapScene extends Phaser.Scene {
   }
 
   // ---- Default starter ----
+  // ---- Nectar Town ambience (frozen basin) ----
+  private genIceCrystalTexture(): void {
+    if (this.textures.exists("ice-crystal")) return;
+    const s = 48;
+    const c = document.createElement("canvas"); c.width = s; c.height = s;
+    const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+    // soft ground shadow
+    ctx.fillStyle = "rgba(40,60,90,0.25)";
+    ctx.beginPath(); ctx.ellipse(s / 2, s - 6, s * 0.38, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // cluster of translucent shards (tall centre + two leaning sides)
+    const shard = (bx: number, tipX: number, tipY: number, w: number) => {
+      const grd = ctx.createLinearGradient(bx, s - 8, tipX, tipY);
+      grd.addColorStop(0, "rgba(140,190,235,0.95)");
+      grd.addColorStop(0.6, "rgba(190,225,250,0.9)");
+      grd.addColorStop(1, "rgba(240,250,255,0.95)");
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.moveTo(bx - w, s - 8); ctx.lineTo(tipX, tipY); ctx.lineTo(bx + w, s - 8);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(bx, s - 9); ctx.lineTo(tipX, tipY + 2); ctx.stroke();
+    };
+    shard(24, 24, 4, 7);
+    shard(13, 8, 16, 5);
+    shard(35, 41, 14, 5);
+    // glint
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(22, 10, 2, 2); ctx.fillRect(23, 8, 1, 6); ctx.fillRect(20, 11, 6, 1);
+    this.textures.addCanvas("ice-crystal", c);
+  }
+
+  private placeNectarDecor(): void {
+    const ts = this.tileSize;
+    this.genIceCrystalTexture();
+    // Ice crystal clusters on blocked rocks/rim tiles (decor only, no collision change)
+    for (const [x, y] of [[9, 8], [19, 18], [4, 17], [26, 24], [3, 4], [28, 3]] as [number, number][]) {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 - 6, "ice-crystal")
+        .setDepth(6).setDisplaySize(ts * 1.3, ts * 1.3);
+    }
+    // An almon skating happily across the frozen pond (⑯ 点景).
+    if (this.textures.exists("monster-mochichi")) {
+      const skater = this.add.image(13 * ts, 14.4 * ts, "monster-mochichi").setDepth(7);
+      const h = skater.height || 32;
+      skater.setScale((ts * 0.9) / h);
+      this.tweens.add({
+        targets: skater, x: 19 * ts, duration: 2800, yoyo: true, repeat: -1,
+        ease: "Sine.inOut",
+        onYoyo: () => skater.setFlipX(true),
+        onRepeat: () => skater.setFlipX(false),
+      });
+      this.tweens.add({
+        targets: skater, angle: { from: -6, to: 6 }, duration: 700, yoyo: true, repeat: -1,
+        ease: "Sine.inOut",
+      });
+    }
+    // Cold colour cast over the whole basin (subtle; below dialogs/UI).
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0x9fc8ff, 0.07)
+      .setOrigin(0).setDepth(26);
+  }
+
+  /**
+   * Keep the nectar gym door's walkability/warp in sync with the melt flag.
+   * mapData comes from the (session-persistent) JSON cache, so this must be
+   * idempotent in BOTH directions — a new game must re-freeze the door.
+   */
+  private applyNectarGymDoorState(): void {
+    const { x, y } = MapScene.NECTAR_GYM_DOOR;
+    const melted = (this.playerState?.pickups || []).includes(MapScene.NECTAR_DOOR_FLAG);
+    const warps = this.mapData.warps || (this.mapData.warps = []);
+    const idx = warps.findIndex(w => w.x === x && w.y === y);
+    if (melted) {
+      this.mapData.layers.collision[y][x] = 0;
+      if (idx < 0) warps.push({ x, y, targetMap: "gym_2", targetX: 10, targetY: 24 });
+    } else {
+      this.mapData.layers.collision[y][x] = 1;
+      if (idx >= 0) warps.splice(idx, 1);
+    }
+  }
+
+  /** 試練 その1 (⑦): melt the frozen gym door with a fire/metal party member. */
+  private tryMeltGymDoor(): void {
+    const party = this.playerState?.party || [];
+    const melter = party.find(m => MapScene.DOOR_MELTERS[m.dataId]);
+    if (!melter) {
+      this.showDialog([
+        "とびらが 分厚い こおりで\nとざされている…。",
+        "はりがみが ある。",
+        "『試練 その1。この とびらを\nとかして みせよ。\n——ネクタルジム リーダー コジマ』",
+        "（ほのおか はがねの アルモンが\nいれば とかせるかも…）",
+      ]);
+      return;
+    }
+    const kind = MapScene.DOOR_MELTERS[melter.dataId];
+    const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    const name = allMonsters.find(m => m.id === melter.dataId)?.name || "アルモン";
+    const actionLine = kind === "fire"
+      ? `${name}が ほのおを ふきつけた！`
+      : `${name}が 体当たりで 氷を くだいた！`;
+    this.inCutscene = true;
+    this.showDialog([
+      "とびらが 分厚い こおりで\nとざされている…。",
+      "（手持ちの アルモンが 反応している…！）",
+      actionLine,
+      "こおりが パリンと われて、\nジムの とびらが ひらいた！",
+    ], () => {
+      this.inCutscene = false;
+      if (this.playerState) {
+        this.playerState.pickups = this.playerState.pickups || [];
+        if (!this.playerState.pickups.includes(MapScene.NECTAR_DOOR_FLAG)) {
+          this.playerState.pickups.push(MapScene.NECTAR_DOOR_FLAG);
+        }
+      }
+      this.applyNectarGymDoorState();
+      // a small white flash at the doorway to sell the crack
+      const ts = this.tileSize;
+      const flash = this.add.circle(
+        MapScene.NECTAR_GYM_DOOR.x * ts + ts / 2,
+        MapScene.NECTAR_GYM_DOOR.y * ts + ts / 2,
+        6, 0xffffff
+      ).setDepth(20);
+      this.tweens.add({ targets: flash, scale: 5, alpha: 0, duration: 420, ease: "Cubic.out",
+        onComplete: () => flash.destroy() });
+    });
+  }
+
+  // ---- Nectar Town education events (第5章 / 設計書 §11-§12) ----
+  // Examinable props/NPCs: face the tile and press A.
+  private nectarExam: { x: number; y: number; fn: () => void }[] = [];
+  private quizAwaiting: { correct: "A" | "B"; explain: string[] } | null = null;
+  private quizIdx = 0;
+
+  private genNectarEventTextures(): void {
+    const mk = (key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
+      if (this.textures.exists(key)) return;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      draw(ctx);
+      this.textures.addCanvas(key, c);
+    };
+    // Old telescope on a tripod (③)
+    mk("nectar-telescope", 32, 40, (ctx) => {
+      ctx.strokeStyle = "#5a4a38"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(16, 26); ctx.lineTo(8, 38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, 26); ctx.lineTo(24, 38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, 26); ctx.lineTo(16, 38); ctx.stroke();
+      ctx.save(); ctx.translate(16, 22); ctx.rotate(-0.6);
+      const grd = ctx.createLinearGradient(-14, 0, 14, 0);
+      grd.addColorStop(0, "#caa64c"); grd.addColorStop(0.5, "#e8cc80"); grd.addColorStop(1, "#a8853c");
+      ctx.fillStyle = grd; ctx.fillRect(-14, -4, 28, 8);
+      ctx.fillStyle = "#3a3a4a"; ctx.fillRect(12, -5, 4, 10);
+      ctx.restore();
+    });
+    // Rock sample display case (④)
+    mk("nectar-sample", 32, 32, (ctx) => {
+      ctx.fillStyle = "#8fa3b8"; ctx.fillRect(4, 18, 24, 12);
+      ctx.fillStyle = "#b8c8d8"; ctx.fillRect(4, 18, 24, 3);
+      ctx.fillStyle = "rgba(180,220,250,0.45)"; ctx.fillRect(6, 2, 20, 16);
+      ctx.strokeStyle = "#dceaf6"; ctx.lineWidth = 1; ctx.strokeRect(6.5, 2.5, 19, 15);
+      ctx.fillStyle = "#7a6a58";
+      ctx.beginPath(); ctx.moveTo(12, 16); ctx.lineTo(16, 7); ctx.lineTo(21, 12); ctx.lineTo(19, 16);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#9a8a74"; ctx.fillRect(14, 10, 3, 2);
+    });
+    // Snowdrift mound (⑪)
+    mk("nectar-drift", 36, 26, (ctx) => {
+      ctx.fillStyle = "#eef6fd";
+      ctx.beginPath(); ctx.ellipse(18, 18, 16, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(11, 13, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(24, 12, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(8, 9, 5, 2); ctx.fillRect(21, 8, 4, 2);
+      ctx.fillStyle = "rgba(150,175,200,0.5)";
+      ctx.beginPath(); ctx.ellipse(18, 22, 14, 3, 0, 0, Math.PI * 2); ctx.fill();
+    });
+    // Blue signpost (看板)
+    mk("nectar-sign", 26, 32, (ctx) => {
+      ctx.fillStyle = "#6a5844"; ctx.fillRect(11, 14, 4, 16);
+      ctx.fillStyle = "#2c4a6e"; ctx.fillRect(1, 2, 24, 14);
+      ctx.fillStyle = "#4a6a90"; ctx.fillRect(1, 2, 24, 2);
+      ctx.strokeStyle = "#9fc0e0"; ctx.lineWidth = 1; ctx.strokeRect(2.5, 3.5, 21, 11);
+      ctx.fillStyle = "#cfe2f4";
+      ctx.fillRect(5, 6, 16, 1); ctx.fillRect(5, 9, 12, 1); ctx.fillRect(5, 12, 14, 1);
+    });
+    // Shadowy figure (⑬ ヴォイス)
+    mk("voice-shadow", 26, 34, (ctx) => {
+      ctx.fillStyle = "#20222e";
+      ctx.beginPath(); ctx.arc(13, 9, 7, 0, Math.PI * 2); ctx.fill();      // hood
+      ctx.beginPath(); ctx.moveTo(4, 32); ctx.quadraticCurveTo(13, 8, 22, 32); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#12141c";
+      ctx.beginPath(); ctx.ellipse(13, 10, 4.5, 5, 0, 0, Math.PI * 2); ctx.fill(); // face void
+      ctx.fillStyle = "#7ad0ff"; ctx.fillRect(10, 9, 2, 2); ctx.fillRect(15, 9, 2, 2); // cold eyes
+    });
+    // Rising Earth (②)
+    mk("earth-sprite", 44, 44, (ctx) => {
+      const g = ctx.createRadialGradient(17, 15, 4, 22, 22, 22);
+      g.addColorStop(0, "#9fd8ff"); g.addColorStop(0.55, "#3a7ad0"); g.addColorStop(1, "#1c3c78");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(22, 22, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";                             // clouds/continents
+      ctx.beginPath(); ctx.ellipse(15, 15, 7, 4, 0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(28, 26, 6, 3, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(120,220,140,0.55)";
+      ctx.beginPath(); ctx.ellipse(24, 14, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(190,230,255,0.8)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(22, 22, 20.5, 0, Math.PI * 2); ctx.stroke();
+    });
+  }
+
+  private awardNectarItem(flag: string, itemId: string, itemName: string, foundLines: string[]): boolean {
+    const pk = this.playerState?.pickups || [];
+    if (!this.playerState || pk.includes(flag)) return false;
+    this.playerState.pickups = pk;
+    pk.push(flag);
+    const it = this.playerState.items.find(i => i.id === itemId);
+    if (it) it.count++;
+    else this.playerState.items.push({ id: itemId, count: 1 });
+    this.showDialog([...foundLines, `「${itemName}」を てにいれた！`]);
+    return true;
+  }
+
+  private placeNectarEvents(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+
+    // ③ 昔の望遠鏡 (repeatable)
+    put("nectar-telescope", 20, 7, () => this.showDialog([
+      "ふるい 望遠鏡を のぞいてみた…。",
+      "暗い 大地が 見わたせる。むかしの\n天文学者は 望遠鏡ごしの この 黒い\n場所を 『海』と 呼んだんだ。",
+      "ほんとうは 水の ない、溶岩の\n平原だと わかったのは ずっと あと。",
+    ]));
+
+    // ④ 神酒代の地層サンプル (first time: どうぐ)
+    put("nectar-sample", 27, 6, () => {
+      const given = this.awardNectarItem("nectar_sample_seen", "hi_repair_gel", "ハイリペアジェル", [
+        "こおりづけの 岩サンプルだ。",
+        "『約39おく年前の 神酒の海の 岩。\n月の 時代区分 神酒代(ネクタリアン)の\n名前の もとに なった 場所の 石』",
+        "ケースの 下に なにか ある…。",
+      ]);
+      if (!given) this.showDialog([
+        "こおりづけの 岩サンプルだ。",
+        "『約39おく年前の 神酒の海の 岩。\n月の 時代区分 神酒代(ネクタリアン)の\n名前の もとに なった 場所の 石』",
+      ]);
+    });
+
+    // 研究者 (展望への誘導・会話のみ)
+    put(this.npcTex("cast-char2-down", "npc-kinoshita"), 26, 6, () => this.showDialog([
+      "やあ、旅の人。ここは 神酒の海の\n研究ステーションだよ。",
+      "この 高台は 神酒の海を 見わたす\nいちばんの 場所なんだ。\nすこし 西に 立ってみて ごらん。",
+    ]));
+
+    // ⑮ 月クイズの子ども
+    put(this.npcTex("cast-char8-down", "npc-mom"), 19, 19, () => this.triggerQuizKid());
+
+    // ⑪ 雪だまりの隠しどうぐ ×2
+    put("nectar-drift", 4, 6, () => {
+      const given = this.awardNectarItem("nectar_hidden_1", "star_capsule", "スターカプセル", [
+        "雪だまりを ほってみた…。\nなにか かたい ものが ある！",
+      ]);
+      if (!given) this.showDialog(["雪だまりだ。\nもう なにも うまっていない。"]);
+    }, 4);
+    put("nectar-drift", 27, 17, () => {
+      const given = this.awardNectarItem("nectar_hidden_2", "repair_gel", "リペアジェル", [
+        "雪だまりを ほってみた…。\nつめたっ！ でも なにか ある！",
+      ]);
+      if (!given) this.showDialog(["雪だまりだ。\nもう なにも うまっていない。"]);
+    }, 4);
+
+    // 看板 ×2
+    put("nectar-sign", 14, 27, () => this.showDialog([
+      "『ネクタルタウン』",
+      "神酒の海の ほとりの 開拓地。\nようこそ！",
+    ]), -4);
+    put("nectar-sign", 13, 7, () => this.showDialog([
+      "『ネクタルジム』\nリーダー：コジマ（氷）",
+      "極低温の こおりを あやつる。\n——とびらの 氷を とかせた者だけ\n挑戦を ゆるされる。",
+    ]), -4);
+  }
+
+  /** 到着カットシーン (脚本24): 寒さを「体感」させる。1回きり。 */
+  private playNectarArrival(): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    if (this.playerState.pickups.includes("nectar_arrival_seen")) return;
+    this.playerState.pickups.push("nectar_arrival_seen");
+    this.inCutscene = true;
+    const emote = this.showEmote("!");
+    // a little shiver
+    this.tweens.add({ targets: this.player, x: this.player.x + 2, duration: 60,
+      yoyo: true, repeat: 7, ease: "Linear" });
+    this.time.delayedCall(800, () => {
+      emote.forEach(o => o.destroy());
+      this.showDialog([
+        "（さむっ…！ さっきまで\n砂漠だったのに…）",
+        "「ようこそ ネクタルタウンへ。\nここは 神酒の海の ほとり——月で\nいちばん 古い 記憶が ねむる 町さ。」",
+      ], () => { this.inCutscene = false; });
+    });
+  }
+
+  /** Step-on triggers: ①②展望+地球の出 / ⑬ヴォイスの影 */
+  private checkNectarStepTriggers(): void {
+    if (this.currentMapKey !== "nectar_town" || this.inCutscene || this.dialogActive ||
+        this.isWarping || this.startingBattle) return;
+    const pk = this.playerState?.pickups || [];
+    if (this.gridY === 6 && (this.gridX === 24 || this.gridX === 25) &&
+        !pk.includes("nectar_altai_seen")) {
+      this.playAltaiCutscene();
+    } else if (this.gridY === 15 && (this.gridX === 26 || this.gridX === 27) &&
+        !pk.includes("nectar_voice_seen")) {
+      this.playVoiceCutscene();
+    }
+  }
+
+  /** ①アルタイの崖 展望 → ②地球の出 (連結カットシーン・1回きり)。 */
+  private playAltaiCutscene(): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    this.playerState.pickups.push("nectar_altai_seen");
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    const cam = this.cameras.main;
+    this.showDialog([
+      "研究者「よく来たね。ここが 神酒の海を\n見わたす いちばんの 場所さ。」",
+      "研究者「目の前の 大きな がけ——\nアルタイの崖は、大むかし 巨大な\n衝突で 盆地が できた ときの ふち なんだ。」",
+      "研究者「その 衝突が 月の 『神酒代』の\nはじまり。ここは 月の 歴史の\nページの 1つ なんだよ。」",
+    ], () => {
+      // pan to the cliff / NE sky and let the Earth rise
+      cam.stopFollow();
+      cam.pan(26 * ts, 3 * ts, 900, "Sine.easeInOut");
+      this.time.delayedCall(1000, () => {
+        const earth = this.add.image(27.5 * ts, 3.4 * ts, "earth-sprite")
+          .setDepth(8).setAlpha(0).setScale(1.2);
+        this.tweens.add({ targets: earth, y: 1.6 * ts, alpha: 1, duration: 1900, ease: "Sine.out" });
+        this.time.delayedCall(2100, () => {
+          this.showDialog([
+            "研究者「……ちょうど いい時間だ。\n東の 空を ごらん。」",
+            "あおく かがやく 地球が\nのぼってきた…！",
+            "研究者「月は いつも 同じ顔を 地球に\n向けている。だから ここからは、地球は\nいつも あの あたりに 見えるんだ。」",
+            "研究者「記念に これを。」",
+            "「スターカプセル」を てにいれた！",
+          ], () => {
+            if (this.playerState) {
+              const it = this.playerState.items.find(i => i.id === "star_capsule");
+              if (it) it.count++;
+              else this.playerState.items.push({ id: "star_capsule", count: 1 });
+            }
+            cam.pan(this.player.x, this.player.y, 700, "Sine.easeInOut");
+            this.time.delayedCall(750, () => {
+              cam.startFollow(this.player, true, 0.15, 0.15);
+              this.inCutscene = false;
+            });
+          });
+        });
+      });
+    });
+  }
+
+  /** ⑬ヴォイスの影: 立ち聞きカットシーン (戦闘なし・1回きり)。 */
+  private playVoiceCutscene(): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    this.playerState.pickups.push("nectar_voice_seen");
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    const s1 = this.add.image(26 * ts + ts / 2, 14 * ts + ts / 2, "voice-shadow").setDepth(9);
+    const s2 = this.add.image(27 * ts + ts / 2, 14 * ts + ts / 2 - 4, "voice-shadow").setDepth(9).setFlipX(true);
+    const emote = this.showEmote("!");
+    this.time.delayedCall(700, () => {
+      emote.forEach(o => o.destroy());
+      this.showDialog([
+        "黒ずくめA「……南極の 永久影。氷、\nつまり 水さえ 押さえれば、月は\nわれらの ものだ。」",
+        "黒ずくめB「おい、だれか 来たぞ。\n……行くぞ。」",
+      ], () => {
+        this.tweens.add({ targets: [s1, s2], y: "-=96", alpha: 0, duration: 900, ease: "Sine.in",
+          onComplete: () => { s1.destroy(); s2.destroy(); } });
+        this.time.delayedCall(1000, () => {
+          this.showDialog(["（いまの…なんだ？）"], () => { this.inCutscene = false; });
+        });
+      });
+    });
+  }
+
+  /** ⑮ 月クイズの子ども: ○×クイズ (正解1回目に つきのすな)。 */
+  private static QUIZZES: { q: string; correct: "A" | "B"; explain: string[] }[] = [
+    {
+      q: "だい1もん！\n月の 『海』には 水が ある？",
+      correct: "B",
+      explain: ["せいかいは 『ない』！", "月の 海は 大むかしの 溶岩が\n固まった 平らな 大地なんだ。"],
+    },
+    {
+      q: "だい2もん！\n月で 日かげが すごーく 寒いのは\n空気が ないから？",
+      correct: "A",
+      explain: ["せいかい！ 空気が ないと 熱を\nはこべない から、日なたと 日かげで\n100ど以上も 差が つくんだ。"],
+    },
+    {
+      q: "だい3もん！\n神酒の海は 月で いちばん\n新しい 海である？",
+      correct: "B",
+      explain: ["せいかいは 『ちがう』！", "神酒の海は とびきり 古い 海。\n時代区分 『神酒代』の 名前の\nもとに なったんだよ。"],
+    },
+  ];
+
+  private triggerQuizKid(): void {
+    const quiz = MapScene.QUIZZES[this.quizIdx % MapScene.QUIZZES.length];
+    this.quizIdx++;
+    this.showDialog([
+      "月クイズの 時間だよ〜！",
+      quiz.q,
+      "Aボタン＝はい ／ Bボタン＝いいえ",
+    ], () => {
+      this.quizAwaiting = { correct: quiz.correct, explain: quiz.explain };
+    });
+  }
+
+  private resolveQuiz(answer: "A" | "B"): void {
+    const quiz = this.quizAwaiting;
+    this.quizAwaiting = null;
+    if (!quiz) return;
+    if (answer === quiz.correct) {
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("nectar_quiz_reward")) {
+        this.playerState.pickups = pk;
+        pk.push("nectar_quiz_reward");
+        const it = this.playerState.items.find(i => i.id === "moon_sand");
+        if (it) it.count++;
+        else this.playerState.items.push({ id: "moon_sand", count: 1 });
+        this.showDialog([...quiz.explain, "ごほうびに 『つきのすな』を\nあげちゃう！"]);
+      } else {
+        this.showDialog([...quiz.explain, "また ちょうせん してね！"]);
+      }
+    } else {
+      this.showDialog(["ぶっぶー！ ざんねん！", ...quiz.explain, "また ちょうせん してね！"]);
+    }
+  }
+
+  private startSnowfall(): void {
+    if (!this.textures.exists("snowflake")) {
+      const c = document.createElement("canvas"); c.width = 6; c.height = 6;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(2, 2, 2, 2);
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.fillRect(1, 2, 1, 2); ctx.fillRect(4, 2, 1, 2); ctx.fillRect(2, 1, 2, 1); ctx.fillRect(2, 4, 2, 1);
+      this.textures.addCanvas("snowflake", c);
+    }
+    const mapW = this.mapData.width * this.tileSize;
+    const mapH = this.mapData.height * this.tileSize;
+    for (let i = 0; i < 70; i++) {
+      const flake = this.add.image(Math.random() * mapW, Math.random() * mapH, "snowflake")
+        .setDepth(27)
+        .setAlpha(0.35 + Math.random() * 0.5)
+        .setScale(0.7 + Math.random() * 0.9);
+      this.tweens.add({
+        targets: flake, y: `+=${140 + Math.random() * 160}`,
+        duration: 3800 + Math.random() * 3600, repeat: -1, ease: "Linear",
+        onRepeat: () => { flake.x = Math.random() * mapW; flake.y = Math.random() * mapH * 0.9; },
+      });
+      this.tweens.add({
+        targets: flake, x: `+=${(Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 14)}`,
+        duration: 1200 + Math.random() * 1400, yoyo: true, repeat: -1, ease: "Sine.inOut",
+      });
+    }
+  }
+
   private createDefaultPlayerState(): PlayerState {
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
     const usamon = allMonsters.find(m => m.id === "usamon")!;
@@ -3547,6 +4225,7 @@ export class MapScene extends Phaser.Scene {
       items: [{ id: "moon_capsule", count: 5 }],
       money: 1000,
       defeatedTrainers: [],
+      playSeconds: 0,
     };
   }
 }

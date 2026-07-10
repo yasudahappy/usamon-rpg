@@ -7,6 +7,7 @@ import type { Direction } from "../gamepad";
 if (typeof window !== "undefined") {
   (window as any).__gamepad = {
     dpad: null,
+    dpadJust: null,
     aJust: false,
     bJust: false,
     menuJust: false,
@@ -16,7 +17,11 @@ if (typeof window !== "undefined") {
 export default function GamePad() {
   const setDpad = useCallback((dir: Direction | null) => {
     if (typeof window !== "undefined" && (window as any).__gamepad) {
-      (window as any).__gamepad.dpad = dir;
+      const gp = (window as any).__gamepad;
+      gp.dpad = dir;
+      // Latch a one-shot press so a quick tap still registers one step even if
+      // touchend clears `dpad` before the game samples it within the same frame.
+      if (dir) gp.dpadJust = dir;
     }
   }, []);
 

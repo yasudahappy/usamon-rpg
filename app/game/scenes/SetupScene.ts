@@ -86,7 +86,7 @@ function toggleByMap(ch: string, map: Record<string, string>): string | null {
 }
 
 export class SetupScene extends Phaser.Scene {
-  private step: "gender" | "suit" | "name" = "gender";
+  private step: "gender" | "name" = "gender";
   private selectedGender: "boy" | "girl" = "boy";
   private selectedSuit = 0;
   private playerName = "";
@@ -95,6 +95,14 @@ export class SetupScene extends Phaser.Scene {
   private promptText!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
   private uiElements: Phaser.GameObjects.GameObject[] = [];
+
+  // Gender step: 5-頭身 illustrations
+  private genderImgs: Phaser.GameObjects.Image[] = [];
+  private genderFrames: Phaser.GameObjects.Graphics[] = [];
+
+  // When launched from the title screen's せってい, editing returns to the title
+  // and does NOT wipe the save or restart the prologue.
+  private settingsMode = false;
 
   // Gamepad polling state
   private prevDpad: string | null = null;
@@ -111,6 +119,23 @@ export class SetupScene extends Phaser.Scene {
 
   constructor() {
     super({ key: "SetupScene" });
+  }
+
+  init(data: { settingsMode?: boolean }): void {
+    this.settingsMode = !!data?.settingsMode;
+    // Prefill the current character setup so せってい starts from existing values.
+    this.selectedGender = "boy";
+    this.selectedSuit = 0;
+    this.playerName = "";
+    if (this.settingsMode) {
+      try {
+        const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
+        if (setup.gender === "boy" || setup.gender === "girl") this.selectedGender = setup.gender;
+        const si = SUIT_COLORS.indexOf(setup.suitColor);
+        if (si >= 0) this.selectedSuit = si;
+        if (typeof setup.playerName === "string") this.playerName = setup.playerName;
+      } catch { /* ignore */ }
+    }
   }
 
   create(): void {
@@ -169,7 +194,8 @@ export class SetupScene extends Phaser.Scene {
       stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(10);
 
-    // Character preview (center)
+    // Character preview (center) — hidden during the gender step (illustrations
+    // replace it) and the name step (kana grid needs the room).
     this.previewSprite = this.add.image(
       w / 2,
       Math.round(H * 0.28),
@@ -240,19 +266,8 @@ export class SetupScene extends Phaser.Scene {
     if (this.step === "gender") {
       if (dir === "left") { this.selectedGender = "boy"; this.highlightGender(); }
       else if (dir === "right") { this.selectedGender = "girl"; this.highlightGender(); }
-      if (a) this.showSuitStep();
-    } else if (this.step === "suit") {
-      if (dir === "left") {
-        this.selectedSuit = Math.max(0, this.selectedSuit - 1);
-        this.highlightSuit();
-        this.updatePreview();
-      } else if (dir === "right") {
-        this.selectedSuit = Math.min(SUIT_COLORS.length - 1, this.selectedSuit + 1);
-        this.highlightSuit();
-        this.updatePreview();
-      }
       if (a) this.showNameStep();
-      else if (b) this.showGenderStep();
+      else if (b && this.settingsMode) this.backToTitle();
     } else if (this.step === "name") {
       if (dir) this.moveKanaCursor(dir);
       if (a) this.activateKanaCell();
@@ -260,50 +275,58 @@ export class SetupScene extends Phaser.Scene {
     }
   }
 
+  private backToTitle(): void {
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("TitleScene"));
+  }
+
   private clearUI(): void {
     this.uiElements.forEach((el) => el.destroy());
     this.uiElements = [];
   }
 
-  // ---- Step 1: Gender ----
+  // ---- Step 1: Gender (5-頭身 illustrations) ----
   private showGenderStep(): void {
     this.step = "gender";
     this.clearUI();
     this.promptText.setText("せいべつを えらんでね");
-    this.instructionText.setText("←→で えらんで Aボタンで けってい");
+    this.instructionText.setText(this.settingsMode ? "←→で えらんで A:けってい B:もどる" : "←→で えらんで Aボタンで けってい");
     this.nameText.setVisible(false);
+    this.previewSprite.setVisible(false);
 
     const w = this.scale.width;
     const H = this.scale.height;
-    const optY = Math.round(H * 0.42);
-    const options = [
-      { label: "おとこのこ", value: "boy", x: w / 2 - 100 },
-      { label: "おんなのこ", value: "girl", x: w / 2 + 100 },
+    const cy = Math.round(H * 0.44);
+    const targetH = Math.round(H * 0.42);
+    const opts = [
+      { key: "select-boy", value: "boy" as const, label: "おとこのこ", x: w / 2 - 108 },
+      { key: "select-girl", value: "girl" as const, label: "おんなのこ", x: w / 2 + 108 },
     ];
 
-    options.forEach((opt) => {
-      const bg = this.add.graphics().setDepth(10);
-      const text = this.add.text(opt.x, optY, opt.label, {
-        fontSize: "18px",
-        color: "#ffffff",
-        fontFamily: "'DotGothic16', monospace",
+    this.genderImgs = [];
+    this.genderFrames = [];
+    opts.forEach((opt) => {
+      const frame = this.add.graphics().setDepth(10);
+      const img = this.add.image(
+        opt.x, cy, this.textures.exists(opt.key) ? opt.key : "player-frame-0"
+      ).setDepth(11);
+      if (img.height) img.setScale(targetH / img.height);
+      const lbl = this.add.text(opt.x, cy + targetH / 2 + 24, opt.label, {
+        fontSize: "16px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(11);
-
-      const zone = this.add.zone(opt.x, optY, 160, 50)
+      const zone = this.add.zone(opt.x, cy, Math.max(120, img.displayWidth + 24), targetH + 24)
         .setInteractive().setDepth(12).setOrigin(0.5);
-      zone.on("pointerdown", () => {
-        this.selectedGender = opt.value as "boy" | "girl";
-        this.highlightGender();
-      });
-
-      this.uiElements.push(bg, text, zone);
+      zone.on("pointerdown", () => { this.selectedGender = opt.value; this.highlightGender(); });
+      this.genderImgs.push(img);
+      this.genderFrames.push(frame);
+      this.uiElements.push(frame, img, lbl, zone);
     });
 
     this.highlightGender();
 
-    // Confirm button
-    const confirmY = Math.round(H * 0.53);
+    // Confirm button → straight to the name step (suit-color step removed)
+    const confirmY = Math.round(H * 0.86);
     const gBg = this.add.graphics().setDepth(10);
     gBg.fillStyle(0x2255aa, 0.9);
     gBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
@@ -315,156 +338,44 @@ export class SetupScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(11);
     const gZone = this.add.zone(w / 2, confirmY, 120, 40)
       .setInteractive().setDepth(12).setOrigin(0.5);
-    gZone.on("pointerdown", () => this.showSuitStep());
+    gZone.on("pointerdown", () => this.showNameStep());
     this.uiElements.push(gBg, gTxt, gZone);
   }
 
   private highlightGender(): void {
-    const isLeft = this.selectedGender === "boy";
     const w = this.scale.width;
     const H = this.scale.height;
-    const optY = Math.round(H * 0.42);
-    const positions = [w / 2 - 100, w / 2 + 100];
-
-    let idx = 0;
-    for (let i = 0; i < this.uiElements.length - 3; i += 3) {
-      const bg = this.uiElements[i] as Phaser.GameObjects.Graphics;
-      const text = this.uiElements[i + 1] as Phaser.GameObjects.Text;
-      const x = positions[idx];
-      bg.clear();
-      if ((idx === 0 && isLeft) || (idx === 1 && !isLeft)) {
-        bg.fillStyle(0x2255aa, 0.9);
-        bg.fillRoundedRect(x - 80, optY - 25, 160, 50, 8);
-        bg.lineStyle(2, 0x66aaff);
-        bg.strokeRoundedRect(x - 80, optY - 25, 160, 50, 8);
-        text.setColor("#ffffff");
+    const cy = Math.round(H * 0.44);
+    const xs = [w / 2 - 108, w / 2 + 108];
+    this.genderFrames.forEach((frame, idx) => {
+      const img = this.genderImgs[idx];
+      const hw = img.displayWidth / 2 + 12;
+      const hh = img.displayHeight / 2 + 12;
+      const sel = (idx === 0 && this.selectedGender === "boy") ||
+                  (idx === 1 && this.selectedGender === "girl");
+      frame.clear();
+      if (sel) {
+        frame.fillStyle(0x2255aa, 0.35);
+        frame.fillRoundedRect(xs[idx] - hw, cy - hh, hw * 2, hh * 2, 10);
+        frame.lineStyle(3, 0x66aaff);
+        frame.strokeRoundedRect(xs[idx] - hw, cy - hh, hw * 2, hh * 2, 10);
+        img.setAlpha(1);
       } else {
-        bg.fillStyle(0x223344, 0.7);
-        bg.fillRoundedRect(x - 80, optY - 25, 160, 50, 8);
-        bg.lineStyle(1, 0x445566);
-        bg.strokeRoundedRect(x - 80, optY - 25, 160, 50, 8);
-        text.setColor("#888888");
+        frame.lineStyle(1, 0x445566);
+        frame.strokeRoundedRect(xs[idx] - hw, cy - hh, hw * 2, hh * 2, 10);
+        img.setAlpha(0.55);
       }
-      idx++;
-    }
-  }
-
-  // ---- Step 2: Suit Color ----
-  private showSuitStep(): void {
-    this.step = "suit";
-    this.clearUI();
-    this.promptText.setText("うちゅうふくの いろを えらんでね");
-    this.instructionText.setText("←→で えらんで A:けってい B:もどる");
-    this.nameText.setVisible(false);
-    this.updatePreview();
-
-    const w = this.scale.width;
-    const H = this.scale.height;
-    const swatchY = Math.round(H * 0.44);
-    const labelY = swatchY + 30;
-    const startX = w / 2 - (SUIT_COLORS.length - 1) * 55 / 2;
-
-    SUIT_COLORS.forEach((color, i) => {
-      const x = startX + i * 55;
-      const bg = this.add.graphics().setDepth(10);
-      const swatch = this.add.graphics().setDepth(11);
-
-      const hex = Phaser.Display.Color.HexStringToColor(SUIT_HEX[i]).color;
-      swatch.fillStyle(hex);
-      swatch.fillCircle(x, swatchY, 18);
-
-      const label = this.add.text(x, labelY, SUIT_LABELS[i], {
-        fontSize: "10px",
-        color: "#ffffff",
-        fontFamily: "'DotGothic16', monospace",
-        stroke: "#000000", strokeThickness: 3,
-      }).setOrigin(0.5).setDepth(11);
-
-      const zone = this.add.zone(x, swatchY + 5, 50, 60)
-        .setInteractive().setDepth(12).setOrigin(0.5);
-      zone.on("pointerdown", () => {
-        this.selectedSuit = i;
-        this.highlightSuit();
-        this.updatePreview();
-      });
-
-      this.uiElements.push(bg, swatch, label, zone);
     });
-
-    this.highlightSuit();
-
-    // Confirm button
-    const confirmY = Math.round(H * 0.55);
-    const scBg = this.add.graphics().setDepth(10);
-    scBg.fillStyle(0x2255aa, 0.9);
-    scBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
-    scBg.lineStyle(2, 0x66aaff);
-    scBg.strokeRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
-    const scTxt = this.add.text(w / 2, confirmY, "けってい", {
-      fontSize: "16px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
-      stroke: "#000000", strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(11);
-    const scZone = this.add.zone(w / 2, confirmY, 120, 40)
-      .setInteractive().setDepth(12).setOrigin(0.5);
-    scZone.on("pointerdown", () => this.showNameStep());
-    this.uiElements.push(scBg, scTxt, scZone);
   }
 
-  private highlightSuit(): void {
-    const H = this.scale.height;
-    const swatchY = Math.round(H * 0.44);
-    const w = this.scale.width;
-    const startX = w / 2 - (SUIT_COLORS.length - 1) * 55 / 2;
-
-    let idx = 0;
-    for (let i = 0; i < this.uiElements.length - 3; i += 4) {
-      const bg = this.uiElements[i] as Phaser.GameObjects.Graphics;
-      const x = startX + idx * 55;
-      bg.clear();
-      if (idx === this.selectedSuit) {
-        bg.lineStyle(3, 0x66aaff);
-        bg.strokeCircle(x, swatchY, 22);
-      }
-      idx++;
-    }
-  }
-
-  private updatePreview(): void {
-    // The protagonist is the hand-drawn astronaut, so the preview shows it
-    // regardless of the (legacy) suit-color selection.
-    if (this.textures.exists("cast-char0-down")) {
-      this.previewSprite.setTexture("cast-char0-down");
-      return;
-    }
-    const suitKey = `player-${SUIT_COLORS[this.selectedSuit]}`;
-    if (this.textures.exists(suitKey)) {
-      const frame = this.textures.getFrame(suitKey, 0);
-      if (frame) {
-        const canvas = document.createElement("canvas");
-        canvas.width = 16;
-        canvas.height = 16;
-        const ctx = canvas.getContext("2d")!;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(
-          frame.source.image as HTMLImageElement,
-          frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight,
-          0, 0, 16, 16
-        );
-        const key = "setup-preview";
-        if (this.textures.exists(key)) this.textures.remove(key);
-        this.textures.addCanvas(key, canvas);
-        this.previewSprite.setTexture(key);
-      }
-    }
-  }
-
-  // ---- Step 3: Name (kana grid, Pokémon style) ----
+  // ---- Step 2: Name (kana grid, Pokémon style) ----
   private showNameStep(): void {
     this.step = "name";
     this.clearUI();
     this.promptText.setText("なまえを いれてね");
     this.instructionText.setText("十字キーで えらぶ A:いれる B:けす");
-    this.playerName = "";
+    this.previewSprite.setVisible(false);
+    if (!this.settingsMode) this.playerName = "";
     this.nameText.setVisible(true);
     this.updateNameDisplay();
 
@@ -702,6 +613,7 @@ export class SetupScene extends Phaser.Scene {
 
   // ---- Input ----
   private handleKeydown(event: KeyboardEvent): void {
+    if (this.settingsMode && event.key === "Escape") { this.backToTitle(); return; }
     if (this.step === "gender") {
       if (event.key === "ArrowLeft" || event.key === "a") {
         this.selectedGender = "boy";
@@ -709,18 +621,6 @@ export class SetupScene extends Phaser.Scene {
       } else if (event.key === "ArrowRight" || event.key === "d") {
         this.selectedGender = "girl";
         this.highlightGender();
-      } else if (event.key === "Enter" || event.key === " ") {
-        this.showSuitStep();
-      }
-    } else if (this.step === "suit") {
-      if (event.key === "ArrowLeft" || event.key === "a") {
-        this.selectedSuit = Math.max(0, this.selectedSuit - 1);
-        this.highlightSuit();
-        this.updatePreview();
-      } else if (event.key === "ArrowRight" || event.key === "d") {
-        this.selectedSuit = Math.min(SUIT_COLORS.length - 1, this.selectedSuit + 1);
-        this.highlightSuit();
-        this.updatePreview();
       } else if (event.key === "Enter" || event.key === " ") {
         this.showNameStep();
       }
@@ -745,7 +645,9 @@ export class SetupScene extends Phaser.Scene {
     this.finished = true;
     const setup: PlayerSetup = {
       gender: this.selectedGender,
-      suitColor: SUIT_COLORS[this.selectedSuit],
+      // Suit-colour selection was removed; the boy uses a fixed white suit and
+      // the girl her own art. Kept in the type for save-compat.
+      suitColor: "white",
       playerName: this.playerName,
     };
 
@@ -756,14 +658,19 @@ export class SetupScene extends Phaser.Scene {
       // ignore
     }
 
-    // Generate player frames from selected suit
-    this.generatePlayerFrames(setup.suitColor);
+    // Build the overworld walk frames for the chosen gender
+    this.generatePlayerFrames(setup.gender);
 
-    // Transition to game
+    // Transition
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
-      // Story starts in the player's own home with the wake-up cutscene (序章).
-      this.scene.start("MapScene", { mapKey: "player_home", intro: true });
+      if (this.settingsMode) {
+        // Just updating settings: return to the title screen, save intact.
+        this.scene.start("TitleScene");
+      } else {
+        // Story starts in the player's own home with the wake-up cutscene (序章).
+        this.scene.start("MapScene", { mapKey: "player_home", intro: true });
+      }
     });
   }
 
@@ -771,34 +678,53 @@ export class SetupScene extends Phaser.Scene {
     down: [0, 1], up: [4, 5], left: [8, 9], right: [12, 13],
   };
 
-  private generatePlayerFrames(suitColor: string): void {
-    const suitKey = `player-${suitColor}`;
-    if (!this.textures.exists(suitKey)) return;
-
-    for (const [dir, [f0, f1]] of Object.entries(SetupScene.DIR_FRAMES)) {
-      for (let i = 0; i < 2; i++) {
-        const srcFrame = this.textures.getFrame(suitKey, i === 0 ? f0 : f1);
-        if (!srcFrame) continue;
-        const canvas = document.createElement("canvas");
-        canvas.width = 32; canvas.height = 32;
-        const ctx = canvas.getContext("2d")!;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(
-          srcFrame.source.image as HTMLImageElement,
-          srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
-          0, 0, 32, 32
-        );
-        const key = `player-${dir}-${i}`;
-        if (this.textures.exists(key)) this.textures.remove(key);
-        this.textures.addCanvas(key, canvas);
+  private generatePlayerFrames(gender: "boy" | "girl"): void {
+    if (gender === "girl") {
+      // Girl: build frames from her overworld directions (frame 1 bobs up 1px).
+      for (const dir of ["down", "up", "left", "right"]) {
+        const srcKey = `player-girl-${dir}`;
+        if (!this.textures.exists(srcKey)) continue;
+        const img = this.textures.get(srcKey).getSourceImage() as HTMLImageElement;
+        for (let i = 0; i < 2; i++) {
+          const canvas = document.createElement("canvas");
+          canvas.width = 32; canvas.height = 32;
+          const ctx = canvas.getContext("2d")!;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, 0, i === 1 ? -1 : 0, 32, 32);
+          const key = `player-${dir}-${i}`;
+          if (this.textures.exists(key)) this.textures.remove(key);
+          this.textures.addCanvas(key, canvas);
+        }
+      }
+    } else {
+      const suitKey = "player-white";
+      if (!this.textures.exists(suitKey)) return;
+      for (const [dir, [f0, f1]] of Object.entries(SetupScene.DIR_FRAMES)) {
+        for (let i = 0; i < 2; i++) {
+          const srcFrame = this.textures.getFrame(suitKey, i === 0 ? f0 : f1);
+          if (!srcFrame) continue;
+          const canvas = document.createElement("canvas");
+          canvas.width = 32; canvas.height = 32;
+          const ctx = canvas.getContext("2d")!;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(
+            srcFrame.source.image as HTMLImageElement,
+            srcFrame.cutX, srcFrame.cutY, srcFrame.cutWidth, srcFrame.cutHeight,
+            0, 0, 32, 32
+          );
+          const key = `player-${dir}-${i}`;
+          if (this.textures.exists(key)) this.textures.remove(key);
+          this.textures.addCanvas(key, canvas);
+        }
       }
     }
-    // Legacy compat
+    // Legacy compat: player-frame-0/1 = down-0/1
     for (let i = 0; i < 2; i++) {
       const key = `player-frame-${i}`;
+      const srcKey = `player-down-${i}`;
+      if (!this.textures.exists(srcKey)) continue;
       if (this.textures.exists(key)) this.textures.remove(key);
-      const src = this.textures.get(`player-down-${i}`).getSourceImage() as HTMLCanvasElement;
-      this.textures.addCanvas(key, src);
+      this.textures.addCanvas(key, this.textures.get(srcKey).getSourceImage() as HTMLCanvasElement);
     }
   }
 }

@@ -1,16 +1,16 @@
 [
   {
     "id": "sui",
-    "name": "月面調査員 スイ",
+    "name": "たんけんか ミサキ",
     "mapKey": "sand_route_1",
     "x": 12,
     "y": 8,
     "direction": "right",
     "sightRange": 3,
     "prizeMoneyBase": 200,
-    "dialogBefore": "あ、トレーナーさんだ！この砂場のモンスター、かわいいでしょ？ちょっと勝負しよ！",
-    "dialogWin": "わー強い！キミのモンスター、すっごく懐いてるね。負けちゃった〜",
-    "dialogLose": "えへへ、調査のかたわら鍛えてるんだ！また挑戦してね",
+    "dialogBefore": "たんけんか の ミサキよ。この 砂場も りっぱな 探検の フィールド。ちょっと 勝負しましょ！",
+    "dialogWin": "まいったわ…。あなた、探検の センス あるわね。",
+    "dialogLose": "まだまだ！ 砂場の 探検は はじまったばかりよ。",
     "party": [
       {
         "id": "mochichi",
@@ -18,20 +18,20 @@
       }
     ],
     "battleSprite": "trainer-girl",
-    "overworldSprite": "char7"
+    "overworldSprite": "char5"
   },
   {
     "id": "yamaoka",
-    "name": "採掘作業員 ヤマオカ",
+    "name": "たんけんか ゴウ",
     "mapKey": "sand_route_1",
     "x": 22,
     "y": 13,
     "direction": "left",
     "sightRange": 4,
     "prizeMoneyBase": 350,
-    "dialogBefore": "あ、あの…もし勝負してもらえるなら…その、お手やわらかに、ね？ウチのスナガニ、守りだけは得意なんです…",
-    "dialogWin": "あぁ、やっぱり強いなあ…でも、いい勝負ができて嬉しかったですよ。ありがとうね",
-    "dialogLose": "わ、勝てちゃった…！すみません、まぐれかもしれません…えへへ",
+    "dialogBefore": "この 砂場は おれの なわばりだ。とおりたければ おれを 倒してから いけ！",
+    "dialogWin": "…行け。この さきにも つよい トレーナーが 待ってるぞ。",
+    "dialogLose": "ここは 通さんぞ！",
     "party": [
       {
         "id": "sunagani",
@@ -42,54 +42,54 @@
         "level": 5
       }
     ],
-    "battleSprite": "trainer-worker",
-    "overworldSprite": "char2"
+    "battleSprite": "trainer-astronaut",
+    "overworldSprite": "astronaut"
   },
   {
     "id": "genki",
-    "name": "影マニア ゲンキ",
+    "name": "クレーターマニア マリコ",
     "mapKey": "gym_1",
     "x": 10,
     "y": 1,
     "direction": "down",
     "sightRange": 3,
     "prizeMoneyBase": 400,
-    "dialogBefore": "フッ…来たか。俺の名はゲンキ。影の力…見せてやるよ",
-    "dialogWin": "バカな…俺の影が、光に消された、だと…！？くっ…",
-    "dialogLose": "フハハ！これが影の力だ！光なき者に敗北はない…！",
+    "dialogBefore": "ようこそ！ わたしは クレーターマニアの マリコ。この 街の クレーター、ぜんぶ 覚えてるの。\nあなたの 心にも 大きな クレーターを あけてあげる！",
+    "dialogWin": "まけたー！ わたしの 心に\n特大の クレーターが できちゃった…",
+    "dialogLose": "ふふん、いまの 衝突も\nしっかり 記録して おくわね！",
     "party": [
       {
         "id": "regonyas",
         "level": 6
       }
     ],
-    "battleSprite": "trainer-redcap",
+    "battleSprite": "trainer-girl",
     "overworldSprite": "char8"
   },
   {
     "id": "kagen",
-    "name": "影マニア カゲン",
+    "name": "ムーンウォーカー シン",
     "mapKey": "gym_1",
-    "x": 9,
-    "y": 13,
+    "x": 8,
+    "y": 17,
     "direction": "left",
     "sightRange": 4,
     "prizeMoneyBase": 450,
-    "dialogBefore": "ゲンキの あいぼうさ。この おくには リーダーが 待つ。まずは 俺を 倒してみろ！",
-    "dialogWin": "ちっ…光が 影を 切りさいたか。リーダーの もとへ 行くがいい。",
-    "dialogLose": "フハハ！影の まえに ひかりは とどかない！",
+    "dialogBefore": "マリコの あいぼう、シンさ。この おくには リーダーが 待つ。\nおれの ムーンウォークを 抜けてから 行きな！",
+    "dialogWin": "ステップが みだれた…。\nリーダーの もとへ 行くがいい。",
+    "dialogLose": "月の 上では おれの ステップが 最強さ！",
     "party": [
       {
         "id": "regonyas",
         "level": 6
       }
     ],
-    "battleSprite": "trainer-hoodie",
-    "overworldSprite": "char3"
+    "battleSprite": "trainer-shin",
+    "overworldSprite": "shin"
   },
   {
     "id": "ryuma",
-    "name": "ジムリーダー リューマ",
+    "name": "ジムリーダー エモ",
     "mapKey": "gym_1",
     "x": 9,
     "y": 7,
@@ -113,8 +113,8 @@
         "level": 10
       }
     ],
-    "battleSprite": "trainer-armor",
-    "overworldSprite": "char4"
+    "battleSprite": "trainer-emo",
+    "overworldSprite": "emo"
   },
   {
     "id": "explorer1",
@@ -138,21 +138,21 @@
         "level": 9
       }
     ],
-    "battleSprite": "trainer-casual",
-    "overworldSprite": "char6"
+    "battleSprite": "trainer-astronaut",
+    "overworldSprite": "astronaut"
   },
   {
     "id": "explorer2",
-    "name": "たんけんか ミサキ",
+    "name": "ちょうさいん シイナ",
     "mapKey": "crater_cave_b1",
     "x": 6,
     "y": 8,
     "direction": "up",
     "sightRange": 3,
     "prizeMoneyBase": 600,
-    "dialogBefore": "ここは 地下1階。下に いくほど あなは せまく、熱く なるの。覚悟は いい？",
-    "dialogWin": "まいったわ…。奥の 人には 気を つけてね。",
-    "dialogLose": "まだまだ！ 探検は これからよ。",
+    "dialogBefore": "あ、トレーナーさんだ！この 地下の モンスター、かわいいでしょ？ちょっと 勝負しよ！",
+    "dialogWin": "やばーい！めっちゃ強い！キミのアルモン。コストコのパン食べていいからね。",
+    "dialogLose": "えへへ、調査のかたわら鍛えてるんだ！また挑戦してね",
     "party": [
       {
         "id": "regonyas",
@@ -163,21 +163,21 @@
         "level": 11
       }
     ],
-    "battleSprite": "trainer-peace",
-    "overworldSprite": "char5"
+    "battleSprite": "trainer-shiina",
+    "overworldSprite": "shiina"
   },
   {
     "id": "explorer3",
-    "name": "たんけんか ゴウ",
+    "name": "さいくつさぎょういん アラガキ",
     "mapKey": "crater_cave_b2",
     "x": 1,
     "y": 4,
     "direction": "right",
     "sightRange": 3,
     "prizeMoneyBase": 700,
-    "dialogBefore": "最下層まで きたか…！ この さきには あの人が いる。おれを 倒してから いけ！",
-    "dialogWin": "…行け。あの人は 隕石の ことを 誰より 知っている。",
-    "dialogLose": "ここは 通さんぞ！",
+    "dialogBefore": "あ、あの…もし 勝負してもらえるなら…その、お手やわらかに、ね？ ウチの アルモン、守りだけは 得意なんです…",
+    "dialogWin": "あぁ、やっぱり強いなあ…でも、いい勝負ができて嬉しかったです。人材困ったら言ってください！",
+    "dialogLose": "わ、勝てちゃった…！すみません、まぐれかもしれません…えへへ",
     "party": [
       {
         "id": "sharisu",
@@ -188,8 +188,8 @@
         "level": 12
       }
     ],
-    "battleSprite": "trainer-suit",
-    "overworldSprite": "char9"
+    "battleSprite": "trainer-aragaki",
+    "overworldSprite": "aragaki"
   },
   {
     "id": "eezen",
@@ -219,5 +219,180 @@
     ],
     "battleSprite": "trainer-eezen",
     "overworldSprite": "eezen"
+  },
+  {
+    "id": "route2_sora",
+    "name": "たんけんか スナガ",
+    "mapKey": "sand_route_2",
+    "x": 2,
+    "y": 2,
+    "direction": "right",
+    "sightRange": 4,
+    "prizeMoneyBase": 400,
+    "dialogBefore": "この 迷路みたいな 砂場、\nワクワク するだろ？ 一緒に 探検しよう！",
+    "dialogWin": "うわ、道に まようより キミの ほうが 手強いや！",
+    "dialogLose": "へへ、まだまだ 探検は これからさ！",
+    "party": [
+      {
+        "id": "rairai",
+        "level": 18
+      },
+      {
+        "id": "sunagani",
+        "level": 19
+      }
+    ],
+    "battleSprite": "trainer-sunaga",
+    "overworldSprite": "sunaga"
+  },
+  {
+    "id": "route2_ren",
+    "name": "じょしゅ マサキ",
+    "mapKey": "sand_route_2",
+    "x": 14,
+    "y": 1,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 450,
+    "dialogBefore": "はかせの じょしゅを してるんだ。\nフィールドワークも りっぱな 研究のうち。きみの アルモンも 調べさせて！",
+    "dialogWin": "いい データが とれたよ。ありがとう！",
+    "dialogLose": "研究けっか——ぼくの 勝ち！",
+    "party": [
+      {
+        "id": "ikarion",
+        "level": 19
+      },
+      {
+        "id": "meteko",
+        "level": 20
+      }
+    ],
+    "battleSprite": "trainer-masaki",
+    "overworldSprite": "masaki"
+  },
+  {
+    "id": "route2_dou",
+    "name": "じょしゅ カイト",
+    "mapKey": "sand_route_2",
+    "x": 21,
+    "y": 5,
+    "direction": "left",
+    "sightRange": 4,
+    "prizeMoneyBase": 500,
+    "dialogBefore": "ぼくも じょしゅ。岩石サンプルを あつめてる とちゅうなんだ。\nうちの アルモンは 岩みたいに かたいぞ！",
+    "dialogWin": "かたさなら 負けないと 思ったのに…",
+    "dialogLose": "ほら、まだまだ あまいな！",
+    "party": [
+      {
+        "id": "lobsner",
+        "level": 20
+      },
+      {
+        "id": "roubau",
+        "level": 20
+      }
+    ],
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "char2"
+  },
+  {
+    "id": "route2_mine",
+    "name": "ベテランじょしゅ タケハナ",
+    "mapKey": "sand_route_2",
+    "x": 12,
+    "y": 14,
+    "direction": "left",
+    "sightRange": 4,
+    "prizeMoneyBase": 650,
+    "dialogBefore": "この 砂場を 抜けた 者は まだ 少ない。\nわたしを 越えて いけるかな？",
+    "dialogWin": "みごとだ。きみなら この さきも 進めるだろう。",
+    "dialogLose": "経験の 差だ。また 鍛えて おいで。",
+    "party": [
+      {
+        "id": "meteko",
+        "level": 21
+      },
+      {
+        "id": "ikarion",
+        "level": 21
+      },
+      {
+        "id": "sunagani",
+        "level": 22
+      }
+    ],
+    "battleSprite": "trainer-takehana",
+    "overworldSprite": "elder"
+  },
+  {
+    "id": "rei",
+    "name": "びきゃくのハジメ",
+    "mapKey": "gym_2",
+    "x": 14,
+    "y": 12,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 500,
+    "dialogBefore": "この 氷の床は おれの ステージ。\nみがきぬかれた 美脚さばき——とくと 見よ！",
+    "dialogWin": "あしが すべった…！\n次の 日かげの道も 気をつけてな。",
+    "dialogLose": "美脚に 死角なし！",
+    "party": [
+      {
+        "id": "shakurin",
+        "level": 21
+      }
+    ],
+    "battleSprite": "trainer-bikyaku",
+    "overworldSprite": "bikyaku"
+  },
+  {
+    "id": "tsurara",
+    "name": "びきゃくのイセリ",
+    "mapKey": "gym_2",
+    "x": 9,
+    "y": 7,
+    "direction": "down",
+    "sightRange": 2,
+    "prizeMoneyBase": 550,
+    "dialogBefore": "日なたと 日かげで 100ど以上も ちがう。それが 月。\n——この 美脚キックで 教えてあげる！",
+    "dialogWin": "ひんやり…。まけたわ。\nリーダーの 冷気は こんなもの じゃないよ。",
+    "dialogLose": "日かげで 頭を ひやして きなさい！",
+    "party": [
+      {
+        "id": "shakurin",
+        "level": 19
+      },
+      {
+        "id": "shakurin",
+        "level": 22
+      }
+    ],
+    "battleSprite": "trainer-bikyaku",
+    "overworldSprite": "bikyaku"
+  },
+  {
+    "id": "simone",
+    "name": "ジムリーダー コジマ",
+    "mapKey": "gym_2",
+    "x": 9,
+    "y": 2,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 1400,
+    "dialogBefore": "ようこそ。ここは 影の 冷たさを 知る 場所。\n月の 夜は マイナス170ど。こごえる 静けさの 中でも アルモンは 生きている。\nあなたの 熱意——こおりの 上でも 燃えつづけるかしら。試させて。",
+    "dialogWin": "……みごと。あなたの 炎は、こおらなかった。\n『ネクタルバッジ』を さずけます。\n南極の 永久影には 氷——水が ねむっているの。その 水を さぐる 不審な 者たちの ウワサ…。旅を つづけるなら、気をつけて。",
+    "dialogLose": "まだ 芯まで 冷えきって いないようね。\nもういちど いらっしゃい。",
+    "party": [
+      {
+        "id": "shakurin",
+        "level": 23
+      },
+      {
+        "id": "shakuros",
+        "level": 26
+      }
+    ],
+    "battleSprite": "trainer-kojima",
+    "overworldSprite": "kojima"
   }
 ]

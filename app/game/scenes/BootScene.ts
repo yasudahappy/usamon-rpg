@@ -2,18 +2,20 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
   "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
   "rairai", "ikarion", "regonyas", "sharisu", "sharian", "meteko", "meteodon",
+  "roubau", "roubaag", "shakurin", "shakuros", "shakuruton",
 ];
 // Back-facing sprites (the player's own monster in battle). Only the ids that
 // actually have a "<id>_back.png" asset — others fall back to the front sprite.
 const MONSTER_BACK_SPRITE_IDS = [
   "usamon", "mochichi", "mochigori", "gorimocchi", "sunagani", "lobsner",
   "rairai", "ikarion", "regonyas", "sharisu", "sharian", "meteko", "meteodon",
+  "roubau", "roubaag", "shakurin", "shakuros", "shakuruton",
 ];
 
 export class BootScene extends Phaser.Scene {
@@ -68,6 +70,13 @@ export class BootScene extends Phaser.Scene {
         frameHeight: 16,
       });
     });
+    // Girl protagonist: overworld directions (4) + character-select art + battle back
+    ["down", "up", "left", "right"].forEach(dir => {
+      this.load.image(`player-girl-${dir}`, `${base}/assets/characters/player_girl_${dir}.png`);
+    });
+    this.load.image("select-boy", `${base}/assets/characters/select_boy.png`);
+    this.load.image("select-girl", `${base}/assets/characters/select_girl.png`);
+    this.load.image("player-back-girl", `${base}/assets/characters/battle/player_back_girl.png`);
 
     // Load monster face icons (high-res source for pixel-art downscale)
     const iconMonsters = ["usamon", "mochichi", "sunagani", "rairai", "regonyas"];
@@ -100,7 +109,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-farm", `${base}/assets/buildings/sprites/farm_dome.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
-    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor"].forEach(t => {
+    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut"].forEach(t => {
       this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
     });
     // Player battle back-illustration (shown before sending out the almon)
@@ -109,6 +118,21 @@ export class BootScene extends Phaser.Scene {
     ["down", "up", "left", "right"].forEach(dir => {
       this.load.image(`cast-eezen-${dir}`, `${base}/assets/characters/cast/eezen_${dir}.png`);
     });
+    // ヴォイス幹部・団員 overworld NPC sprites (4 directions each)
+    ["shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4"].forEach(who => {
+      ["down", "up", "left", "right"].forEach(dir => {
+        this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
+      });
+    });
+    // トレーナー専用 overworld NPC sprites (4 directions each)
+    ["aragaki", "shiina", "sunaga", "astronaut", "bikyaku", "shin", "emo", "elder", "masaki", "kojima", "colonist_m", "mom2", "colonist_e"].forEach(who => {
+      ["down", "up", "left", "right"].forEach(dir => {
+        this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
+      });
+    });
+
+    // Title screen key art (continue / new-game menu)
+    this.load.image("title-art", `${base}/assets/ui/title.jpg`);
 
     // Item icons
     this.load.image("item-moon-capsule", `${base}/assets/items/moon_capsule.png`);
@@ -144,43 +168,17 @@ export class BootScene extends Phaser.Scene {
     this.generateMonsterSprites();
     this.generatePixelIcons();
 
-    // Check for existing save data
-    let hasSave = false;
+    // Apply the saved character's walk frames (if a setup exists) so the title
+    // screen and any continue land on the right sprite.
     try {
-      hasSave = !!localStorage.getItem("usamon-player-setup");
+      const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
+      if (setup.gender === "girl") this.generateGirlFrames();
+      else if (setup.gender || setup.suitColor) this.applySuitFrames(setup.suitColor || "white");
     } catch (e) { /* ignore */ }
 
-    if (hasSave) {
-      // Load saved setup and apply suit color
-      try {
-        const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
-        if (setup.suitColor) {
-          this.applySuitFrames(setup.suitColor);
-        }
-      } catch (e) { /* ignore */ }
-
-      // Continue from a real save if one exists; otherwise (setup done but no
-      // progress yet) begin the prologue in the player's bedroom.
-      let sceneData: Record<string, unknown> = { mapKey: "player_home", intro: true };
-      try {
-        const raw = localStorage.getItem("usamon-save-data");
-        if (raw) {
-          const save = JSON.parse(raw);
-          if (save.mapKey) {
-            sceneData = {
-              mapKey: save.mapKey,
-              playerX: save.gridX,
-              playerY: save.gridY,
-              playerState: save.playerState,
-            };
-          }
-        }
-      } catch (e) { /* ignore */ }
-
-      this.scene.start("MapScene", sceneData);
-    } else {
-      this.scene.start("SetupScene");
-    }
+    // The title screen (thumbnail → START → つづき/さいしょ/せってい) is always the
+    // entry point; さいしょから routes into character setup.
+    this.scene.start("TitleScene");
   }
 
   private generateTileset(
@@ -570,6 +568,113 @@ export class BootScene extends Phaser.Scene {
         for (let ry = 4; ry < ts; ry += 8) ctx.fillRect(railL, ry, railR - railL, 3);
         ctx.fillStyle = "#a07d45";
         for (let ry = 4; ry < ts; ry += 8) ctx.fillRect(railL, ry, railR - railL, 1);
+      } else if (id === "90") {
+        // Frost regolith (ネクタルタウンの霜地面): pale blue-grey soil + frost specks
+        let s = 17;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#b6c2cf";
+        for (let i = 0; i < 44; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#e8f2fa";
+        for (let i = 0; i < 18; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // faint frost sparkles
+        ctx.fillStyle = "#ffffff";
+        for (const [fx, fy] of [[7, 21], [23, 10]] as [number, number][]) {
+          ctx.fillRect(fx, fy, 1, 1); ctx.fillRect(fx - 1, fy, 1, 1); ctx.fillRect(fx + 1, fy, 1, 1);
+          ctx.fillRect(fx, fy - 1, 1, 1); ctx.fillRect(fx, fy + 1, 1, 1);
+        }
+      } else if (id === "91") {
+        // Ice patch (こおりのまだら): glossy pale-blue sheet with cracks
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#cfe6f5"); grd.addColorStop(0.5, "#aacfe8"); grd.addColorStop(1, "#c4e0f2");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(4, 26); ctx.lineTo(13, 17); ctx.lineTo(11, 8); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(20, 28); ctx.lineTo(25, 18); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.fillRect(6, 5, 6, 2); ctx.fillRect(22, 12, 4, 2);
+      } else if (id === "92") {
+        // Frozen rock (凍った岩): bluish boulder face with icy top edge
+        ctx.fillStyle = "#8795a8"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#a8b8cc"; ctx.fillRect(0, 0, ts, 4);
+        ctx.fillStyle = "#6c7a8e"; ctx.fillRect(0, ts - 4, ts, 4);
+        ctx.fillStyle = "#98a8bc";
+        ctx.beginPath(); ctx.arc(10, 14, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(23, 20, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#dceafc"; ctx.fillRect(4, 2, 8, 2); ctx.fillRect(18, 3, 6, 2);
+      } else if (id === "93") {
+        // Frost-stone road (こおりみち): cold blue-grey paving slabs with clear
+        // joints so the road pops against the pale frost ground.
+        ctx.fillStyle = "#b7c9db"; ctx.fillRect(0, 0, ts, ts);
+        // 2x2 slabs per tile, each with a top-left highlight and bottom shadow
+        const slab = (sx: number, sy: number, w: number, h: number) => {
+          ctx.fillStyle = "#c6d8e8"; ctx.fillRect(sx, sy, w, h);
+          ctx.fillStyle = "#d9e8f4"; ctx.fillRect(sx, sy, w, 2); ctx.fillRect(sx, sy, 2, h);
+          ctx.fillStyle = "#9fb3c8"; ctx.fillRect(sx, sy + h - 2, w, 2); ctx.fillRect(sx + w - 2, sy, 2, h);
+        };
+        slab(1, 1, 14, 14); slab(17, 1, 14, 14);
+        slab(1, 17, 14, 14); slab(17, 17, 14, 14);
+        // dark mortar joints (the cross between slabs + tile edges)
+        ctx.fillStyle = "#8ba0b6";
+        ctx.fillRect(0, 15, ts, 2); ctx.fillRect(15, 0, 2, ts);
+        ctx.fillRect(0, 0, ts, 1); ctx.fillRect(0, ts - 1, ts, 1);
+        ctx.fillRect(0, 0, 1, ts); ctx.fillRect(ts - 1, 0, 1, ts);
+        // light dusting of snow so it still belongs to the wintry town
+        let s = 29;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "rgba(240,248,255,0.7)";
+        for (let i = 0; i < 8; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+      } else if (id === "94" || id === "95") {
+        // Frost twinkle frames for tile 90 (animated via MapScene SPARKLE_MAP):
+        // same frost base + bright cross-shaped glints at alternating spots.
+        let s = 17;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#dce6ee"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#b6c2cf";
+        for (let i = 0; i < 44; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#e8f2fa";
+        for (let i = 0; i < 18; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        const spots: [number, number][] = id === "94" ? [[7, 21], [23, 10]] : [[16, 6], [10, 26], [26, 22]];
+        ctx.fillStyle = "#ffffff";
+        for (const [fx, fy] of spots) {
+          ctx.fillRect(fx - 2, fy, 5, 1); ctx.fillRect(fx, fy - 2, 1, 5);
+          ctx.fillRect(fx, fy, 1, 1);
+        }
+      } else if (id === "96") {
+        // Shadow ice (かげのこおり): dark, solidly frozen lane — safe to walk.
+        ctx.fillStyle = "#3f5d7e"; ctx.fillRect(0, 0, ts, ts);
+        let s = 41;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#33506e";
+        for (let i = 0; i < 26; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.strokeStyle = "rgba(150,190,230,0.35)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(5, 25); ctx.lineTo(13, 17); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(19, 27); ctx.lineTo(24, 18); ctx.stroke();
+        ctx.fillStyle = "rgba(220,240,255,0.4)";
+        ctx.fillRect(8, 8, 2, 1); ctx.fillRect(24, 12, 2, 1);
+      } else if (id === "97") {
+        // Sunlit thin ice (ひなたのうすごおり): bright, glaring, half-melted — NOT safe.
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#e8f7ff"); grd.addColorStop(0.5, "#c2e6f8"); grd.addColorStop(1, "#e0f3fd");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
+        // strong sun glare stripe
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(14, 0); ctx.lineTo(0, 14); ctx.lineTo(0, 4);
+        ctx.closePath(); ctx.fill();
+        // meltwater cracks (visual "danger")
+        ctx.strokeStyle = "rgba(90,160,200,0.8)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(8, 28); ctx.lineTo(16, 18); ctx.lineTo(14, 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(24, 26); ctx.lineTo(27, 14); ctx.stroke();
+        ctx.fillStyle = "rgba(120,190,225,0.6)";
+        ctx.beginPath(); ctx.ellipse(22, 24, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+      } else if (id === "98") {
+        // Ice-gym floor (ジム床(氷)): pale blue tiles with frosty grid lines
+        ctx.fillStyle = "#dbe8f4"; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "#bcd0e2"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        ctx.fillStyle = "#c8dcec";
+        ctx.fillRect(ts / 2 - 1, ts / 2 - 1, 2, 2);
+        ctx.fillStyle = "rgba(255,255,255,0.65)";
+        ctx.fillRect(4, 4, 6, 1); ctx.fillRect(22, 24, 5, 1);
       }
 
       this.textures.addCanvas(key, canvas);
@@ -733,6 +838,34 @@ export class BootScene extends Phaser.Scene {
 
   private applySuitFrames(suitColor: string): void {
     this.generateDirectionalFrames(`player-${suitColor}`);
+  }
+
+  /** Build the player's directional walk frames from the girl overworld art
+   *  (frame 1 bobs up 1px for a simple walk cycle). */
+  private generateGirlFrames(): void {
+    for (const dir of ["down", "up", "left", "right"]) {
+      const srcKey = `player-girl-${dir}`;
+      if (!this.textures.exists(srcKey)) continue;
+      const img = this.textures.get(srcKey).getSourceImage() as HTMLImageElement;
+      for (let i = 0; i < 2; i++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 32; canvas.height = 32;
+        const ctx = canvas.getContext("2d")!;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, i === 1 ? -1 : 0, 32, 32);   // frame 1 = bob up 1px
+        const key = `player-${dir}-${i}`;
+        if (this.textures.exists(key)) this.textures.remove(key);
+        this.textures.addCanvas(key, canvas);
+      }
+    }
+    for (let i = 0; i < 2; i++) {
+      const key = `player-frame-${i}`;
+      const srcKey = `player-down-${i}`;
+      if (this.textures.exists(srcKey)) {
+        if (this.textures.exists(key)) this.textures.remove(key);
+        this.textures.addCanvas(key, this.textures.get(srcKey).getSourceImage() as HTMLCanvasElement);
+      }
+    }
   }
 
   private generatePlayerSprite(): void {

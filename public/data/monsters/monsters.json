@@ -835,5 +835,274 @@
     ],
     "color": "#e0531a",
     "baseExp": 150
+  },
+  {
+    "id": "roubau",
+    "name": "ローバウ",
+    "type": "金属",
+    "role": "ぼうぎょ型",
+    "description": "月面ローバーがアルモンになった犬型。忠実で健気に探査チームを待っている。",
+    "baseStats": {
+      "hp": 26,
+      "attack": 11,
+      "defense": 18,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 135,
+      "attack": 62,
+      "defense": 100,
+      "speed": 40
+    },
+    "evolution": {
+      "level": 32,
+      "to": "roubaag"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 4,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 8,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 12,
+        "moveId": "tetsu_no_kiba"
+      },
+      {
+        "level": 16,
+        "moveId": "accel_drive"
+      },
+      {
+        "level": 20,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 24,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 28,
+        "moveId": "sonar_scan"
+      },
+      {
+        "level": 31,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#d8c8a0",
+    "baseExp": 62
+  },
+  {
+    "id": "roubaag",
+    "name": "ローバーグ",
+    "type": "金属",
+    "role": "重装ぼうぎょ型",
+    "description": "長い年月でボディが強化された重装甲の探査獣。背中のハンバーググリルは動力源であり非常食でもある。",
+    "baseStats": {
+      "hp": 40,
+      "attack": 19,
+      "defense": 30,
+      "speed": 9
+    },
+    "statsAt50": {
+      "hp": 182,
+      "attack": 96,
+      "defense": 148,
+      "speed": 52
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 1,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 18,
+        "moveId": "tetsu_no_kiba"
+      },
+      {
+        "level": 22,
+        "moveId": "accel_drive"
+      },
+      {
+        "level": 26,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 30,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 34,
+        "moveId": "sonar_scan"
+      },
+      {
+        "level": 38,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#b89a6a",
+    "baseExp": 158
+  },
+  {
+    "id": "shakurin",
+    "name": "シャクリン",
+    "type": "氷",
+    "role": "すばやさ型",
+    "description": "南極シャクルトンクレーターの永久影に住むペンギン風アルモン。はずかしがり屋だけど心優しい。",
+    "baseStats": {
+      "hp": 20,
+      "attack": 11,
+      "defense": 13,
+      "speed": 14
+    },
+    "statsAt50": {
+      "hp": 100,
+      "attack": 62,
+      "defense": 78,
+      "speed": 85
+    },
+    "evolution": {
+      "level": 25,
+      "to": "shakuros"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 5,
+        "moveId": "koori_no_tsubute"
+      },
+      {
+        "level": 10,
+        "moveId": "koori_no_veil"
+      },
+      {
+        "level": 16,
+        "moveId": "icicle_lance"
+      },
+      {
+        "level": 28,
+        "moveId": "fubuki"
+      }
+    ],
+    "color": "#bfe2f5",
+    "baseExp": 66
+  },
+  {
+    "id": "shakuros",
+    "name": "シャクロス",
+    "type": "氷",
+    "role": "バランス型",
+    "description": "氷の貴鳥。永久影の冷気をまとい、静かに氷原を見守る。シャクリンの進化形。",
+    "baseStats": {
+      "hp": 30,
+      "attack": 21,
+      "defense": 22,
+      "speed": 17
+    },
+    "statsAt50": {
+      "hp": 152,
+      "attack": 108,
+      "defense": 112,
+      "speed": 90
+    },
+    "evolution": {
+      "level": 45,
+      "to": "shakuruton"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "koori_no_tsubute"
+      },
+      {
+        "level": 10,
+        "moveId": "koori_no_veil"
+      },
+      {
+        "level": 16,
+        "moveId": "icicle_lance"
+      },
+      {
+        "level": 28,
+        "moveId": "fubuki"
+      },
+      {
+        "level": 36,
+        "moveId": "eikyuukage_no_iki"
+      }
+    ],
+    "color": "#8fc4e8",
+    "baseExp": 160
+  },
+  {
+    "id": "shakuruton",
+    "name": "シャクルトン",
+    "type": "氷",
+    "role": "重装攻撃型",
+    "description": "永久影を統べる氷の帝王。絶対零度の冷気で大地を凍らせ、その存在は伝説として語り継がれる。",
+    "baseStats": {
+      "hp": 38,
+      "attack": 26,
+      "defense": 28,
+      "speed": 18
+    },
+    "statsAt50": {
+      "hp": 175,
+      "attack": 128,
+      "defense": 135,
+      "speed": 95
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "koori_no_veil"
+      },
+      {
+        "level": 1,
+        "moveId": "icicle_lance"
+      },
+      {
+        "level": 28,
+        "moveId": "fubuki"
+      },
+      {
+        "level": 36,
+        "moveId": "eikyuukage_no_iki"
+      },
+      {
+        "level": 50,
+        "moveId": "zettai_reido"
+      }
+    ],
+    "color": "#5f7fb8",
+    "baseExp": 220
   }
 ]

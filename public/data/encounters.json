@@ -107,27 +107,32 @@
         "maxLevel": 20
       },
       {
-        "id": "lobsner",
-        "weight": 15,
-        "minLevel": 18,
-        "maxLevel": 22
-      },
-      {
-        "id": "rairai",
+        "id": "roubau",
         "weight": 20,
         "minLevel": 16,
         "maxLevel": 20
-      },
+      }
+    ]
+  },
+  "frost_route_1": {
+    "encounterRate": 0.12,
+    "monsters": [
       {
-        "id": "ikarion",
-        "weight": 15,
+        "id": "shakurin",
+        "weight": 45,
         "minLevel": 18,
         "maxLevel": 22
       },
       {
-        "id": "meteko",
-        "weight": 20,
-        "minLevel": 17,
+        "id": "roubau",
+        "weight": 30,
+        "minLevel": 18,
+        "maxLevel": 21
+      },
+      {
+        "id": "mochichi",
+        "weight": 25,
+        "minLevel": 18,
         "maxLevel": 21
       }
     ]

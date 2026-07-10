@@ -471,8 +471,8 @@ export class BattleScene extends Phaser.Scene {
       plat.lineStyle(2, 0xe6d9a2, 0.55);
       plat.strokeEllipse(cx, cy, rx, ry);
     };
-    drawPlat(this.EPLAT_X, this.EPLAT_Y, 152, 38);
-    drawPlat(this.PPLAT_X, this.PPLAT_Y, 176, 46);
+    drawPlat(this.EPLAT_X, this.EPLAT_Y, 182, 46);
+    drawPlat(this.PPLAT_X, this.PPLAT_Y, 211, 55);
   }
 
   // ---- RSE battle layout anchors (640-wide design, Y ×sy) ----
@@ -497,16 +497,25 @@ export class BattleScene extends Phaser.Scene {
     if (this.trainerData) this.enemySprite.setVisible(false);
     // The player's almon is sent out after the hero throws a capsule; until then
     // show the hero's back illustration (both wild and trainer battles).
-    if (this.textures.exists("player-back")) {
+    if (this.textures.exists(this.playerBackKey())) {
       this.playerSprite.setVisible(false);
       this.showPlayerBack();
     }
   }
 
+  /** Battle back-illustration key, chosen by the player's saved gender. */
+  private playerBackKey(): string {
+    let girl = false;
+    try {
+      girl = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}").gender === "girl";
+    } catch { /* ignore */ }
+    return girl && this.textures.exists("player-back-girl") ? "player-back-girl" : "player-back";
+  }
+
   private showPlayerBack(): void {
     const y = Math.round((this.PPLAT_Y + 12) * this.sy);
     if (!this.playerBackPortrait) {
-      this.playerBackPortrait = this.add.image(this.PPLAT_X, y, "player-back").setOrigin(0.5, 1).setDepth(6);
+      this.playerBackPortrait = this.add.image(this.PPLAT_X, y, this.playerBackKey()).setOrigin(0.5, 1).setDepth(6);
     }
     const h = this.playerBackPortrait.height || 32;
     this.playerBackPortrait.setScale((148 * this.sy) / h);
@@ -564,11 +573,45 @@ export class BattleScene extends Phaser.Scene {
 
   // Scale a monster sprite to fit within a target box (design units, ×sy),
   // preserving aspect so both wide and tall monsters read at a similar size.
+  // Per-species battle-size tweak (multiplies the fit-to-box scale). Used when a
+  // monster should read smaller/larger than its raw art implies.
+  private static MONSTER_SCALE: Record<string, number> = {
+    usamon: 0.77,
+    mochichi: 0.5,
+    mochigori: 1.265,
+    gorimocchi: 1.38,
+    sunagani: 0.6,
+    lobsner: 0.9,
+    rairai: 0.5,
+    ikarion: 0.85,
+    regonyas: 0.63,
+    sharisu: 0.95,
+    sharian: 1.1,
+    meteko: 0.54,
+    meteodon: 1.2,
+    roubau: 0.6,
+    shakurin: 0.5,
+    shakuruton: 1.3,
+  };
+
+  // Species that hover above their platform (design px, scaled by sy).
+  private static MONSTER_LIFT: Record<string, number> = {
+    meteko: 14,
+  };
+
   private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
     const w = sprite.width || 64;
     const h = sprite.height || 64;
-    const scale = Math.min((maxW * this.sy) / w, (maxH * this.sy) / h);
+    let scale = Math.min((maxW * this.sy) / w, (maxH * this.sy) / h);
+    // Derive the species id from the texture key ("monster-<id>" / "monster-<id>-back").
+    const id = sprite.texture.key.replace(/^monster-/, "").replace(/-back$/, "");
+    scale *= BattleScene.MONSTER_SCALE[id] ?? 1;
     sprite.setScale(scale);
+    // Apply a hover offset for floating species (baseline captured once, so
+    // repeated re-sizes don't compound the lift).
+    if (sprite.getData("groundY") === undefined) sprite.setData("groundY", sprite.y);
+    const lift = (BattleScene.MONSTER_LIFT[id] ?? 0) * this.sy;
+    sprite.y = (sprite.getData("groundY") as number) - lift;
   }
 
   // ---- HUD geometry (RSE status boxes) ----
@@ -1988,13 +2031,14 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private endBattleDefeat(): void {
-    // Reset all party HP for respawn
+    // Blacked out: revive the whole party and restart at the recovery pod the
+    // player last healed at (fallback: the Crater City pod).
     this.playerState.party.forEach(m => { m.currentHp = m.maxHp; });
 
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       this.scene.start("MapScene", {
-        mapKey: "moonbase",
+        mapKey: this.playerState.lastRecoveryMap || "recovery_pod",
         playerState: this.playerState,
       });
     });

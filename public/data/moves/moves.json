@@ -641,5 +641,168 @@
       "target": "self"
     },
     "description": "岩の よろいで ぼうぎょ大アップ"
+  },
+  {
+    "id": "metal_bumper",
+    "name": "メタルバンパー",
+    "type": "金属",
+    "power": 55,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "金属の からだで 体当たり"
+  },
+  {
+    "id": "rover_tackle",
+    "name": "ローバータックル",
+    "type": "金属",
+    "power": 80,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "タイヤを 回して 突進する 主力技"
+  },
+  {
+    "id": "heavy_armor_press",
+    "name": "じゅうそうこうプレス",
+    "type": "金属",
+    "power": 115,
+    "accuracy": 95,
+    "isSupport": false,
+    "effect": null,
+    "description": "重装甲の おもみで 押しつぶす"
+  },
+  {
+    "id": "ganjou_mode",
+    "name": "がんじょうモード",
+    "type": "金属",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "statChange",
+      "stat": "defense",
+      "multiplier": 1.6,
+      "target": "self"
+    },
+    "description": "装甲を かためて ぼうぎょアップ"
+  },
+  {
+    "id": "solar_charge",
+    "name": "ソーラーチャージ",
+    "type": "金属",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "heal",
+      "healPercent": 50,
+      "target": "self"
+    },
+    "description": "ソーラーパネルで HPを 回復"
+  },
+  {
+    "id": "tetsu_no_kiba",
+    "name": "てつのキバ",
+    "type": "金属",
+    "power": 70,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "鋼の キバで かみつく"
+  },
+  {
+    "id": "accel_drive",
+    "name": "かそくドライブ",
+    "type": "金属",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "statChange",
+      "stat": "speed",
+      "multiplier": 1.6,
+      "target": "self"
+    },
+    "description": "タイヤを 加速して すばやさアップ"
+  },
+  {
+    "id": "sonar_scan",
+    "name": "ソナースキャン",
+    "type": "金属",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "allStatsUp",
+      "multiplier": 1.2,
+      "target": "self"
+    },
+    "description": "周囲を 走査して 全能力アップ"
+  },
+  {
+    "id": "koori_no_tsubute",
+    "name": "こおりのつぶて",
+    "type": "氷",
+    "power": 45,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "小さな 氷の かけらを ぶつける"
+  },
+  {
+    "id": "koori_no_veil",
+    "name": "こおりのベール",
+    "type": "氷",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "statChange",
+      "stat": "defense",
+      "multiplier": 1.5,
+      "target": "self"
+    },
+    "description": "氷の ベールで ぼうぎょアップ"
+  },
+  {
+    "id": "icicle_lance",
+    "name": "アイシクルランス",
+    "type": "氷",
+    "power": 75,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "氷の 槍で つらぬく 主力技"
+  },
+  {
+    "id": "fubuki",
+    "name": "ふぶき",
+    "type": "氷",
+    "power": 110,
+    "accuracy": 85,
+    "isSupport": false,
+    "effect": null,
+    "description": "はげしい 雪あらしで こうげきする"
+  },
+  {
+    "id": "eikyuukage_no_iki",
+    "name": "えいきゅうかげのいき",
+    "type": "氷",
+    "power": 95,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "永久影の 冷気を あびせる"
+  },
+  {
+    "id": "zettai_reido",
+    "name": "ぜったいれいど",
+    "type": "氷",
+    "power": 140,
+    "accuracy": 75,
+    "isSupport": false,
+    "effect": null,
+    "description": "きゅうきょくの 冷気で すべてを こおらせる"
   }
 ]
