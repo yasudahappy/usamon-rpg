@@ -60,7 +60,6 @@ export class MapScene extends Phaser.Scene {
     ryuma: ["genki", "kagen"],
     simone: ["rei", "tsurara"],
   };
-  private leaderGateNotified = false;
   // Sealed exits/doors: openings that are not yet passable. Stepping toward one
   // of its tiles shows the messages and blocks passage.
   private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; messages: string[] }[]> = {
@@ -602,8 +601,8 @@ export class MapScene extends Phaser.Scene {
     );
 
     for (const trainer of mapTrainers) {
-      // Skip defeated trainers
-      if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
+      // Defeated trainers are still shown (standing at their original post) —
+      // they just no longer battle and become passable (see isCollision).
 
       // Use the trainer's hand-drawn NPC sprite (facing their set direction);
       // fall back to the old red-tinted marker only if that texture is missing.
@@ -627,49 +626,45 @@ export class MapScene extends Phaser.Scene {
       t => t.mapKey === this.currentMapKey
     );
 
-    let leaderBlockedInSight = false;
+    const RANGE = 6;   // all trainers see 6 tiles ahead (blocked by walls)
     for (const trainer of mapTrainers) {
       if (this.playerState?.defeatedTrainers.includes(trainer.id)) continue;
+      // Gym leaders battle only when the player talks to them (checkNpcInteraction).
+      if (MapScene.GYM_LEADER_GATES[trainer.id]) continue;
 
       let inSight = false;
       const dx = this.gridX - trainer.x;
       const dy = this.gridY - trainer.y;
 
       switch (trainer.direction) {
-        case "down":
-          inSight = dx === 0 && dy > 0 && dy <= trainer.sightRange;
-          break;
-        case "up":
-          inSight = dx === 0 && dy < 0 && Math.abs(dy) <= trainer.sightRange;
-          break;
-        case "left":
-          inSight = dy === 0 && dx < 0 && Math.abs(dx) <= trainer.sightRange;
-          break;
-        case "right":
-          inSight = dy === 0 && dx > 0 && dx <= trainer.sightRange;
-          break;
+        case "down":  inSight = dx === 0 && dy > 0 && dy <= RANGE; break;
+        case "up":    inSight = dx === 0 && dy < 0 && Math.abs(dy) <= RANGE; break;
+        case "left":  inSight = dy === 0 && dx < 0 && Math.abs(dx) <= RANGE; break;
+        case "right": inSight = dy === 0 && dx > 0 && dx <= RANGE; break;
       }
 
+      // A wall between the trainer and the player blocks the line of sight.
+      if (inSight && !this.sightLineClear(trainer)) inSight = false;
+
       if (inSight) {
-        // Gym-leader gate: block the battle until the required trainers are beaten.
-        const gate = MapScene.GYM_LEADER_GATES[trainer.id];
-        if (gate && !gate.every(id => this.playerState?.defeatedTrainers.includes(id))) {
-          if (!this.leaderGateNotified) {
-            this.leaderGateNotified = true;
-            this.showDialog([
-              "……まだ 早い。",
-              "このジムの トレーナー2人を\n倒してから 挑むがいい。",
-            ]);
-          }
-          leaderBlockedInSight = true;
-          continue;
-        }
         this.beginTrainerApproach(trainer);
         return;
       }
     }
-    // Re-arm the leader gate message once the player leaves the leader's sight.
-    if (!leaderBlockedInSight) this.leaderGateNotified = false;
+  }
+
+  /** True when no wall tile lies between the trainer and the player (along the
+   *  trainer's facing axis). Used so 6-tile sight can't pierce walls. */
+  private sightLineClear(trainer: TrainerData): boolean {
+    const stepX = trainer.direction === "left" ? -1 : trainer.direction === "right" ? 1 : 0;
+    const stepY = trainer.direction === "up" ? -1 : trainer.direction === "down" ? 1 : 0;
+    const dist = Math.abs(this.gridX - trainer.x) + Math.abs(this.gridY - trainer.y);
+    for (let k = 1; k < dist; k++) {
+      const x = trainer.x + stepX * k;
+      const y = trainer.y + stepY * k;
+      if (this.mapData.layers.collision[y]?.[x] === 1) return false;
+    }
+    return true;
   }
 
   // Ruby/Sapphire-style: on being spotted, a "！" pops over the trainer, the
@@ -841,6 +836,14 @@ export class MapScene extends Phaser.Scene {
     // Uncollected cave capsules block their tile (pick up by facing + A).
     for (const c of MapScene.CAVE_CAPSULES) {
       if (c.mapKey === this.currentMapKey && c.x === x && c.y === y && this.caveCapsuleSprites.has(c.flag)) return true;
+    }
+    // Un-defeated trainers are solid; defeated ones stay visible but passable.
+    for (const t of this.allTrainers) {
+      if (t.mapKey !== this.currentMapKey) continue;
+      if (t.x !== x || t.y !== y) continue;
+      if (!this.trainerSprites.has(t.id)) continue;
+      if (this.playerState?.defeatedTrainers.includes(t.id)) continue;
+      return true;
     }
     return false;
   }
@@ -2120,6 +2123,27 @@ export class MapScene extends Phaser.Scene {
       case "down": fy++; break;
       case "left": fx--; break;
       case "right": fx++; break;
+    }
+    // Gym leaders battle only when talked to (not by sight). Requires beating
+    // the gym's gate trainers first.
+    const leader = this.allTrainers.find(t =>
+      t.mapKey === this.currentMapKey &&
+      MapScene.GYM_LEADER_GATES[t.id] &&
+      t.x === fx && t.y === fy &&
+      this.trainerSprites.has(t.id) &&
+      !this.playerState?.defeatedTrainers.includes(t.id)
+    );
+    if (leader) {
+      const gate = MapScene.GYM_LEADER_GATES[leader.id];
+      if (gate && !gate.every(id => this.playerState?.defeatedTrainers.includes(id))) {
+        this.showDialog([
+          "……まだ 早い。",
+          "このジムの トレーナー2人を\n倒してから 挑むがいい。",
+        ]);
+      } else {
+        this.startBattle(undefined, undefined, leader);
+      }
+      return;
     }
     // Moon-sand deposit: crater at the south edge of Crater City (23,33)
     if (this.currentMapKey === "crater_city" && fx === 23 && fy === 33) {
