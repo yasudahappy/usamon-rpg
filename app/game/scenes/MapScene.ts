@@ -2591,6 +2591,13 @@ export class MapScene extends Phaser.Scene {
       ctx.fillStyle = "#ffffff"; this.roundRect(ctx, 8, 13, 24, 10, 3); ctx.fill();        // pillow
       ctx.strokeStyle = "#3a5a90"; ctx.lineWidth = 2; this.roundRect(ctx, 2, 10, 36, 50, 4); ctx.stroke();
     });
+    // Duvet drawn OVER the sleeping player during the prologue so the hero
+    // looks tucked in (only head/pillow shows). Removed on wake-up.
+    mk("home-bed-cover", 40, 40, (ctx) => {
+      ctx.fillStyle = "#5f8ad0"; this.roundRect(ctx, 3, 6, 34, 32, 5); ctx.fill();         // blanket body
+      ctx.fillStyle = "#7aa4e4"; this.roundRect(ctx, 3, 6, 34, 8, 5); ctx.fill();          // turned-down fold
+      ctx.strokeStyle = "#3a5a90"; ctx.lineWidth = 2; this.roundRect(ctx, 3, 6, 34, 32, 5); ctx.stroke();
+    });
   }
 
   private placeMomNpc(): void {
@@ -2901,10 +2908,12 @@ export class MapScene extends Phaser.Scene {
   private playIntroCutscene(): void {
     this.inCutscene = true;
     const ts = this.tileSize;
-    // Start the player in bed (top-left) fast asleep.
+    // Start the player in bed (top-left) fast asleep, tucked under the duvet
+    // (the cover sits above the player so only the head/pillow shows).
     this.gridX = 1; this.gridY = 4;
     this.player.setPosition(1 * ts + ts / 2, 4 * ts + ts / 2);
     this.setPlayerFacing("down");
+    const bedCover = this.add.image(1 * ts + ts / 2, Math.round(5.0 * ts), "home-bed-cover").setDepth(12);
     let emote = this.showEmote("zzz");
 
     this.time.delayedCall(1300, () => {
@@ -2914,6 +2923,7 @@ export class MapScene extends Phaser.Scene {
         "今日から 月面探査が 始まるんでしょ？\n遅刻しないで 行きなさいね！",
       ], () => {
         emote.forEach(o => o.destroy());
+        bedCover.destroy();                    // throw off the covers on waking
         emote = this.showEmote("!");           // startled
         this.time.delayedCall(650, () => {
           this.showDialog([
