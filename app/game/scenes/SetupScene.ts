@@ -161,11 +161,11 @@ export class SetupScene extends Phaser.Scene {
 
     const w = this.scale.width;
     const H = this.scale.height;
-    const cy = Math.round(H * 0.36);
-    const targetH = Math.round(H * 0.34);
+    const cy = Math.round(H * 0.44);
+    const targetH = Math.round(H * 0.42);
     const opts = [
-      { key: "select-boy", value: "boy" as const, label: "おとこのこ", x: w / 2 - 95 },
-      { key: "select-girl", value: "girl" as const, label: "おんなのこ", x: w / 2 + 95 },
+      { key: "select-boy", value: "boy" as const, label: "おとこのこ", x: w / 2 - 108 },
+      { key: "select-girl", value: "girl" as const, label: "おんなのこ", x: w / 2 + 108 },
     ];
 
     this.genderImgs = [];
@@ -176,7 +176,7 @@ export class SetupScene extends Phaser.Scene {
         opt.x, cy, this.textures.exists(opt.key) ? opt.key : "player-frame-0"
       ).setDepth(11);
       if (img.height) img.setScale(targetH / img.height);
-      const lbl = this.add.text(opt.x, cy + targetH / 2 + 22, opt.label, {
+      const lbl = this.add.text(opt.x, cy + targetH / 2 + 24, opt.label, {
         fontSize: "16px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(11);
@@ -191,7 +191,7 @@ export class SetupScene extends Phaser.Scene {
     this.highlightGender();
 
     // Confirm button → straight to the name step (suit-color step removed)
-    const confirmY = Math.round(H * 0.64);
+    const confirmY = Math.round(H * 0.86);
     const gBg = this.add.graphics().setDepth(10);
     gBg.fillStyle(0x2255aa, 0.9);
     gBg.fillRoundedRect(w / 2 - 60, confirmY - 20, 120, 40, 8);
@@ -210,8 +210,8 @@ export class SetupScene extends Phaser.Scene {
   private highlightGender(): void {
     const w = this.scale.width;
     const H = this.scale.height;
-    const cy = Math.round(H * 0.36);
-    const xs = [w / 2 - 95, w / 2 + 95];
+    const cy = Math.round(H * 0.44);
+    const xs = [w / 2 - 108, w / 2 + 108];
     this.genderFrames.forEach((frame, idx) => {
       const img = this.genderImgs[idx];
       const hw = img.displayWidth / 2 + 12;
