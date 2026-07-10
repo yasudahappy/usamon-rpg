@@ -183,7 +183,7 @@ export class MapScene extends Phaser.Scene {
 
   // Menu system
   private menuOpen = false;
-  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" = "none";
+  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" = "none";
   private menuSelectedIndex = 0;
   private menuElements: Phaser.GameObjects.GameObject[] = [];
   private menuGpPrevDpad: string | null = null;
@@ -193,6 +193,11 @@ export class MapScene extends Phaser.Scene {
   private partySelIndex = 0;
   private partyPickIndex = -1;
   private partyGpPrevDpad: string | null = null;
+  // Bag (どうぐ) screen state
+  private bagSelIndex = 0;
+  private bagTargetIndex = 0;
+  private bagGpPrevDpad: string | null = null;
+  private bagMessage = "";
 
   constructor() {
     super({ key: "MapScene" });
@@ -1214,6 +1219,7 @@ export class MapScene extends Phaser.Scene {
   private updateMenu(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
     if (this.menuSubScreen !== "none") {
       if (this.menuSubScreen === "party") { this.updatePartyScreen(a, b, menu, dpad); return; }
+      if (this.menuSubScreen === "bag" || this.menuSubScreen === "bag_target") { this.updateBagScreen(a, b, menu, dpad); return; }
       if (b || menu) { this.closeSubScreen(); return; }
       // Sub-screen specific: save confirm
       if (this.menuSubScreen === "save" && a) { this.doSave(); return; }
@@ -1293,7 +1299,7 @@ export class MapScene extends Phaser.Scene {
     switch (this.menuSelectedIndex) {
       case 0: this.showStubScreen("ずかん"); break;
       case 1: this.showPartyScreen(); break;
-      case 2: this.showStubScreen("どうぐ"); break;
+      case 2: this.showBagScreen(); break;
       case 3: this.showPlayerInfoScreen(); break;
       case 4: this.showSaveScreen(); break;
       case 5: this.showSettingsScreen(); break;
@@ -1654,6 +1660,250 @@ export class MapScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(hint);
     this.applyTextResolution(this.menuElements);
+  }
+
+  // ---- Bag (どうぐ) Screen ----
+  private ownedItems(): { id: string; count: number; name: string; description: string; category?: string }[] {
+    const all = (this.cache.json.get("items") as { id: string; name: string; description: string; price: number; category?: string }[]) || [];
+    const rank: Record<string, number> = { recovery: 0, capsule: 1 };
+    const out: { id: string; count: number; name: string; description: string; category?: string }[] = [];
+    for (const it of (this.playerState?.items || [])) {
+      if (it.count <= 0) continue;
+      const d = all.find(a => a.id === it.id);
+      if (!d) continue;
+      out.push({ id: it.id, count: it.count, name: d.name, description: d.description, category: d.category });
+    }
+    out.sort((a, b) => (rank[a.category ?? "z"] ?? 9) - (rank[b.category ?? "z"] ?? 9));
+    return out;
+  }
+
+  private showBagScreen(): void {
+    this.bagSelIndex = 0;
+    this.bagTargetIndex = 0;
+    this.bagGpPrevDpad = null;
+    this.bagMessage = "";
+    this.drawBagScreen();
+  }
+
+  private drawBagScreen(): void {
+    this.menuSubScreen = "bag";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    const title = this.add.text(this.uiX(W / 2), this.uiY(28), "どうぐ", {
+      fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title);
+
+    const items = this.ownedItems();
+    if (items.length === 0) {
+      const empty = this.add.text(this.uiX(W / 2), this.uiY(H / 2), "なにも もっていない。", {
+        fontSize: `${this.uiS(15)}px`, color: "#ccddee", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+      this.menuElements.push(empty);
+    } else {
+      if (this.bagSelIndex >= items.length) this.bagSelIndex = items.length - 1;
+      const listX = 40, listTop = 64, rowH = 30;
+      items.forEach((it, i) => {
+        const y = listTop + i * rowH;
+        const on = i === this.bagSelIndex;
+        if (on) {
+          const hl = this.add.graphics().setScrollFactor(0).setDepth(201);
+          hl.fillStyle(0x1b3a63, 0.9); hl.fillRoundedRect(this.uiX(listX - 8), this.uiY(y - 4), this.uiS(W - (listX - 8) * 2), this.uiS(rowH - 4), 6);
+          this.menuElements.push(hl);
+        }
+        const name = this.add.text(this.uiX(listX), this.uiY(y), `${on ? "▶ " : "  "}${it.name}`, {
+          fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : "#ccddee", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202);
+        const cnt = this.add.text(this.uiX(W - 52), this.uiY(y), `×${it.count}`, {
+          fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : "#aabbcc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0);
+        this.menuElements.push(name, cnt);
+      });
+
+      // Description box for the selected item
+      const sel = items[this.bagSelIndex];
+      const descY = listTop + items.length * rowH + 16;
+      const box = this.add.graphics().setScrollFactor(0).setDepth(201);
+      box.fillStyle(0x061020, 0.95); box.fillRoundedRect(this.uiX(28), this.uiY(descY), this.uiS(W - 56), this.uiS(64), 8);
+      box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(28), this.uiY(descY), this.uiS(W - 56), this.uiS(64), 8);
+      this.menuElements.push(box);
+      const desc = this.add.text(this.uiX(40), this.uiY(descY + 12), sel.description, {
+        fontSize: `${this.uiS(13)}px`, color: "#d6e4f5", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        wordWrap: { width: this.uiS(W - 80) },
+      }).setScrollFactor(0).setDepth(202);
+      this.menuElements.push(desc);
+    }
+
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 28),
+      items.length > 0 ? "A:つかう   Bボタンでもどる" : "Bボタンでもどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
+
+    if (this.bagMessage) this.drawBagMessage();
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private drawBagMessage(): void {
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const box = this.add.graphics().setScrollFactor(0).setDepth(210);
+    box.fillStyle(0x000000, 0.6); box.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    box.fillStyle(0x11326a, 0.98); box.fillRoundedRect(this.uiX(30), this.uiY(H / 2 - 40), this.uiS(W - 60), this.uiS(80), 10);
+    box.lineStyle(2, 0x8fd0ff); box.strokeRoundedRect(this.uiX(30), this.uiY(H / 2 - 40), this.uiS(W - 60), this.uiS(80), 10);
+    this.menuElements.push(box);
+    const t = this.add.text(this.uiX(W / 2), this.uiY(H / 2 - 8), this.bagMessage, {
+      fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      align: "center", wordWrap: { width: this.uiS(W - 90) },
+    }).setScrollFactor(0).setDepth(211).setOrigin(0.5);
+    const ok = this.add.text(this.uiX(W / 2), this.uiY(H / 2 + 22), "A / B でとじる", {
+      fontSize: `${this.uiS(11)}px`, color: "#cfe0f5", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(211).setOrigin(0.5);
+    this.menuElements.push(t, ok);
+  }
+
+  private drawBagTargetScreen(): void {
+    this.menuSubScreen = "bag_target";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    const party = this.playerState?.party || [];
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    const title = this.add.text(this.uiX(W / 2), this.uiY(28), "だれに つかう？", {
+      fontSize: `${this.uiS(18)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title);
+
+    const listTop = 64, rowH = 44;
+    party.forEach((m, i) => {
+      const d = allMonsters.find(md => md.id === m.dataId);
+      const y = listTop + i * rowH;
+      const on = i === this.bagTargetIndex;
+      const fainted = m.currentHp <= 0;
+      if (on) {
+        const hl = this.add.graphics().setScrollFactor(0).setDepth(201);
+        hl.fillStyle(0x1b3a63, 0.9); hl.fillRoundedRect(this.uiX(28), this.uiY(y - 4), this.uiS(W - 56), this.uiS(rowH - 6), 6);
+        this.menuElements.push(hl);
+      }
+      const name = this.add.text(this.uiX(44), this.uiY(y), `${on ? "▶ " : "  "}${d?.name ?? m.dataId}  Lv${m.level}`, {
+        fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : "#ccddee", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202);
+      const hp = this.add.text(this.uiX(W - 44), this.uiY(y), `HP ${m.currentHp}/${m.maxHp}`, {
+        fontSize: `${this.uiS(13)}px`, color: fainted ? "#ff8888" : (on ? "#ffffff" : "#aabbcc"), fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(1, 0);
+      this.menuElements.push(name, hp);
+    });
+
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 28), "A:つかう   Bボタンでもどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
+
+    if (this.bagMessage) this.drawBagMessage();
+    this.applyTextResolution(this.menuElements);
+  }
+
+  /** Apply a recovery item to a party member. Returns a result message; ok=false means it wasn't consumed. */
+  private applyRecoveryItem(itemId: string, m: MonsterInstance, itemName: string): { ok: boolean; msg: string } {
+    const nameOf = (): string => {
+      const all = this.cache.json.get("monsters") as MonsterData[];
+      return all.find(md => md.id === m.dataId)?.name ?? m.dataId;
+    };
+    if (itemId === "revive_star") {
+      if (m.currentHp > 0) return { ok: false, msg: "ひんしの アルモンにしか\nつかえない！" };
+      m.currentHp = Math.max(1, Math.floor(m.maxHp / 2));
+      return { ok: true, msg: `${nameOf()}は げんきを とりもどした！` };
+    }
+    // HP recovery gels
+    if (m.currentHp <= 0) return { ok: false, msg: "ひんしの アルモンには\nつかえない！" };
+    if (m.currentHp >= m.maxHp) return { ok: false, msg: "HPは まんたんだ！" };
+    const amount = itemId === "repair_gel" ? 20 : itemId === "hi_repair_gel" ? 50 : m.maxHp;
+    const before = m.currentHp;
+    m.currentHp = Math.min(m.maxHp, m.currentHp + amount);
+    return { ok: true, msg: `${nameOf()}の HPが ${m.currentHp - before} かいふくした！\n（${itemName}）` };
+  }
+
+  private consumeItem(itemId: string): void {
+    if (!this.playerState) return;
+    const entry = this.playerState.items.find(it => it.id === itemId);
+    if (!entry) return;
+    entry.count -= 1;
+    if (entry.count <= 0) this.playerState.items = this.playerState.items.filter(it => it.count > 0);
+  }
+
+  private updateBagScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    // A message popup swallows the next input and closes.
+    if (this.bagMessage) {
+      if (a || b || menu) {
+        this.bagMessage = "";
+        if (this.menuSubScreen === "bag_target") this.drawBagTargetScreen();
+        else this.drawBagScreen();
+      }
+      this.bagGpPrevDpad = dpad;
+      return;
+    }
+
+    const justUp = dpad === "up" && this.bagGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.bagGpPrevDpad !== "down";
+    let kbUp = false, kbDown = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+    }
+    this.bagGpPrevDpad = dpad;
+
+    if (this.menuSubScreen === "bag_target") {
+      const party = this.playerState?.party || [];
+      if (b || menu) { this.drawBagScreen(); return; }
+      if (justUp || kbUp) { this.bagTargetIndex = (this.bagTargetIndex - 1 + party.length) % party.length; this.drawBagTargetScreen(); return; }
+      if (justDown || kbDown) { this.bagTargetIndex = (this.bagTargetIndex + 1) % party.length; this.drawBagTargetScreen(); return; }
+      if (a) {
+        const items = this.ownedItems();
+        const sel = items[this.bagSelIndex];
+        const target = party[this.bagTargetIndex];
+        if (sel && target) {
+          const res = this.applyRecoveryItem(sel.id, target, sel.name);
+          if (res.ok) this.consumeItem(sel.id);
+          this.bagMessage = res.msg;
+          // If that item ran out, return to the bag list after the message.
+          const stillOwned = (this.playerState?.items || []).some(it => it.id === sel.id && it.count > 0);
+          if (res.ok && !stillOwned) this.menuSubScreen = "bag";
+          if (this.menuSubScreen === "bag_target") this.drawBagTargetScreen(); else this.drawBagScreen();
+        }
+      }
+      return;
+    }
+
+    // menuSubScreen === "bag"
+    if (b || menu) { this.closeSubScreen(); return; }
+    const items = this.ownedItems();
+    if (justUp || kbUp) { if (items.length) { this.bagSelIndex = (this.bagSelIndex - 1 + items.length) % items.length; this.drawBagScreen(); } return; }
+    if (justDown || kbDown) { if (items.length) { this.bagSelIndex = (this.bagSelIndex + 1) % items.length; this.drawBagScreen(); } return; }
+    if (a && items.length) {
+      const sel = items[this.bagSelIndex];
+      if (sel.category === "recovery") {
+        if ((this.playerState?.party.length || 0) === 0) { this.bagMessage = "つかう アルモンが いない！"; this.drawBagScreen(); return; }
+        this.bagTargetIndex = 0;
+        this.drawBagTargetScreen();
+      } else if (sel.category === "capsule") {
+        this.bagMessage = "いまは つかえない！\n（バトル中に つかおう）";
+        this.drawBagScreen();
+      } else {
+        this.bagMessage = "たいせつな どうぐの ようだ。";
+        this.drawBagScreen();
+      }
+    }
   }
 
   // ---- Save Screen ----
