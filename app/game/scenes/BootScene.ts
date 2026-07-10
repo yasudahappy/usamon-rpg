@@ -70,6 +70,13 @@ export class BootScene extends Phaser.Scene {
         frameHeight: 16,
       });
     });
+    // Girl protagonist: overworld directions (4) + character-select art + battle back
+    ["down", "up", "left", "right"].forEach(dir => {
+      this.load.image(`player-girl-${dir}`, `${base}/assets/characters/player_girl_${dir}.png`);
+    });
+    this.load.image("select-boy", `${base}/assets/characters/select_boy.png`);
+    this.load.image("select-girl", `${base}/assets/characters/select_girl.png`);
+    this.load.image("player-back-girl", `${base}/assets/characters/battle/player_back_girl.png`);
 
     // Load monster face icons (high-res source for pixel-art downscale)
     const iconMonsters = ["usamon", "mochichi", "sunagani", "rairai", "regonyas"];
@@ -171,8 +178,10 @@ export class BootScene extends Phaser.Scene {
       // Load saved setup and apply suit color
       try {
         const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
-        if (setup.suitColor) {
-          this.applySuitFrames(setup.suitColor);
+        if (setup.gender === "girl") {
+          this.generateGirlFrames();
+        } else {
+          this.applySuitFrames(setup.suitColor || "white");
         }
       } catch (e) { /* ignore */ }
 
@@ -852,6 +861,34 @@ export class BootScene extends Phaser.Scene {
 
   private applySuitFrames(suitColor: string): void {
     this.generateDirectionalFrames(`player-${suitColor}`);
+  }
+
+  /** Build the player's directional walk frames from the girl overworld art
+   *  (frame 1 bobs up 1px for a simple walk cycle). */
+  private generateGirlFrames(): void {
+    for (const dir of ["down", "up", "left", "right"]) {
+      const srcKey = `player-girl-${dir}`;
+      if (!this.textures.exists(srcKey)) continue;
+      const img = this.textures.get(srcKey).getSourceImage() as HTMLImageElement;
+      for (let i = 0; i < 2; i++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 32; canvas.height = 32;
+        const ctx = canvas.getContext("2d")!;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, i === 1 ? -1 : 0, 32, 32);   // frame 1 = bob up 1px
+        const key = `player-${dir}-${i}`;
+        if (this.textures.exists(key)) this.textures.remove(key);
+        this.textures.addCanvas(key, canvas);
+      }
+    }
+    for (let i = 0; i < 2; i++) {
+      const key = `player-frame-${i}`;
+      const srcKey = `player-down-${i}`;
+      if (this.textures.exists(srcKey)) {
+        if (this.textures.exists(key)) this.textures.remove(key);
+        this.textures.addCanvas(key, this.textures.get(srcKey).getSourceImage() as HTMLCanvasElement);
+      }
+    }
   }
 
   private generatePlayerSprite(): void {

@@ -497,16 +497,25 @@ export class BattleScene extends Phaser.Scene {
     if (this.trainerData) this.enemySprite.setVisible(false);
     // The player's almon is sent out after the hero throws a capsule; until then
     // show the hero's back illustration (both wild and trainer battles).
-    if (this.textures.exists("player-back")) {
+    if (this.textures.exists(this.playerBackKey())) {
       this.playerSprite.setVisible(false);
       this.showPlayerBack();
     }
   }
 
+  /** Battle back-illustration key, chosen by the player's saved gender. */
+  private playerBackKey(): string {
+    let girl = false;
+    try {
+      girl = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}").gender === "girl";
+    } catch { /* ignore */ }
+    return girl && this.textures.exists("player-back-girl") ? "player-back-girl" : "player-back";
+  }
+
   private showPlayerBack(): void {
     const y = Math.round((this.PPLAT_Y + 12) * this.sy);
     if (!this.playerBackPortrait) {
-      this.playerBackPortrait = this.add.image(this.PPLAT_X, y, "player-back").setOrigin(0.5, 1).setDepth(6);
+      this.playerBackPortrait = this.add.image(this.PPLAT_X, y, this.playerBackKey()).setOrigin(0.5, 1).setDepth(6);
     }
     const h = this.playerBackPortrait.height || 32;
     this.playerBackPortrait.setScale((148 * this.sy) / h);
