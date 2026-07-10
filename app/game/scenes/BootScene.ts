@@ -168,40 +168,17 @@ export class BootScene extends Phaser.Scene {
     this.generateMonsterSprites();
     this.generatePixelIcons();
 
-    // Check for existing save data
-    let hasSave = false;
+    // Apply the saved character's walk frames (if a setup exists) so the title
+    // screen and any continue land on the right sprite.
     try {
-      hasSave = !!localStorage.getItem("usamon-player-setup");
+      const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
+      if (setup.gender === "girl") this.generateGirlFrames();
+      else if (setup.gender || setup.suitColor) this.applySuitFrames(setup.suitColor || "white");
     } catch (e) { /* ignore */ }
 
-    if (hasSave) {
-      // Load saved setup and apply suit color
-      try {
-        const setup = JSON.parse(localStorage.getItem("usamon-player-setup") || "{}");
-        if (setup.gender === "girl") {
-          this.generateGirlFrames();
-        } else {
-          this.applySuitFrames(setup.suitColor || "white");
-        }
-      } catch (e) { /* ignore */ }
-
-      // If a real save (レポート) exists, show the title / continue screen so the
-      // player can choose つづきから / さいしょから / せってい. Otherwise (setup done
-      // but no saved progress yet) drop straight into the wake-up prologue.
-      let hasProgress = false;
-      try {
-        const raw = localStorage.getItem("usamon-save-data");
-        if (raw && JSON.parse(raw).mapKey) hasProgress = true;
-      } catch (e) { /* ignore */ }
-
-      if (hasProgress) {
-        this.scene.start("TitleScene");
-      } else {
-        this.scene.start("MapScene", { mapKey: "player_home", intro: true });
-      }
-    } else {
-      this.scene.start("SetupScene");
-    }
+    // The title screen (thumbnail → START → つづき/さいしょ/せってい) is always the
+    // entry point; さいしょから routes into character setup.
+    this.scene.start("TitleScene");
   }
 
   private generateTileset(

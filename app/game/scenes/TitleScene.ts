@@ -17,7 +17,7 @@ interface SaveReport {
 //   2: せっていを かえる     — re-open character setup without touching the save
 export class TitleScene extends Phaser.Scene {
   private sel = 0;
-  private mode: "menu" | "confirm" = "menu";
+  private page: "start" | "menu" | "confirm" = "start";
   private prevDpad: string | null = null;
   private els: Phaser.GameObjects.GameObject[] = [];
   private report!: SaveReport;
@@ -33,7 +33,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.sel = 0;
-    this.mode = "menu";
+    this.page = "start";
     this.prevDpad = null;
     this.busy = false;
     this.report = this.loadReport();
@@ -57,13 +57,6 @@ export class TitleScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(2);
     }
 
-    // Scrim over the lower portion so the menu text stays readable over the art.
-    const scrim = this.add.graphics().setDepth(2);
-    scrim.fillStyle(0x05070f, 0.62);
-    scrim.fillRect(0, H * 0.52, W, H * 0.48);
-    scrim.fillStyle(0x05070f, 0.35);
-    scrim.fillRect(0, H * 0.46, W, H * 0.06);
-
     // Input
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -73,6 +66,44 @@ export class TitleScene extends Phaser.Scene {
     }
 
     this.cameras.main.fadeIn(320, 0, 0, 0);
+    this.drawStart();
+  }
+
+  // ---- Page 1: title thumbnail + START button ----
+  private drawStart(): void {
+    this.clearEls();
+    this.page = "start";
+    const W = this.scale.width;
+    const H = this.scale.height;
+
+    // Light scrim just behind the button so it stays readable over the art.
+    const g = this.add.graphics().setDepth(9);
+    g.fillStyle(0x05070f, 0.42);
+    g.fillRect(0, Math.round(H * 0.72), W, Math.round(H * 0.28));
+    this.els.push(g);
+
+    const bw = 220, bh = 58;
+    const bx = W / 2 - bw / 2;
+    const by = Math.round(H * 0.80);
+    const btn = this.add.graphics().setDepth(10);
+    btn.fillStyle(0x11326a, 0.95);
+    btn.fillRoundedRect(bx, by, bw, bh, 14);
+    btn.lineStyle(3, 0x8fd0ff);
+    btn.strokeRoundedRect(bx, by, bw, bh, 14);
+    this.els.push(btn);
+
+    this.mkText(W / 2, by + bh / 2, "▶ スタート", 24, "#ffffff", 0.5).setStyle({ fontStyle: "bold" });
+    const hint = this.mkText(W / 2, by + bh + 26, "おして はじめる", 13, "#cfe0f5", 0.5);
+    this.tweens.add({ targets: hint, alpha: 0.25, duration: 750, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+
+    const zone = this.add.zone(bx, by, bw, bh).setOrigin(0, 0).setInteractive().setDepth(12);
+    zone.on("pointerdown", () => this.gotoMenu());
+    this.els.push(zone);
+  }
+
+  private gotoMenu(): void {
+    if (this.busy) return;
+    this.sel = this.report.hasSave ? 0 : 1;   // skip greyed-out つづき when no save
     this.drawMenu();
   }
 
@@ -127,8 +158,17 @@ export class TitleScene extends Phaser.Scene {
 
   private drawMenu(): void {
     this.clearEls();
+    this.page = "menu";
     const W = this.scale.width;
     const H = this.scale.height;
+
+    // Scrim over the lower portion so the menu text stays readable over the art.
+    const scrim = this.add.graphics().setDepth(9);
+    scrim.fillStyle(0x05070f, 0.62);
+    scrim.fillRect(0, H * 0.52, W, H * 0.48);
+    scrim.fillStyle(0x05070f, 0.35);
+    scrim.fillRect(0, H * 0.46, W, H * 0.06);
+    this.els.push(scrim);
 
     const margin = 44;
     const boxX = margin;
@@ -166,13 +206,19 @@ export class TitleScene extends Phaser.Scene {
     const c = rects[0];
     const leftX = boxX + 34;
     const rightX = boxX + Math.round(boxW * 0.52);
-    this.mkText(leftX, c.y + 24, "つづきから はじめる", 21, this.sel === 0 ? "#ffffff" : "#d6e4f5").setStyle({ fontStyle: "bold" });
     const r = this.report;
-    const t = this.formatTime(r.playSeconds);
-    this.mkText(leftX, c.y + 62, `しゅじんこう  ${r.name}`, 15, "#c9d8ec");
-    this.mkText(rightX, c.y + 62, `プレイじかん  ${t}`, 15, "#c9d8ec");
-    this.mkText(leftX, c.y + 92, `ずかん  ${r.caught} しゅるい`, 15, "#c9d8ec");
-    this.mkText(rightX, c.y + 92, `トレーナー  ${r.trainers} 人`, 15, "#c9d8ec");
+    if (r.hasSave) {
+      this.mkText(leftX, c.y + 24, "つづきから はじめる", 21, this.sel === 0 ? "#ffffff" : "#d6e4f5").setStyle({ fontStyle: "bold" });
+      const t = this.formatTime(r.playSeconds);
+      this.mkText(leftX, c.y + 62, `しゅじんこう  ${r.name}`, 15, "#c9d8ec");
+      this.mkText(rightX, c.y + 62, `プレイじかん  ${t}`, 15, "#c9d8ec");
+      this.mkText(leftX, c.y + 92, `ずかん  ${r.caught} しゅるい`, 15, "#c9d8ec");
+      this.mkText(rightX, c.y + 92, `トレーナー  ${r.trainers} 人`, 15, "#c9d8ec");
+    } else {
+      // No save yet: greyed-out, not selectable.
+      this.mkText(leftX, c.y + 24, "つづきから はじめる", 21, "#5b6a80").setStyle({ fontStyle: "bold" });
+      this.mkText(leftX, c.y + 74, "きろくが ありません", 15, "#7a8aa0");
+    }
 
     // --- New game / settings rows ---
     this.mkText(boxX + 34, rects[1].y + rects[1].h / 2, "さいしょから はじめる", 18, this.sel === 1 ? "#ffffff" : "#d6e4f5");
@@ -185,7 +231,7 @@ export class TitleScene extends Phaser.Scene {
     rects.forEach((rr, i) => {
       const zone = this.add.zone(boxX, rr.y, boxW, rr.h).setOrigin(0, 0).setInteractive().setDepth(12);
       zone.on("pointerdown", () => {
-        if (this.busy || this.mode !== "menu") return;
+        if (this.busy || this.page !== "menu") return;
         this.sel = i;
         this.drawMenu();
         this.activate(i);
@@ -237,8 +283,11 @@ export class TitleScene extends Phaser.Scene {
   // ---- Actions ----
   private activate(i: number): void {
     if (this.busy) return;
-    if (i === 0) this.doContinue();
-    else if (i === 1) { this.mode = "confirm"; this.drawConfirm(); }
+    if (i === 0) { if (this.report.hasSave) this.doContinue(); }   // no save → not selectable
+    else if (i === 1) {
+      if (this.report.hasSave) { this.page = "confirm"; this.drawConfirm(); }
+      else this.doNewGame();   // nothing to erase → skip the confirmation
+    }
     else this.doSettings();
   }
 
@@ -296,9 +345,15 @@ export class TitleScene extends Phaser.Scene {
       if (this.keyEsc && Phaser.Input.Keyboard.JustDown(this.keyEsc)) kBack = true;
     }
 
-    if (this.mode === "confirm") {
+    // Page 1: title thumbnail — any confirm advances to the menu.
+    if (this.page === "start") {
+      if (a || kConfirm) this.gotoMenu();
+      return;
+    }
+
+    if (this.page === "confirm") {
       if (a || kConfirm) { this.doNewGame(); return; }
-      if (b || kBack) { this.mode = "menu"; this.drawMenu(); return; }
+      if (b || kBack) { this.page = "menu"; this.drawMenu(); return; }
       return;
     }
 
@@ -309,8 +364,14 @@ export class TitleScene extends Phaser.Scene {
     const goDown = dpadJust === "down" || (held === "down" && this.prevDpad !== "down") || kDown;
     this.prevDpad = held;
 
-    if (goUp) { this.sel = (this.sel + 2) % 3; this.drawMenu(); }
-    else if (goDown) { this.sel = (this.sel + 1) % 3; this.drawMenu(); }
+    if (goUp) this.sel = (this.sel + 2) % 3;
+    else if (goDown) this.sel = (this.sel + 1) % 3;
+    // Skip the greyed-out つづき row when there is no save.
+    if ((goUp || goDown) && !this.report.hasSave && this.sel === 0) this.sel = goUp ? 2 : 1;
+    if (goUp || goDown) this.drawMenu();
+
+    // B on the menu returns to the title thumbnail.
+    if (b || kBack) { this.drawStart(); return; }
 
     if (a || kConfirm) this.activate(this.sel);
   }
