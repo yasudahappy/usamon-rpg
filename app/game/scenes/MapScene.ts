@@ -601,8 +601,10 @@ export class MapScene extends Phaser.Scene {
     );
 
     for (const trainer of mapTrainers) {
-      // Defeated trainers are still shown (standing at their original post) —
-      // they just no longer battle and become passable (see isCollision).
+      // Defeated trainers stay on the map. If a side tile is free they step
+      // aside (staying solid) so the path opens; otherwise they remain on their
+      // tile and become passable (see isCollision / trainerTile).
+      const pos = this.trainerTile(trainer);
 
       // Use the trainer's hand-drawn NPC sprite (facing their set direction);
       // fall back to the old red-tinted marker only if that texture is missing.
@@ -611,13 +613,38 @@ export class MapScene extends Phaser.Scene {
       const castKey = owKey ? `cast-${owKey}-${dir}` : "";
       const useCast = !!castKey && this.textures.exists(castKey);
       const sprite = this.add.image(
-        trainer.x * this.tileSize + this.tileSize / 2,
-        trainer.y * this.tileSize + this.tileSize / 2,
+        pos.x * this.tileSize + this.tileSize / 2,
+        pos.y * this.tileSize + this.tileSize / 2,
         useCast ? castKey : "player-frame-0"
       ).setDepth(9);
       if (!useCast) sprite.setTint(0xff6644);
       this.trainerSprites.set(trainer.id, sprite);
     }
+  }
+
+  /** Where a trainer currently stands and whether it's solid.
+   *  Live: on its post (solid). Defeated: steps to a free perpendicular side
+   *  tile (solid) so the path clears; if both sides are walls it stays put and
+   *  becomes passable. */
+  private trainerTile(t: TrainerData): { x: number; y: number; solid: boolean } {
+    if (!this.playerState?.defeatedTrainers.includes(t.id)) {
+      return { x: t.x, y: t.y, solid: true };
+    }
+    const aside = this.defeatedAside(t);
+    return aside ? { x: aside.x, y: aside.y, solid: true } : { x: t.x, y: t.y, solid: false };
+  }
+
+  /** A free tile perpendicular to the trainer's facing (the axis the player
+   *  walks past on), or null if both perpendicular neighbours are walls. */
+  private defeatedAside(t: TrainerData): { x: number; y: number } | null {
+    const vertical = t.direction === "up" || t.direction === "down";
+    const cands = vertical
+      ? [{ x: t.x - 1, y: t.y }, { x: t.x + 1, y: t.y }]
+      : [{ x: t.x, y: t.y - 1 }, { x: t.x, y: t.y + 1 }];
+    for (const c of cands) {
+      if (this.mapData.layers.collision[c.y]?.[c.x] === 0) return c;
+    }
+    return null;
   }
 
   private checkTrainerSight(): void {
@@ -837,13 +864,13 @@ export class MapScene extends Phaser.Scene {
     for (const c of MapScene.CAVE_CAPSULES) {
       if (c.mapKey === this.currentMapKey && c.x === x && c.y === y && this.caveCapsuleSprites.has(c.flag)) return true;
     }
-    // Un-defeated trainers are solid; defeated ones stay visible but passable.
+    // Trainers block their current tile: live ones on their post, defeated ones
+    // on the side tile they stepped to (defeated with no side tile are passable).
     for (const t of this.allTrainers) {
       if (t.mapKey !== this.currentMapKey) continue;
-      if (t.x !== x || t.y !== y) continue;
       if (!this.trainerSprites.has(t.id)) continue;
-      if (this.playerState?.defeatedTrainers.includes(t.id)) continue;
-      return true;
+      const pos = this.trainerTile(t);
+      if (pos.solid && pos.x === x && pos.y === y) return true;
     }
     return false;
   }
