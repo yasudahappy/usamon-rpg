@@ -353,6 +353,20 @@ export class MapScene extends Phaser.Scene {
       this.startSnowfall();
     }
 
+    // タテアナ村 — 縦孔のふちの村。救助クエスト（第6章 / タテアナ村設計v1）。
+    if (this.currentMapKey === "pit_village") {
+      this.placePitVillageEvents();
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("pit_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playPitArrival());
+      }
+    }
+
+    // 溶岩洞 — 行方不明のツキヤマ研究員（救助対象）。
+    if (this.currentMapKey === "lava_tube") {
+      this.placeLavaTubeEvents();
+    }
+
 
     // Farm dome interior — a researcher tending the plants
     if (this.currentMapKey === "farm_dome") {
@@ -4596,6 +4610,125 @@ export class MapScene extends Phaser.Scene {
         "「ようこそ ネクタルタウンへ。\nここは 神酒の海の ほとり——月で\nいちばん 古い 記憶が ねむる 町さ。」",
       ], () => { this.inCutscene = false; });
     });
+  }
+
+  // ========== タテアナ村 / 溶岩洞（第6章 P2: 救助クエスト） ==========
+
+  private hasPitFlag(flag: string): boolean {
+    return (this.playerState?.pickups || []).includes(flag);
+  }
+  private setPitFlag(flag: string): void {
+    if (!this.playerState) return;
+    this.playerState.pickups = this.playerState.pickups || [];
+    if (!this.playerState.pickups.includes(flag)) this.playerState.pickups.push(flag);
+  }
+
+  private placePitVillageEvents(): void {
+    this.genNectarEventTextures(); // 看板テクスチャを流用
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+
+    // 看板①（村の入口）
+    put("nectar-sign", 10, 19, () => this.showDialog([
+      "『タテアナむら』",
+      "巨大な 縦孔（たてあな）の ふちに\nひらかれた 村。",
+    ]), -4);
+
+    // 看板②（縦孔のふち・教育①）
+    put("nectar-sign", 16, 12, () => this.showDialog([
+      "『月の縦孔』",
+      "日本の 探査機 かぐや が 見つけた\n大きな あな。",
+      "下には 溶岩が 流れた あとの\nトンネル——溶岩洞（ようがんどう）が\n広がっている。",
+    ]), -4);
+
+    // 村長（縦孔のふち）— 救助クエストの起点
+    put(this.npcTex("cast-elder-down", "npc-kinoshita"), 12, 8, () => {
+      if (!this.hasPitFlag("pit_rescue_started")) {
+        this.showDialog([
+          "村長「たいへんじゃ！ 研究員の\nツキヤマくんが、あなの 調査に\n降りたきり もどらんのじゃ…！」",
+          "村長「ロープは 縦孔の 西がわに\nかけてある。すまんが ようすを\n見てきて くれんか。たのむ！」",
+        ], () => this.setPitFlag("pit_rescue_started"));
+      } else if (!this.hasPitFlag("pit_rescue_cleared")) {
+        this.showDialog([
+          "村長「ツキヤマくんを たのむ！\nロープは わしの すぐ 東がわじゃ。」",
+        ]);
+      } else if (!this.hasPitFlag("pit_reward_given")) {
+        this.showDialog([
+          "村長「おお…！ ツキヤマくんが\nぶじに もどって きたぞ！」",
+          "村長「ほんとうに ありがとう。\nこれは ほんの お礼じゃ。」",
+          "★ スターカプセルを 2つ もらった！",
+        ], () => {
+          this.setPitFlag("pit_reward_given");
+          if (this.playerState) {
+            const e = this.playerState.items.find(i => i.id === "star_capsule");
+            if (e) e.count += 2;
+            else this.playerState.items.push({ id: "star_capsule", count: 2 });
+          }
+        });
+      } else {
+        this.showDialog([
+          "村長「この 村は 縦孔と ともに\n生きて きたんじゃ。あなの 下は\nふしぎと おだやかでな。」",
+        ]);
+      }
+    });
+
+    // ツキヤマ（救助後は村で調査を続ける・教育の再話＋ヴォイスの布石）
+    if (this.hasPitFlag("pit_rescue_cleared")) {
+      put(this.npcTex("cast-colonist_m-down", "npc-kinoshita"), 8, 13, () => this.showDialog([
+        "ツキヤマ「やあ、命の恩人！ あれから\nあなの データを まとめて いるんだ。」",
+        "ツキヤマ「溶岩洞は 温度が 安定して、\n放射線も ふせげる。3Dプリンタと\nレゴリスが あれば 月の 家も 作れる。\n夢が あるだろう？」",
+        "ツキヤマ「…そうそう。あなの 奥で\n黒ずくめの 2人組を 見かけたんだ。\nただの 調査隊じゃ なさそうだった。\n気を つけて。」",
+      ]));
+    }
+  }
+
+  /** 到着カットシーン（1回きり）: 村のざわつき→村長への誘導。 */
+  private playPitArrival(): void {
+    if (!this.playerState) return;
+    if (this.hasPitFlag("pit_arrival_seen")) return;
+    this.setPitFlag("pit_arrival_seen");
+    this.inCutscene = true;
+    const emote = this.showEmote("!");
+    this.time.delayedCall(800, () => {
+      emote.forEach(o => o.destroy());
+      this.showDialog([
+        "（なんだか 村が ざわついている…）",
+        "住人「村長が こまって いるんだ。\n村の おく、縦孔の ふちに いるよ。」",
+      ], () => { this.inCutscene = false; });
+    });
+  }
+
+  private placeLavaTubeEvents(): void {
+    if (this.hasPitFlag("pit_rescue_cleared")) return;
+    const ts = this.tileSize;
+    const tx = 16, ty = 11;
+    const img = this.add.image(
+      tx * ts + ts / 2, ty * ts + ts / 2,
+      this.npcTex("cast-colonist_m-left", "npc-kinoshita")
+    ).setDepth(9);
+    const exam = {
+      x: tx, y: ty, fn: () => {
+        this.showDialog([
+          "ツキヤマ「きみは…！ 村の 人に\nたのまれて 来て くれたのか！」",
+          "ツキヤマ「調査に むちゅうに なって、\n足を くじいて しまってね…。\nありがとう、もう だいじょうぶ。」",
+          "ツキヤマ「しかし 見たかい。この 洞窟、\n外より ずっと あたたかくて\n温度が ほとんど 変わらないんだ。」",
+          "ツキヤマ「昼は 110ど、夜は マイナス\n170どの 月面でも、溶岩洞の 中は\n岩が まもって くれる。放射線も\n隕石も とどかない。」",
+          "ツキヤマ「未来の 月の 家は、\nこういう 場所に 作られるかも\nしれないよ。」",
+          "ツキヤマ「材料なら 足もとに いくらでも\nある。月の砂（レゴリス）を 3Dプリンタに\n入れて、家の 部品を その場で\n印刷するのさ。」",
+          "ツキヤマ「さあ、先に 村へ もどるよ。\nきみも 気を つけて！」",
+        ], () => {
+          this.setPitFlag("pit_rescue_cleared");
+          // 彼は先にロープで帰る（すっと消える）
+          const idx = this.nectarExam.indexOf(exam);
+          if (idx >= 0) this.nectarExam.splice(idx, 1);
+          this.tweens.add({ targets: img, alpha: 0, duration: 600, onComplete: () => img.destroy() });
+        });
+      },
+    };
+    this.nectarExam.push(exam);
   }
 
   /** Step-on triggers: ①②展望+地球の出 / ⑬ヴォイスの影 */
