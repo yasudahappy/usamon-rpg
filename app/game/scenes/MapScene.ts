@@ -5122,6 +5122,33 @@ export class MapScene extends Phaser.Scene {
       "ん？ なんだよ ガキ。おれたちは\nただの 調査員…… そう、\nヴォイスの ちょうさいん さまだ。",
       "おぼえて おけ。『水を 制する ものが\n月を 制する』。ボスたちは もう\n南極の 秘密に 手を かけてるのさ。",
     ]));
+
+    // 太陽光ファームの看板（門の外・教育＋南極伏線）
+    put("nectar-sign", 41, 33, () => this.showDialog([
+      "『ミノリ太陽光ファーム』",
+      "月の 昼は 2週間 つづく。\nその間 パネルは 発電し ほうだい！",
+      "でも 夜も 2週間 つづく…。\nためた 電気と 地熱プラントの\n二本立てで 町を まもっている。",
+      "※南極には 『ほぼ 一日じゅう 日の当たる 峰』が あるらしい。発電の 聖地だ。",
+    ]), -4);
+
+    // 太陽光ファームの整備員（レゴリスの静電気の教育）
+    put(this.npcTex("cast-char3-down", "npc-kinoshita"), 40, 38, () => this.showDialog([
+      "整備員「パネルの そうじが 毎日\n大しごとさ。月の ちり——レゴリスは\n静電気で ペタペタ くっつくんだ。」",
+      "整備員「ちりが つもると 発電が\nガクンと おちる。だから ほうきロボと\n二人三きゃくで ピカピカに してる。」",
+    ]));
+
+    // 地熱プラントの作業員（夜の2週間の心臓）
+    put(this.npcTex("cast-char7-down", "npc-kinoshita"), 27, 36, () => this.showDialog([
+      "作業員「ここは 地熱プラント。地下の\n熱で タービンを 回して、電気と\nおんすいを 作ってるんだ。」",
+      "作業員「太陽が しずむ 夜の 2週間は、\nここが 町の 心ぞうに なる。\n畑の 土も ここの 熱で ぬくぬくさ。」",
+    ]));
+
+    // 温室の看板（ミツバチ＝ムーンハニーの種明かし）
+    put("nectar-sign", 9, 34, () => this.showDialog([
+      "『ミノリ温室』",
+      "デリケートな 野菜と くだものは\nガラスの 中で そだてる。",
+      "市場の 『ムーンハニー』の ミツバチも\nこの 温室に すんでいる。",
+    ]), -4);
   }
 
   /** ミノリタウンの点景 — 蒸気の噴気孔・パイプ・市場・広場・アルモンの暮らし。 */
@@ -5175,7 +5202,7 @@ export class MapScene extends Phaser.Scene {
       ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(8, 8, 8, 0, Math.PI * 2); ctx.fill();
       this.textures.addCanvas("steam-puff", c);
     }
-    const vents: [number, number][] = [[19.5, 32.5], [6.5, 33.5], [12.5, 37.5], [18.5, 39.8], [30.5, 34.2]];
+    const vents: [number, number][] = [[19.5, 32.5], [13.8, 33.8], [12.5, 37.5], [18.5, 39.8], [30.5, 34.2]];
     for (const [vx, vy] of vents) {
       this.add.image(vx * ts, vy * ts, "minori-vent").setDepth(7).setScale(1.15);
       for (let i = 0; i < 2; i++) {
@@ -5201,8 +5228,45 @@ export class MapScene extends Phaser.Scene {
       for (let y = 10; y < 96; y += 22) ctx.fillRect(0, y, 10, 4);
       this.textures.addCanvas("geo-pipe-v", c);
     }
-    this.add.image(6.5 * ts, 32 * ts - 48, "geo-pipe-v").setDepth(6);
-    this.add.image(12.5 * ts, 36 * ts - 48, "geo-pipe-v").setDepth(6);
+    this.add.image(13.8 * ts, 32 * ts - 42, "geo-pipe-v").setDepth(6);   // 噴気孔→畑B
+    if (!this.textures.exists("geo-pipe-h")) {
+      const c = document.createElement("canvas"); c.width = 96; c.height = 10;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#707888"; ctx.fillRect(0, 2, 96, 6);
+      ctx.fillStyle = "#8a92a4"; ctx.fillRect(0, 2, 96, 2);
+      ctx.fillStyle = "#565e6e";
+      for (let x = 10; x < 96; x += 22) ctx.fillRect(x, 0, 4, 10);
+      this.textures.addCanvas("geo-pipe-h", c);
+    }
+    this.add.image(10.6 * ts, 36.9 * ts, "geo-pipe-h").setDepth(6);      // 噴気孔→温室
+
+    // --- 地熱プラントの煙突から立ちのぼる大きめの蒸気 ---
+    for (let i = 0; i < 3; i++) {
+      const puff = this.add.image(32.7 * ts, 36.6 * ts, "steam-puff")
+        .setDepth(27).setAlpha(0).setScale(1.1);
+      this.tweens.add({
+        targets: puff, y: 36.6 * ts - 52 - Math.random() * 22,
+        alpha: { from: 0.8, to: 0 }, scale: { from: 1.1, to: 2.4 },
+        duration: 2300 + Math.random() * 800, repeat: -1, ease: "Sine.out",
+        delay: i * 800,
+        onRepeat: () => { puff.y = 36.6 * ts; puff.x = (32.7 + (Math.random() - 0.5) * 0.25) * ts; },
+      });
+    }
+
+    // --- 太陽光パネルのきらめき ---
+    if (!this.textures.exists("pit-spark")) {
+      const c = document.createElement("canvas"); c.width = 6; c.height = 6;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(2, 2, 2, 2);
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillRect(1, 2, 1, 2); ctx.fillRect(4, 2, 1, 2); ctx.fillRect(2, 1, 2, 1); ctx.fillRect(2, 4, 2, 1);
+      this.textures.addCanvas("pit-spark", c);
+    }
+    for (const [gx, gy] of [[41.4, 35.7], [45.6, 36.4], [42.6, 39.7], [46.4, 40.6]] as [number, number][]) {
+      const glint = this.add.image(gx * ts, gy * ts, "pit-spark").setDepth(27).setAlpha(0).setScale(1.6);
+      this.tweens.add({ targets: glint, alpha: { from: 0, to: 0.95 }, duration: 700 + Math.random() * 500,
+        yoyo: true, repeat: -1, repeatDelay: 1400 + Math.random() * 1600, ease: "Sine.inOut" });
+    }
 
     // --- 広場のランタン＆ベンチ＆旗 ---
     if (!this.textures.exists("pit-lantern")) {
