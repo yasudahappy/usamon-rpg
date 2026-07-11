@@ -598,6 +598,7 @@ export class BattleScene extends Phaser.Scene {
     roubau: 0.6,
     shakurin: 0.5,
     shakuruton: 1.3,
+    hotaruna: 0.5,
   };
 
   // Species that hover above their platform (design px, scaled by sy).
