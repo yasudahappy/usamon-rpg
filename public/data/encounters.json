@@ -177,31 +177,37 @@
   "monsters": [
    {
     "id": "meteko",
-    "weight": 40,
+    "weight": 34,
     "minLevel": 24,
     "maxLevel": 28
    },
    {
+    "id": "hidaneko",
+    "weight": 14,
+    "minLevel": 24,
+    "maxLevel": 27
+   },
+   {
     "id": "genbu",
-    "weight": 22,
+    "weight": 20,
     "minLevel": 24,
     "maxLevel": 27
    },
    {
     "id": "pribo",
-    "weight": 15,
+    "weight": 12,
     "minLevel": 24,
     "maxLevel": 27
    },
    {
     "id": "hotaruna",
-    "weight": 13,
+    "weight": 11,
     "minLevel": 24,
     "maxLevel": 27
    },
    {
     "id": "regonyas",
-    "weight": 10,
+    "weight": 9,
     "minLevel": 24,
     "maxLevel": 26
    }
@@ -211,26 +217,32 @@
   "encounterRate": 0.1,
   "monsters": [
    {
+    "id": "hidaneko",
+    "weight": 18,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
     "id": "meteko",
-    "weight": 30,
+    "weight": 24,
     "minLevel": 25,
     "maxLevel": 28
    },
    {
     "id": "genbu",
-    "weight": 25,
+    "weight": 22,
     "minLevel": 25,
     "maxLevel": 28
    },
    {
     "id": "rairai",
-    "weight": 20,
+    "weight": 15,
     "minLevel": 25,
     "maxLevel": 27
    },
    {
     "id": "sunagani",
-    "weight": 15,
+    "weight": 11,
     "minLevel": 25,
     "maxLevel": 27
    },
