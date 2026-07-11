@@ -173,6 +173,11 @@ export class BootScene extends Phaser.Scene {
         }
       });
     });
+    // Programmatic animation frames that appear in no map's tileTypes
+    // (magma flow 107/108, glowing-crack pulse 105/106) still need textures.
+    for (const id of ["105", "106", "107", "108"]) {
+      if (!allTileTypes[id]) allTileTypes[id] = { name: "anim", color: "#000000", walkable: false };
+    }
 
     this.generateTileset(allTileTypes);
     this.generatePlayerSprite();
@@ -629,6 +634,49 @@ export class BootScene extends Phaser.Scene {
         ctx.fillRect(ts / 2 - 1, ts / 2 - 1, 2, 2);
         ctx.fillStyle = "rgba(240,140,60,0.18)";
         ctx.fillRect(4, 4, 5, 1); ctx.fillRect(22, 25, 5, 1);
+      } else if (id === "104" || id === "105" || id === "106") {
+        // ひびわれ玄武岩 (104) + 発光アニメフレーム (105/106): walkable basalt
+        // with magma glowing through the cracks. Frames vary the glow strength.
+        const glow = id === "104" ? 0.45 : id === "105" ? 0.75 : 0.25;
+        ctx.fillStyle = "#4a3c40"; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "#5e4c50"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        // crack veins
+        const vein = (pts: [number, number][], w: number, col: string) => {
+          ctx.strokeStyle = col; ctx.lineWidth = w;
+          ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+          for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+          ctx.stroke();
+        };
+        const cracks: [number, number][][] = [
+          [[3, 27], [10, 20], [9, 12], [15, 7]],
+          [[15, 7], [22, 11], [28, 8]],
+          [[10, 20], [19, 22], [26, 27]],
+          [[22, 11], [24, 18]],
+        ];
+        for (const c2 of cracks) vein(c2, 3, `rgba(200,60,20,${glow * 0.5})`);
+        for (const c2 of cracks) vein(c2, 1.6, `rgba(255,140,50,${glow})`);
+        ctx.fillStyle = `rgba(255,210,120,${glow * 0.9})`;
+        ctx.fillRect(14, 6, 2, 2); ctx.fillRect(9, 19, 2, 2); ctx.fillRect(23, 17, 2, 2);
+      } else if (id === "107" || id === "108") {
+        // マグマ流動フレーム (tile 100 のアニメ): the molten channel with the
+        // bright core shifted so the flow reads as moving.
+        const shift = id === "107" ? 4 : -4;
+        ctx.fillStyle = "#3a1410"; ctx.fillRect(0, 0, ts, ts);
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#c83a10"); grd.addColorStop(0.5, "#f07020"); grd.addColorStop(1, "#c83a10");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.moveTo(0, 10 + shift * 0.4); ctx.quadraticCurveTo(10, 4 + shift * 0.4, 18, 12);
+        ctx.quadraticCurveTo(26, 20, ts, 14 - shift * 0.4);
+        ctx.lineTo(ts, 24 - shift * 0.4); ctx.quadraticCurveTo(20, 30, 10, 24);
+        ctx.quadraticCurveTo(4, 20, 0, 22 + shift * 0.4); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#ffd070";
+        ctx.fillRect(6 + shift, 14, 7, 2); ctx.fillRect(20 + shift, 17, 6, 2);
+        ctx.fillStyle = "#fff0b0";
+        ctx.fillRect(8 + shift, 14, 3, 1);
+        ctx.fillStyle = "#4a1c14";
+        ctx.fillRect(14 - shift, 8, 5, 3); ctx.fillRect(24 - shift, 22, 4, 3); ctx.fillRect(2 + shift, 24, 5, 3);
       } else if (id === "103") {
         // リルの溝: a dark collapsed groove sunk into the regolith plain
         ctx.fillStyle = "#c8bfae"; ctx.fillRect(0, 0, ts, ts);
