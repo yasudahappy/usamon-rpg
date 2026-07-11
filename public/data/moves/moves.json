@@ -804,5 +804,41 @@
     "isSupport": false,
     "effect": null,
     "description": "きゅうきょくの 冷気で すべてを こおらせる"
+  },
+  {
+    "id": "hikari_no_tsubu",
+    "name": "ひかりのつぶ",
+    "type": "光",
+    "power": 45,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "小さな ひかりの たまを とばす 基本技"
+  },
+  {
+    "id": "lantern_flash",
+    "name": "ランタンフラッシュ",
+    "type": "光",
+    "power": 75,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "ランタンの ひかりを いっしゅんで はなつ"
+  },
+  {
+    "id": "tsukiakari",
+    "name": "つきあかり",
+    "type": "光",
+    "power": 0,
+    "accuracy": 100,
+    "isSupport": true,
+    "effect": {
+      "type": "healAndBuff",
+      "healPercent": 30,
+      "stat": "defense",
+      "multiplier": 1.5,
+      "target": "self"
+    },
+    "description": "やさしい つきあかりで きずを いやし まもりを かためる"
   }
 ]

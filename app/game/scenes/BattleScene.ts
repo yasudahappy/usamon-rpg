@@ -603,6 +603,7 @@ export class BattleScene extends Phaser.Scene {
   // Species that hover above their platform (design px, scaled by sy).
   private static MONSTER_LIFT: Record<string, number> = {
     meteko: 14,
+    hotaruna: 12,
   };
 
   private sizeMonsterSprite(sprite: Phaser.GameObjects.Image, maxW: number, maxH: number): void {
