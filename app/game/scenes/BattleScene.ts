@@ -648,9 +648,10 @@ export class BattleScene extends Phaser.Scene {
     hotaruna: 0.5,
     genbu: 0.5,
     hidaneko: 0.6,
-    kagario: 1.05,
+    kagario: 0.945,
     solpoka: 0.55,
     fureado: 1.15,
+    prominence: 1.3,
   };
 
   // Species that hover above their platform (design px, scaled by sy).

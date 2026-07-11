@@ -1563,7 +1563,10 @@
    "defense": 80,
    "speed": 112
   },
-  "evolution": null,
+  "evolution": {
+   "level": 45,
+   "to": "prominence"
+  },
   "learnset": [
    {
     "level": 1,
@@ -1596,5 +1599,57 @@
   ],
   "color": "#e8552a",
   "baseExp": 140
+ },
+ {
+  "id": "prominence",
+  "name": "プロミネンス",
+  "type": "炎",
+  "role": "エースアタッカー",
+  "description": "太陽の 表面から ふき上がる 巨大な 炎のループ——プロミネンスの 化身。つばさの 炎は 頭の上で つながり、地球が 何個も 入る 大きさの 輪を えがくという。",
+  "baseStats": {
+   "hp": 36,
+   "attack": 27,
+   "defense": 21,
+   "speed": 24
+  },
+  "statsAt50": {
+   "hp": 158,
+   "attack": 138,
+   "defense": 102,
+   "speed": 118
+  },
+  "evolution": null,
+  "learnset": [
+   {
+    "level": 1,
+    "moveId": "hinoko"
+   },
+   {
+    "level": 1,
+    "moveId": "kaen_tosshin"
+   },
+   {
+    "level": 1,
+    "moveId": "kaenbullet"
+   },
+   {
+    "level": 1,
+    "moveId": "funka"
+   },
+   {
+    "level": 50,
+    "moveId": "kaen_housha"
+   },
+   {
+    "level": 58,
+    "moveId": "bakuen"
+   },
+   {
+    "level": 66,
+    "moveId": "meteor_storm"
+   }
+  ],
+  "color": "#ff5a1e",
+  "baseExp": 215
  }
 ]
