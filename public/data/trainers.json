@@ -394,5 +394,55 @@
     ],
     "battleSprite": "trainer-kojima",
     "overworldSprite": "kojima"
+  },
+  {
+    "id": "voice_grunt_a",
+    "name": "ヴォイスだんいん",
+    "mapKey": "lava_tube",
+    "x": 13,
+    "y": 10,
+    "direction": "right",
+    "battleSprite": "trainer-voice_grunt1",
+    "overworldSprite": "voice_grunt1",
+    "sightRange": 4,
+    "party": [
+      {
+        "id": "sharisu",
+        "level": 25
+      },
+      {
+        "id": "rairai",
+        "level": 24
+      }
+    ],
+    "prizeMoneyBase": 600,
+    "dialogBefore": "ここは 放射線も 隕石も とどかない。\nアジトに ぴったりだろ？\nヴォイスの 下見を 見た ガキを\nこのまま 帰すわけには いかない！",
+    "dialogWin": "くっ… この ガキ、つよい…！",
+    "dialogLose": "フン。ここで 見た ことは\nぜんぶ わすれるんだな。"
+  },
+  {
+    "id": "voice_grunt_b",
+    "name": "ヴォイスだんいん",
+    "mapKey": "lava_tube",
+    "x": 12,
+    "y": 11,
+    "direction": "right",
+    "battleSprite": "trainer-voice_grunt2",
+    "overworldSprite": "voice_grunt2",
+    "sightRange": 4,
+    "party": [
+      {
+        "id": "shakurin",
+        "level": 25
+      },
+      {
+        "id": "regonyas",
+        "level": 24
+      }
+    ],
+    "prizeMoneyBase": 600,
+    "dialogBefore": "じゃまする ガキは\n実力で 排除する！",
+    "dialogWin": "ば…ばかな…！\nおぼえてろ、参謀キヨハラさまに\n報告してやる！ 撤退だ！",
+    "dialogLose": "水も 地形も、つよい者の ものだ。\nおまえには 関係ない。"
   }
 ]
