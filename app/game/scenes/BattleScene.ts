@@ -25,6 +25,7 @@ type BattlePhase =
   | "intro"
   | "command"
   | "move_select"
+  | "target_select"
   | "executing"
   | "victory"
   | "defeat"
@@ -32,6 +33,28 @@ type BattlePhase =
   | "learn_move"
   | "switch_mon"
   | "evolution";
+
+// ---- Double battle (2vs2) runtime types ----
+interface DSlot {
+  mon: BattleMonster;
+  inst: MonsterInstance;
+  sprite: Phaser.GameObjects.Image;
+  panel: {
+    bar: Phaser.GameObjects.Graphics;
+    name: Phaser.GameObjects.Text;
+    lv: Phaser.GameObjects.Text;
+    hp?: Phaser.GameObjects.Text;
+    objs: Phaser.GameObjects.GameObject[];
+    rect: { x: number; y: number; w: number; h: number };
+  };
+}
+interface DAction {
+  side: "p" | "e";
+  slot: number;
+  move: BattleMove;
+  targetSide: "p" | "e";
+  targetSlot: number;
+}
 
 interface CommandSlot {
   label: string;
@@ -123,6 +146,20 @@ export class BattleScene extends Phaser.Scene {
   private playerInfoObjects: Phaser.GameObjects.GameObject[] = [];
   private fleeAttempts = 0;
 
+  // ---- Double battle (2vs2) state — singles code never touches these ----
+  private isDouble = false;
+  private dP: (DSlot | null)[] = [];        // player actives (up to 2)
+  private dE: (DSlot | null)[] = [];        // enemy actives (up to 2)
+  private dEReserve: { id: string; level: number }[] = [];
+  private dCmdSlot = 0;                     // which player slot is choosing
+  private dActions: DAction[] = [];
+  private dPendingMove: BattleMove | null = null;
+  private dTargetIdx = 0;
+  private dTargetMarker?: Phaser.GameObjects.Triangle;
+  private trainerPortrait2?: Phaser.GameObjects.Image;
+  private dParticipants: Set<MonsterInstance> = new Set();
+  private dOver = false;
+
   constructor() {
     super({ key: "BattleScene" });
   }
@@ -158,6 +195,14 @@ export class BattleScene extends Phaser.Scene {
     this.trainerPartyIndex = 0;
     this.trainerPortrait = undefined;   // display object is recreated per battle
     this.playerBackPortrait = undefined;
+    // Double battle reset
+    this.isDouble = !!this.trainerData?.doubles;
+    this.dP = []; this.dE = []; this.dEReserve = [];
+    this.dCmdSlot = 0; this.dActions = []; this.dPendingMove = null;
+    this.dTargetIdx = 0; this.dTargetMarker = undefined;
+    this.trainerPortrait2 = undefined;
+    this.dParticipants = new Set();
+    this.dOver = false;
 
     // Load JSON data
     this.allMonsters = this.cache.json.get("monsters") as MonsterData[];
@@ -280,6 +325,8 @@ export class BattleScene extends Phaser.Scene {
     // Clear stale gamepad state
     const gp = typeof window !== "undefined" ? (window as any).__gamepad : null;
     if (gp) { gp.aJust = false; gp.bJust = false; gp.menuJust = false; }
+
+    if (this.isDouble) { this.createDouble(); return; }
 
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
     this.enemyMon = this.instanceToBattleMonster(this.enemyInstance);
@@ -1062,14 +1109,32 @@ export class BattleScene extends Phaser.Scene {
       if (confirm) {
         const move = this.playerMon.moves[this.selectedMove];
         if (move) {
-          this.executeTurn(move);
+          if (this.isDouble) this.chooseMoveD(move);
+          else this.executeTurn(move);
         }
       }
       if (kbEsc || gpB) {
         this.hideMoveSelect();
         this.phase = "command";
         this.showCommandWindow();
-        this.setMessage("");
+        if (this.isDouble) this.setCommandPromptD();
+        else this.setMessage("");
+      }
+    } else if (this.phase === "target_select") {
+      // Double battle: pick which enemy to hit (left/right toggles).
+      if ((justLeft || justRight || justUp || justDown) && this.isDouble) {
+        const alive = this.dAliveSlots(this.dE);
+        if (alive.length > 1) {
+          this.dTargetIdx = alive.find(i => i !== this.dTargetIdx) ?? this.dTargetIdx;
+          this.placeTargetMarkerD();
+        }
+      }
+      if (confirm && this.dPendingMove) {
+        this.lockActionD(this.dPendingMove, this.dTargetIdx, "e");
+      } else if (kbEsc || gpB) {
+        this.destroyTargetMarkerD();
+        this.dPendingMove = null;
+        this.showMoveSelect();
       }
     } else if (this.phase === "learn_move") {
       // Move replacement selection handled by command slots
@@ -1095,8 +1160,11 @@ export class BattleScene extends Phaser.Scene {
       }
     } else if (this.phase === "switch_mon") {
       // Party-switch selection (2-column grid of alive members + もどる).
+      const activeInsts = this.isDouble
+        ? this.dAliveSlots(this.dP).map(i => this.dP[i]!.inst)
+        : [this.playerInstance];
       const aliveParty = this.playerState.party.filter(
-        (m) => m.currentHp > 0 && m !== this.playerInstance
+        (m) => m.currentHp > 0 && !activeInsts.includes(m)
       );
       const maxSlots = Math.min(this.commandSlots.length, 6);
       if (justUp && this.selectedCommand >= 2) {
@@ -1123,8 +1191,10 @@ export class BattleScene extends Phaser.Scene {
           this.rebuildCommandWindow();
           this.phase = "command";
           this.showCommandWindow();
+          if (this.isDouble) this.setCommandPromptD();
         } else if (aliveParty[this.selectedCommand]) {
-          this.doSwitch(aliveParty[this.selectedCommand]);
+          if (this.isDouble) this.doSwitchD(aliveParty[this.selectedCommand]);
+          else this.doSwitch(aliveParty[this.selectedCommand]);
         }
       } else if (kbEsc || gpB) {
         this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
@@ -1132,6 +1202,7 @@ export class BattleScene extends Phaser.Scene {
         this.rebuildCommandWindow();
         this.phase = "command";
         this.showCommandWindow();
+        if (this.isDouble) this.setCommandPromptD();
       }
     }
   }
@@ -1139,6 +1210,7 @@ export class BattleScene extends Phaser.Scene {
   // ---- Commands ----
 
   private executeCommand(index: number): void {
+    if (this.isDouble) { this.executeCommandD(index); return; }
     switch (index) {
       case 0:
         this.showMoveSelect();
@@ -2135,5 +2207,593 @@ export class BattleScene extends Phaser.Scene {
         this.showCommandWindow();
       }
     );
+  }
+
+  // ================= ダブルバトル (2vs2) =================
+  // シングル戦のコードパスには一切手を入れず、doubles トレーナー戦だけが
+  // ここを通る。エメラルド式: 敵2体・味方2体・HPパネル4枚・ターゲット選択。
+
+  private dAliveSlots(arr: (DSlot | null)[]): number[] {
+    const out: number[] = [];
+    arr.forEach((s, i) => { if (s && s.mon.currentHp > 0) out.push(i); });
+    return out;
+  }
+
+  private dMonName(inst: MonsterInstance): string {
+    return this.allMonsters.find(m => m.id === inst.dataId)?.name ?? inst.dataId;
+  }
+
+  private makeSlotD(inst: MonsterInstance, isPlayer: boolean, i: number): DSlot {
+    const s = this.sy;
+    const pos = isPlayer
+      ? { x: this.PPLAT_X - 72 + i * 150, y: Math.round((this.PPLAT_Y + 8 + i * 7) * s) }
+      : { x: this.EPLAT_X - 74 + i * 112, y: Math.round((this.EPLAT_Y + 6 + i * 6) * s) };
+    const key = isPlayer ? this.playerTexKey(inst.dataId) : `monster-${inst.dataId}`;
+    const sprite = this.add.image(pos.x, pos.y, key).setOrigin(0.5, 1).setDepth(5);
+    this.sizeMonsterSprite(sprite, isPlayer ? 106 : 92, isPlayer ? 112 : 98);
+
+    const rect = isPlayer
+      ? { x: 384, y: Math.round((140 + i * 50) * s), w: 242, h: Math.round(42 * s) }
+      : { x: 14, y: Math.round((8 + i * 46) * s), w: 236, h: Math.round(40 * s) };
+    const panelBg = this.drawStatusPanel(rect);
+    const mon = this.instanceToBattleMonster(inst);
+    const name = this.add.text(rect.x + 10, rect.y + Math.round(5 * s), mon.name, {
+      fontSize: "15px", color: "#222233", fontFamily: "'DotGothic16', monospace",
+    }).setDepth(11);
+    const lv = this.add.text(rect.x + rect.w - 10, rect.y + Math.round(5 * s), `Lv${mon.level}`, {
+      fontSize: "14px", color: "#222233", fontFamily: "'DotGothic16', monospace",
+    }).setOrigin(1, 0).setDepth(11);
+    const bar = this.add.graphics().setDepth(11);
+    let hp: Phaser.GameObjects.Text | undefined;
+    if (isPlayer) {
+      hp = this.add.text(rect.x + rect.w - 10, rect.y + rect.h - Math.round(4 * s),
+        `${mon.currentHp}/${mon.maxHp}`, {
+          fontSize: "13px", color: "#333344", fontFamily: "'DotGothic16', monospace",
+        }).setOrigin(1, 1).setDepth(11);
+    }
+    const slot: DSlot = { mon, inst, sprite, panel: { bar, name, lv, hp, objs: [panelBg, name, lv, bar, ...(hp ? [hp] : [])], rect } };
+    this.refreshPanelD(slot);
+    return slot;
+  }
+
+  private dBarGeom(slot: DSlot) {
+    const r = slot.panel.rect;
+    return { x: r.x + 12, y: r.y + Math.round(r.h * 0.55), w: r.w - (slot.panel.hp ? 96 : 24), h: Math.max(5, Math.round(7 * this.sy)) };
+  }
+
+  private refreshPanelD(slot: DSlot): void {
+    const g = this.dBarGeom(slot);
+    this.drawHpBarGraphic(slot.panel.bar, g.x, g.y, g.w, g.h,
+      Phaser.Math.Clamp(slot.mon.currentHp / slot.mon.maxHp, 0, 1));
+    slot.panel.name.setText(slot.mon.name);
+    slot.panel.lv.setText(`Lv${slot.mon.level}`);
+    slot.panel.hp?.setText(`${slot.mon.currentHp}/${slot.mon.maxHp}`);
+  }
+
+  private dSetPanelsVisible(arr: (DSlot | null)[], v: boolean): void {
+    arr.forEach(s => s && s.panel.objs.forEach(o => (o as Phaser.GameObjects.Image).setVisible(v)));
+  }
+
+  private createDouble(): void {
+    const t = this.trainerData!;
+    this.drawBackground();
+
+    const pActives = this.playerState.party.filter(m => m.currentHp > 0).slice(0, 2);
+    this.playerInstance = pActives[0];              // alias for shared UI paths
+    this.dEReserve = t.party.slice(2);
+
+    this.dP = pActives.map((inst, i) => this.makeSlotD(inst, true, i));
+    this.dE = t.party.slice(0, 2).map((e, i) => this.makeSlotD(this.createInstance(e.id, e.level), false, i));
+    this.playerMon = this.dP[0]!.mon;               // alias
+
+    this.dE.forEach(s => s && markSeen(this.playerState, s.inst.dataId));
+    this.playerState.party.forEach(m => markCaught(this.playerState, m.dataId));
+    this.dP.forEach(s => s && this.dParticipants.add(s.inst));
+
+    // hidden until the intro reveals them
+    [...this.dP, ...this.dE].forEach(s => s && s.sprite.setVisible(false));
+    this.dSetPanelsVisible(this.dP, false);
+    this.dSetPanelsVisible(this.dE, false);
+
+    this.drawMessageWindow();
+    this.drawCommandWindow();
+    this.setupInput();
+    this.cameras.main.flash(500, 255, 255, 255);
+    this.time.delayedCall(600, () => this.introD());
+  }
+
+  // ---- ペアの立ち絵（登場・勝利時） ----
+  private showPairPortraitsD(onDone?: () => void): void {
+    const t = this.trainerData!;
+    const y = Math.round((this.EPLAT_Y + 8) * this.sy);
+    const keyA = t.battleSprite && this.textures.exists(t.battleSprite) ? t.battleSprite : "player-frame-0";
+    const keyB = t.battleSprite2 && this.textures.exists(t.battleSprite2) ? t.battleSprite2 : keyA;
+    if (!this.trainerPortrait) this.trainerPortrait = this.add.image(720, y, keyA).setOrigin(0.5, 1).setDepth(6);
+    if (!this.trainerPortrait2) this.trainerPortrait2 = this.add.image(760, y, keyB).setOrigin(0.5, 1).setDepth(6);
+    const size = (img: Phaser.GameObjects.Image, key: string) => {
+      img.setTexture(key);
+      img.setScale((116 * this.sy) / (img.height || 32));
+      img.setVisible(true).setAlpha(1).setY(y);
+    };
+    size(this.trainerPortrait, keyA);
+    size(this.trainerPortrait2, keyB);
+    this.trainerPortrait.setX(700); this.trainerPortrait2.setX(760);
+    this.tweens.add({ targets: this.trainerPortrait, x: this.EPLAT_X - 52, duration: 350, ease: "Cubic.out" });
+    this.tweens.add({ targets: this.trainerPortrait2, x: this.EPLAT_X + 58, duration: 350, ease: "Cubic.out",
+      onComplete: () => onDone && onDone() });
+  }
+
+  private hidePairPortraitsD(onDone?: () => void): void {
+    if (!this.trainerPortrait) { onDone && onDone(); return; }
+    this.tweens.add({ targets: this.trainerPortrait, x: 700, duration: 300, ease: "Cubic.in" });
+    this.tweens.add({ targets: this.trainerPortrait2!, x: 770, duration: 300, ease: "Cubic.in",
+      onComplete: () => {
+        this.trainerPortrait?.setVisible(false);
+        this.trainerPortrait2?.setVisible(false);
+        onDone && onDone();
+      } });
+  }
+
+  private revealSideD(arr: (DSlot | null)[], onDone: () => void): void {
+    let pending = 0;
+    arr.forEach(s => {
+      if (!s) return;
+      pending++;
+      const flash = this.add.circle(s.sprite.x, s.sprite.y - s.sprite.displayHeight / 2, 8 * this.sy, 0xffffff).setDepth(7);
+      this.tweens.add({ targets: flash, scale: 5, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => flash.destroy() });
+      const sc = s.sprite.scaleX;
+      s.sprite.setVisible(true).setScale(sc * 0.1);
+      this.tweens.add({ targets: s.sprite, scaleX: sc, scaleY: sc, duration: 260, ease: "Back.out",
+        onComplete: () => { if (--pending === 0) onDone(); } });
+    });
+    this.dSetPanelsVisible(arr, true);
+    if (pending === 0) onDone();
+  }
+
+  private introD(): void {
+    const t = this.trainerData!;
+    const eNames = this.dAliveSlots(this.dE).map(i => this.dE[i]!.mon.name);
+    const pNames = this.dAliveSlots(this.dP).map(i => this.dP[i]!.mon.name);
+    this.showPairPortraitsD(() => {
+      this.showMessages(
+        [`${t.name}が しょうぶを しかけてきた！`, t.dialogBefore],
+        () => this.showMessages(
+          [`2人は ${eNames.join("と ")}を くりだした！`],
+          () => this.hidePairPortraitsD(() => this.revealSideD(this.dE, () => {
+            // 主人公の後ろ姿 → 2体同時くりだし
+            if (this.textures.exists(this.playerBackKey())) this.showPlayerBack();
+            this.showMessages([`ゆけっ！ ${pNames.join("と ")}！`], () => {
+              if (this.playerBackPortrait) this.playerBackPortrait.setVisible(false);
+              this.revealSideD(this.dP, () => this.beginCommandD(0));
+            });
+          }))
+        )
+      );
+    });
+  }
+
+  // ---- コマンド選択（スロットごと） ----
+  private beginCommandD(fromSlot: number): void {
+    const alive = this.dAliveSlots(this.dP).filter(i => i >= fromSlot);
+    if (alive.length === 0) { this.queueEnemyActionsD(); this.resolveRoundD(); return; }
+    this.dCmdSlot = alive[0];
+    const slot = this.dP[this.dCmdSlot]!;
+    this.playerMon = slot.mon;          // alias: 技メニュー等の共有UIが参照する
+    this.playerInstance = slot.inst;
+    this.phase = "command";
+    this.selectedCommand = 0;
+    this.showCommandWindow();
+    this.highlightCommand(0);
+    this.setCommandPromptD();
+  }
+
+  private setCommandPromptD(): void {
+    const slot = this.dP[this.dCmdSlot];
+    if (slot) this.setMessage(`${slot.mon.name}は どうする？`);
+  }
+
+  private executeCommandD(index: number): void {
+    switch (index) {
+      case 0:
+        this.showMoveSelect();
+        break;
+      case 1:
+        this.phase = "executing";
+        this.hideCommandWindow();
+        this.showMessages(["ダブルバトルの さいちゅうは\nどうぐを つかえない！"], () => {
+          this.phase = "command"; this.showCommandWindow(); this.setCommandPromptD();
+        });
+        break;
+      case 2:
+        this.handleSwitchD();
+        break;
+      case 3:
+        this.phase = "executing";
+        this.hideCommandWindow();
+        this.showMessages(["だめだ！ しょうぶの さいちゅうだ！"], () => {
+          this.phase = "command"; this.showCommandWindow(); this.setCommandPromptD();
+        });
+        break;
+    }
+  }
+
+  private chooseMoveD(move: BattleMove): void {
+    this.hideMoveSelect();
+    if (move.isSupport) { this.lockActionD(move, this.dCmdSlot, "p"); return; }
+    const alive = this.dAliveSlots(this.dE);
+    if (alive.length <= 1) { this.lockActionD(move, alive[0] ?? 0, "e"); return; }
+    this.dPendingMove = move;
+    this.dTargetIdx = alive[0];
+    this.phase = "target_select";
+    this.placeTargetMarkerD();
+    this.setMessage("どの あいてに つかう？\n（←→で えらんで Aで けってい）");
+  }
+
+  private placeTargetMarkerD(): void {
+    this.destroyTargetMarkerD();
+    const slot = this.dE[this.dTargetIdx];
+    if (!slot) return;
+    const x = slot.sprite.x, y = slot.sprite.y - slot.sprite.displayHeight - Math.round(16 * this.sy);
+    this.dTargetMarker = this.add.triangle(x, y, 0, 0, 18, 0, 9, 13, 0xffe14a).setDepth(9);
+    this.tweens.add({ targets: this.dTargetMarker, y: y + 5, duration: 320, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+  }
+
+  private destroyTargetMarkerD(): void {
+    this.dTargetMarker?.destroy();
+    this.dTargetMarker = undefined;
+  }
+
+  private lockActionD(move: BattleMove, targetSlot: number, targetSide: "p" | "e"): void {
+    this.destroyTargetMarkerD();
+    this.dPendingMove = null;
+    this.dActions.push({ side: "p", slot: this.dCmdSlot, move, targetSide, targetSlot });
+    const nextAlive = this.dAliveSlots(this.dP).filter(i => i > this.dCmdSlot);
+    if (nextAlive.length > 0) {
+      this.beginCommandD(nextAlive[0]);
+    } else {
+      this.queueEnemyActionsD();
+      this.resolveRoundD();
+    }
+  }
+
+  private queueEnemyActionsD(): void {
+    for (const i of this.dAliveSlots(this.dE)) {
+      const mon = this.dE[i]!.mon;
+      const move = mon.moves[Math.floor(Math.random() * mon.moves.length)];
+      const pAlive = this.dAliveSlots(this.dP);
+      const target = pAlive[Math.floor(Math.random() * pAlive.length)] ?? 0;
+      if (move.isSupport) this.dActions.push({ side: "e", slot: i, move, targetSide: "e", targetSlot: i });
+      else this.dActions.push({ side: "e", slot: i, move, targetSide: "p", targetSlot: target });
+    }
+  }
+
+  // ---- ラウンド解決（すばやさ順） ----
+  private resolveRoundD(): void {
+    this.phase = "executing";
+    this.hideCommandWindow();
+    const arrOf = (side: "p" | "e") => (side === "p" ? this.dP : this.dE);
+    this.dActions.sort((a, b) => {
+      const pa = a.move.priority ? 1 : 0, pb = b.move.priority ? 1 : 0;
+      if (pa !== pb) return pb - pa;
+      const sa = arrOf(a.side)[a.slot]?.mon; const sb = arrOf(b.side)[b.slot]?.mon;
+      const va = (sa?.speed || 0) * (sa?.speedMod || 1);
+      const vb = (sb?.speed || 0) * (sb?.speedMod || 1);
+      if (va !== vb) return vb - va;
+      return Math.random() < 0.5 ? -1 : 1;
+    });
+
+    const step = (i: number): void => {
+      if (this.dOver) return;
+      if (i >= this.dActions.length) { this.endRoundD(); return; }
+      const a = this.dActions[i];
+      const attacker = arrOf(a.side)[a.slot];
+      if (!attacker || attacker.mon.currentHp <= 0) { step(i + 1); return; }
+      // ターゲット再決定（倒れていたら同じ側の生存者へ）
+      let target = arrOf(a.targetSide)[a.targetSlot];
+      if (!target || target.mon.currentHp <= 0) {
+        const alive = this.dAliveSlots(arrOf(a.targetSide));
+        target = alive.length > 0 ? arrOf(a.targetSide)[alive[0]]! : null as unknown as DSlot;
+      }
+      if (!target) { step(i + 1); return; }
+      this.executeActionD(attacker, a.move, target, () => {
+        if (target!.mon.currentHp <= 0) {
+          this.faintD(target!, a.targetSide, () => this.checkSidesD(() => step(i + 1)));
+        } else {
+          step(i + 1);
+        }
+      });
+    };
+    step(0);
+  }
+
+  private executeActionD(att: DSlot, move: BattleMove, tgt: DSlot, onComplete: () => void): void {
+    const messages: string[] = [];
+    if (move.isSupport && move.effect) {
+      messages.push(`${att.mon.name}の ${move.name}！`);
+      const eff = move.effect;
+      if (eff.type === "heal" || eff.type === "healAndBuff") {
+        const healAmount = Math.floor(att.mon.maxHp * ((eff.healPercent || 50) / 100));
+        att.mon.currentHp = Math.min(att.mon.maxHp, att.mon.currentHp + healAmount);
+        att.inst.currentHp = att.mon.currentHp;
+        messages.push(`${att.mon.name}のHPが かいふくした！`);
+      }
+      if (eff.type === "statChange" || eff.type === "healAndBuff" || eff.type === "allStatsUp") {
+        const subject = eff.target === "self" ? att.mon : tgt.mon;
+        if (eff.type === "allStatsUp") {
+          const mult = eff.multiplier || 1.2;
+          subject.attackMod *= mult; subject.defenseMod *= mult; subject.speedMod *= mult;
+          messages.push(`${subject.name}の のうりょくが あがった！`);
+        } else if (eff.stat) {
+          const mult = eff.multiplier || 1;
+          switch (eff.stat) {
+            case "attack": subject.attackMod *= mult; break;
+            case "defense": subject.defenseMod *= mult; break;
+            case "speed": subject.speedMod *= mult; break;
+          }
+          const statName = eff.stat === "attack" ? "こうげき" : eff.stat === "defense" ? "ぼうぎょ" : "すばやさ";
+          messages.push(`${subject.name}の ${statName}が ${mult > 1 ? "あがった" : "さがった"}！`);
+        }
+      }
+      this.showMessages(messages, () => { this.refreshPanelD(att); onComplete(); });
+      return;
+    }
+
+    // 攻撃わざ
+    const roll = Math.random() * 100;
+    const acc = (move as BattleMove & { accuracy?: number }).accuracy || 100;
+    if (roll > acc) {
+      this.showMessages([`${att.mon.name}の ${move.name}！`, "しかし こうげきは はずれた！"], onComplete);
+      return;
+    }
+    let damage = 0; let effectiveness = 1; let hitLine: string | null = null;
+    if (move.effect && move.effect.type === "multiHit") {
+      const hits = Phaser.Math.Between(move.effect.min || 2, move.effect.max || 5);
+      for (let i = 0; i < hits; i++) damage += calculateDamage(att.mon, tgt.mon, move, this.typeChart).damage;
+      hitLine = `${hits}かい あたった！`;
+    } else {
+      const r = calculateDamage(att.mon, tgt.mon, move, this.typeChart);
+      damage = r.damage; effectiveness = r.effectiveness;
+    }
+    this.showMessages([`${att.mon.name}の ${move.name}！`], () => {
+      tgt.mon.currentHp = Math.max(0, tgt.mon.currentHp - damage);
+      tgt.inst.currentHp = tgt.mon.currentHp;
+      this.blinkSprite(tgt.sprite, () => {
+        this.animateHpBarD(tgt, () => {
+          const extra: string[] = [];
+          if (hitLine) extra.push(hitLine);
+          if (effectiveness >= 2.0) extra.push("こうかは バツグンだ！");
+          else if (effectiveness <= 0.5) extra.push("こうかは いまひとつ…");
+          if (extra.length > 0) this.showMessages(extra, onComplete);
+          else onComplete();
+        });
+      });
+    });
+  }
+
+  private animateHpBarD(slot: DSlot, onComplete: () => void): void {
+    const g = this.dBarGeom(slot);
+    const targetRatio = Phaser.Math.Clamp(slot.mon.currentHp / slot.mon.maxHp, 0, 1);
+    this.tweens.addCounter({
+      from: 0, to: 100, duration: 380, ease: "Linear",
+      onUpdate: (tw) => {
+        const p = (tw.getValue() ?? 0) / 100;
+        const r = Phaser.Math.Linear(Math.min(1, targetRatio + (1 - p) * 0.12), targetRatio, p);
+        this.drawHpBarGraphic(slot.panel.bar, g.x, g.y, g.w, g.h, Phaser.Math.Clamp(r, 0, 1));
+      },
+      onComplete: () => { this.refreshPanelD(slot); onComplete(); },
+    });
+  }
+
+  private faintD(slot: DSlot, side: "p" | "e", cb: () => void): void {
+    const line = side === "e" ? `${slot.mon.name}を たおした！` : `${slot.mon.name}は たおれた！`;
+    this.tweens.add({ targets: slot.sprite, alpha: 0, y: slot.sprite.y + 26, duration: 450 });
+    slot.panel.objs.forEach(o => (o as Phaser.GameObjects.Image).setAlpha(0.35));
+    if (side === "p") slot.inst.currentHp = 0;
+    this.showMessages([line], cb);
+  }
+
+  private checkSidesD(next: () => void): void {
+    const eAlive = this.dAliveSlots(this.dE).length;
+    if (eAlive === 0 && this.dEReserve.length === 0) { this.victoryD(); return; }
+    const pPartyAlive = this.playerState.party.some(m => m.currentHp > 0);
+    if (!pPartyAlive) { this.defeatD(); return; }
+    next();
+  }
+
+  /** ラウンド終了: 倒れた枠に控えを補充してから次のコマンドへ。 */
+  private endRoundD(): void {
+    this.dActions = [];
+    const t = this.trainerData!;
+    const refills: (() => void)[] = [];
+    const runNext = (): void => {
+      const f = refills.shift();
+      if (f) { f(); return; }
+      // 次ラウンドへ
+      const firstAlive = this.dAliveSlots(this.dP)[0];
+      if (firstAlive === undefined) { this.defeatD(); return; }
+      this.beginCommandD(0);
+    };
+
+    // 敵側の補充
+    this.dE.forEach((s, i) => {
+      if (s && s.mon.currentHp > 0) return;
+      if (this.dEReserve.length === 0) return;
+      const nxt = this.dEReserve.shift()!;
+      refills.push(() => {
+        const inst = this.createInstance(nxt.id, nxt.level);
+        this.replaceSlotD(this.dE, i, inst, false);
+        markSeen(this.playerState, inst.dataId);
+        this.showMessages([`${t.name}は ${this.dMonName(inst)}を くりだした！`], runNext);
+      });
+    });
+    // 味方側の補充（ベンチから自動で前へ）
+    this.dP.forEach((s, i) => {
+      if (s && s.mon.currentHp > 0) return;
+      refills.push(() => {
+        const activeInsts = this.dAliveSlots(this.dP).map(j => this.dP[j]!.inst);
+        const bench = this.playerState.party.find(m => m.currentHp > 0 && !activeInsts.includes(m));
+        if (!bench) { runNext(); return; }
+        this.replaceSlotD(this.dP, i, bench, true);
+        this.dParticipants.add(bench);
+        this.showMessages([`ゆけっ！ ${this.dMonName(bench)}！`], runNext);
+      });
+    });
+    runNext();
+  }
+
+  /** 枠のモンスターを差し替えて表示を復帰させる（補充・こうたい共用）。 */
+  private replaceSlotD(arr: (DSlot | null)[], i: number, inst: MonsterInstance, isPlayer: boolean): void {
+    const old = arr[i];
+    if (!old) return;
+    old.mon = this.instanceToBattleMonster(inst);
+    old.inst = inst;
+    old.sprite.setTexture(isPlayer ? this.playerTexKey(inst.dataId) : `monster-${inst.dataId}`);
+    this.sizeMonsterSprite(old.sprite, isPlayer ? 106 : 92, isPlayer ? 112 : 98);
+    // faint tween が y をずらしているので基準位置に戻す
+    const s = this.sy;
+    old.sprite.setY(isPlayer
+      ? Math.round((this.PPLAT_Y + 8 + i * 7) * s)
+      : Math.round((this.EPLAT_Y + 6 + i * 6) * s));
+    old.sprite.setX(isPlayer
+      ? this.PPLAT_X - 72 + i * 150
+      : this.EPLAT_X - 74 + i * 112);
+    old.sprite.setAlpha(1).setVisible(true);
+    old.panel.objs.forEach(o => (o as Phaser.GameObjects.Image).setAlpha(1));
+    this.refreshPanelD(old);
+  }
+
+  // ---- こうたい（そのスロットのターンを消費） ----
+  private handleSwitchD(): void {
+    this.hideCommandWindow();
+    const activeInsts = this.dAliveSlots(this.dP).map(i => this.dP[i]!.inst);
+    const aliveParty = this.playerState.party.filter(m => m.currentHp > 0 && !activeInsts.includes(m));
+    if (aliveParty.length === 0) {
+      this.showMessages(["こうたいできる なかまが いない！"], () => {
+        this.phase = "command"; this.showCommandWindow(); this.setCommandPromptD();
+      });
+      return;
+    }
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+    const positions = [
+      { x: 160, y: Math.round(360 * this.sy) }, { x: 480, y: Math.round(360 * this.sy) },
+      { x: 160, y: Math.round(410 * this.sy) }, { x: 480, y: Math.round(410 * this.sy) },
+      { x: 160, y: Math.round(455 * this.sy) }, { x: 480, y: Math.round(455 * this.sy) },
+    ];
+    const options = [
+      ...aliveParty.map(m => `${this.dMonName(m)} Lv${m.level} HP${m.currentHp}/${m.maxHp}`),
+      "もどる",
+    ];
+    this.phase = "switch_mon";
+    this.selectedCommand = 0;
+    for (let i = 0; i < options.length; i++) {
+      const px = positions[i % positions.length].x;
+      const py = positions[i % positions.length].y;
+      const bg = this.add.graphics().setDepth(20);
+      const text = this.add.text(px, py, options[i], {
+        fontSize: "19px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(21);
+      const zone = this.add.zone(px, py, 280, 40).setInteractive().setDepth(22).setOrigin(0.5);
+      const idx = i;
+      zone.on("pointerdown", () => {
+        if (idx === aliveParty.length) {
+          this.commandSlots.forEach(s2 => { s2.bg.destroy(); s2.text.destroy(); s2.zone.destroy(); });
+          this.commandSlots = [];
+          this.rebuildCommandWindow();
+          this.phase = "command";
+          this.showCommandWindow();
+          this.setCommandPromptD();
+        } else {
+          this.doSwitchD(aliveParty[idx]);
+        }
+      });
+      this.commandSlots.push({ label: options[i], x: px, y: py, bg, text, zone });
+    }
+    this.highlightLearnSlots(0);
+    this.setMessage("だれと こうたいする？");
+  }
+
+  private doSwitchD(newMon: MonsterInstance): void {
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+    this.rebuildCommandWindow();
+    this.hideCommandWindow();
+    const slot = this.dP[this.dCmdSlot]!;
+    const oldName = slot.mon.name;
+    this.replaceSlotD(this.dP, this.dCmdSlot, newMon, true);
+    this.dParticipants.add(newMon);
+    this.playerMon = slot.mon;
+    this.playerInstance = slot.inst;
+    this.phase = "executing";
+    this.showMessages([`${oldName} もどれ！ ゆけっ！${slot.mon.name}！`], () => {
+      // こうたいはそのスロットの行動を消費する
+      const nextAlive = this.dAliveSlots(this.dP).filter(i => i > this.dCmdSlot);
+      if (nextAlive.length > 0) this.beginCommandD(nextAlive[0]);
+      else { this.queueEnemyActionsD(); this.resolveRoundD(); }
+    });
+  }
+
+  // ---- 勝敗 ----
+  private victoryD(): void {
+    this.dOver = true;
+    this.phase = "victory";
+    const t = this.trainerData!;
+    const prize = t.prizeMoneyBase;
+    this.playerState.money += prize;
+    this.playerState.defeatedTrainers.push(t.id);
+    this.dE.forEach(s => s && s.sprite.setVisible(false));
+    this.showPairPortraitsD(() => {
+      this.showMessages([t.dialogWin, `${prize}円 もらった！`], () => {
+        this.hidePairPortraitsD(() => this.expFlowD(() => this.endBattle()));
+      });
+    });
+  }
+
+  /** 参加した生存アルモン全員に経験値（敵パーティ全体ぶん）を配る。 */
+  private expFlowD(cb: () => void): void {
+    const t = this.trainerData!;
+    let total = 0;
+    for (const e of t.party) {
+      const data = this.allMonsters.find(m => m.id === e.id);
+      if (data) total += getExpReward(data.baseExp, e.level);
+    }
+    const msgs: string[] = [];
+    for (const inst of this.dParticipants) {
+      if (inst.currentHp <= 0) continue;
+      const data = this.allMonsters.find(m => m.id === inst.dataId)!;
+      inst.exp += total;
+      msgs.push(`${data.name}は ${total}けいけんちを かくとく！`);
+      while (inst.level < 100 && inst.exp >= getExpForLevel(inst.level + 1)) {
+        inst.level++;
+        applyLevelUp(inst, this.allMonsters);
+        msgs.push(`${data.name}は レベル${inst.level}に なった！`);
+        const mv = getNewMoveAtLevel(data, inst.level);
+        if (mv && !inst.moves.includes(mv)) {
+          const mvName = this.allMoves.find(m => m.id === mv)?.name ?? mv;
+          if (inst.moves.length < 4) {
+            inst.moves.push(mv);
+            msgs.push(`${data.name}は ${mvName}を おぼえた！`);
+          } else {
+            msgs.push(`${data.name}は ${mvName}を おぼえたかったが\nわざが いっぱいだった…`);
+          }
+        }
+      }
+      const evo = checkEvolution(inst, this.allMonsters);
+      if (evo) {
+        const idx = this.playerState.party.indexOf(inst);
+        if (idx >= 0) this.pendingEvolutions.push({ partyIndex: idx, fromId: inst.dataId, toId: evo.evolvesTo });
+      }
+    }
+    if (msgs.length === 0) { cb(); return; }
+    this.showMessages(msgs, cb);
+  }
+
+  private defeatD(): void {
+    this.dOver = true;
+    this.phase = "defeat";
+    this.showMessages(["めのまえが まっくらになった…"], () => {
+      this.time.delayedCall(1200, () => this.endBattleDefeat());
+    });
   }
 }

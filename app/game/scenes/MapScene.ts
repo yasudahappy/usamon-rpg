@@ -5040,8 +5040,8 @@ export class MapScene extends Phaser.Scene {
 
     // ジムの看板（ジム前の広場）
     put("nectar-sign", 21, 8, () => this.showDialog([
-      "『ミノリジム』\nリーダー：ヒノ",
-      "「もえる 探究心で むかえうつ！」",
+      "『ミノリジム』\nリーダー：イシイ＆シオリ",
+      "「2人で ひとつ！ ダブルバトルで\nむかえうつ！」",
       "※ジムの マグマは バルブで\nながれを きりかえられる らしい。",
     ]), -4);
 
@@ -5477,11 +5477,28 @@ export class MapScene extends Phaser.Scene {
     this.nectarExam.push({
       x: 11, y: 22, fn: () => this.showDialog([
         "『ミノリジム 心得』",
+        "一、この ジムの しょうぶは すべて\n2たい2の ダブルバトル なり。",
         "一、バルブで マグマの ながれを\nきりかえるべし。",
         "一、バルブが かたほうだけ ONのとき、\n西の たからばしが ひえる との うわさ。",
       ]),
     });
     this.add.image(11 * ts + ts / 2, 22 * ts + ts / 2 - 4, "nectar-sign").setDepth(8);
+
+    // ペア戦の相方（バトルはトレーナー1エントリで2人ぶん扱い）
+    // ヒジリ（キシシタの相方・ジム員コンビ）
+    this.add.image(12 * ts + ts / 2, 15 * ts + ts / 2, this.npcTex("cast-char4-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({
+      x: 12, y: 15, fn: () => this.showDialog([
+        "ヒジリ「しょうぶは キシシタと\nぼくの 2人で ひとつ だよ！」",
+      ]),
+    });
+    // シオリ（イシイの相方・リーダーコンビ）
+    this.add.image(10 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-char5-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({
+      x: 10, y: 2, fn: () => this.showDialog([
+        "シオリ「しょうぶなら となりの\nイシイに 声を かけてね！\n2人 いっしょに おあいて するわ！」",
+      ]),
+    });
   }
 
   /** Step-on triggers: ①②展望+地球の出 / ⑬ヴォイスの影 */

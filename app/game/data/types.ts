@@ -86,4 +86,6 @@ export interface TrainerData {
   dialogLose: string;
   party: { id: string; level: number }[];
   battleSprite?: string;   // texture key for the battle intro/outro portrait
+  battleSprite2?: string;  // second portrait for duo (double-battle) trainers
+  doubles?: boolean;       // true = 2vs2 double battle against this trainer duo
 }

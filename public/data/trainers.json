@@ -505,7 +505,7 @@
   "sightRange": 2,
   "prizeMoneyBase": 560,
   "dialogBefore": "わたしは リルの 地層を しらべているの。\n月の 歴史が ぎゅっと つまってる のよ。\nちょっと 実験に つきあって！",
-  "dialogWin": "すごい データが とれたわ！ ありがと。\n豊かの海の ジムリーダー ヒノさんも 火山の 研究者なのよ。",
+  "dialogWin": "すごい データが とれたわ！ ありがと。\nミノリジムの リーダーは イシイ＆シオリの 2人組。2たい2の ダブルバトルで むかえうつ そうよ。",
   "dialogLose": "実験は 大せいこう ってこと ね！",
   "party": [
    {
@@ -521,78 +521,65 @@
   "overworldSprite": "char5"
  },
  {
-  "id": "gym3_atsushi",
-  "name": "かざんマニア アツシ",
+  "id": "gym3_pair",
+  "name": "ジムトレーナー キシシタ＆ヒジリ",
   "mapKey": "gym_3",
-  "x": 12,
+  "x": 11,
   "y": 15,
   "direction": "left",
   "sightRange": 4,
-  "prizeMoneyBase": 700,
-  "dialogBefore": "ようこそ ミノリジムへ！\nここの マグマは ヒノさんが 地下の 熱で つくった 人工マグマ だ！\nあついぜ〜 バトルも あついぜ〜！",
-  "dialogWin": "あちち… まけた！\nバルブの しかけは もう わかったか？ かたっぽだけ ONの ときに ひえる 橋も あるらしいぜ。",
-  "dialogLose": "マグマより あつい おれの 勝ち！",
+  "prizeMoneyBase": 1400,
+  "doubles": true,
+  "dialogBefore": "キシシタ「おれたち ミノリジムの ジム員コンビ！」\nヒジリ「このジムの しょうぶは ぜんぶ 2たい2の ダブルバトル！ アルモン 2体で かかってきな！」",
+  "dialogWin": "キシシタ「くっ… いいコンビネーションだ…！」\nヒジリ「リーダーの イシイさんと シオリさんは もっと 息ピッタリだよ！ バルブの しかけを といて 会いに いきな！」",
+  "dialogLose": "キシシタ「ダブルバトルは チームワークが すべて だ！」",
   "party": [
    {
     "id": "meteko",
-    "level": 27
+    "level": 26
    },
    {
     "id": "genbu",
     "level": 26
    }
   ],
-  "battleSprite": "trainer-peace",
-  "overworldSprite": "char6"
+  "battleSprite": "trainer-kishishita",
+  "battleSprite2": "trainer-hijiri",
+  "overworldSprite": "char3"
  },
  {
-  "id": "gym3_kazama",
-  "name": "ちしつちょうさいん カザマ",
-  "mapKey": "gym_3",
-  "x": 8,
-  "y": 9,
-  "direction": "left",
-  "sightRange": 4,
-  "prizeMoneyBase": 720,
-  "dialogBefore": "月の 海はね、玄武岩（げんぶがん）という\n黒い 岩の 平原 なんだ。この ジムの 床も 玄武岩 づくし。\n地質の 力、みせて あげよう！",
-  "dialogWin": "みごと！ ヒノさんは この先だ。\n燃える ハートで ぶつかって いきな！",
-  "dialogLose": "地層のように どっしり かまえる ことだね。",
-  "party": [
-   {
-    "id": "genbu",
-    "level": 27
-   },
-   {
-    "id": "pribo",
-    "level": 27
-   }
-  ],
-  "battleSprite": "trainer-suit",
-  "overworldSprite": "char7"
- },
- {
-  "id": "hino",
-  "name": "ジムリーダー ヒノ",
+  "id": "ishii_shiori",
+  "name": "ジムリーダー イシイ＆シオリ",
   "mapKey": "gym_3",
   "x": 9,
   "y": 2,
   "direction": "down",
   "sightRange": 3,
-  "prizeMoneyBase": 1800,
-  "dialogBefore": "よく来たね！ あたしは ヒノ。\n溶岩洞と リルを しらべる 火山研究者さ！\n月の 火山は 大むかしに 活動を やめた——でも あたしの 探究心は マグマみたいに 熱いまま！\nあんたの 熱、みせてもらうよ！",
-  "dialogWin": "あっつい バトルだった…！\n『フェカンドバッジ』は あんたの もんだ！\nこの 豊かの海はね、1970年に ルナ16号が 世界で はじめて 無人で 月の土を 持ち帰った 場所なんだ。たった 101グラムの 土が 世界中を わくわくさせた！\n…それとね。最近 黒ずくめの 連中が 『水』を かぎまわってる って ウワサだ。次の 海へ 行くなら 気を つけな！",
-  "dialogLose": "まだまだ 生焼けだね！\nリカバリーポッドで 休んで また おいで！",
+  "prizeMoneyBase": 2200,
+  "doubles": true,
+  "dialogBefore": "イシイ「ようこそ、ミノリジムへ。おれは イシイ。地下の 熱を あやつる 地熱エンジニアだ。」\nシオリ「わたしは シオリ！ 溶岩と 玄武岩を しらべる 火山研究者よ。」\nイシイ「おれたちの しょうぶは 2たい2——」\nシオリ「息の あった コンビネーション、うけてみて！」",
+  "dialogWin": "イシイ「……あついな。おれたちの 完敗だ。」\nシオリ「『フェカンドバッジ』は あなたの もの！」\nイシイ「この 豊かの海は 1970年、ルナ16号が 世界で はじめて 無人で 月の土を 持ち帰った 場所だ。101グラムの 土が 世界を 変えた。」\nシオリ「…それとね、最近 黒ずくめの 連中が 『水』を かぎまわってる ウワサが あるの。次の 海へ 行くなら 気をつけて！」",
+  "dialogLose": "シオリ「まだまだ 生焼け ね！」\nイシイ「リカバリーポッドで 休んで また 来い。」",
   "party": [
    {
     "id": "meteko",
+    "level": 28
+   },
+   {
+    "id": "genbu",
     "level": 27
    },
    {
     "id": "meteodon",
     "level": 30
+   },
+   {
+    "id": "ganburos",
+    "level": 29
    }
   ],
-  "battleSprite": "trainer-redcap",
+  "battleSprite": "trainer-ishii",
+  "battleSprite2": "trainer-shiori",
   "overworldSprite": "char9"
  }
 ]
