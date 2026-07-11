@@ -545,7 +545,7 @@
   ],
   "battleSprite": "trainer-kishishita",
   "battleSprite2": "trainer-hijiri",
-  "overworldSprite": "char3"
+  "overworldSprite": "kishishita"
  },
  {
   "id": "ishii_shiori",
@@ -580,6 +580,6 @@
   ],
   "battleSprite": "trainer-ishii",
   "battleSprite2": "trainer-shiori",
-  "overworldSprite": "char9"
+  "overworldSprite": "ishii"
  }
 ]

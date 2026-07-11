@@ -5486,14 +5486,14 @@ export class MapScene extends Phaser.Scene {
 
     // ペア戦の相方（バトルはトレーナー1エントリで2人ぶん扱い）
     // ヒジリ（キシシタの相方・ジム員コンビ）
-    this.add.image(12 * ts + ts / 2, 15 * ts + ts / 2, this.npcTex("cast-char4-down", "npc-kinoshita")).setDepth(9);
+    this.add.image(12 * ts + ts / 2, 15 * ts + ts / 2, this.npcTex("cast-hijiri-left", "npc-kinoshita")).setDepth(9);
     this.nectarExam.push({
       x: 12, y: 15, fn: () => this.showDialog([
         "ヒジリ「しょうぶは キシシタと\nぼくの 2人で ひとつ だよ！」",
       ]),
     });
     // シオリ（イシイの相方・リーダーコンビ）
-    this.add.image(10 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-char5-down", "npc-mom")).setDepth(9);
+    this.add.image(10 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-shiori-down", "npc-mom")).setDepth(9);
     this.nectarExam.push({
       x: 10, y: 2, fn: () => this.showDialog([
         "シオリ「しょうぶなら となりの\nイシイに 声を かけてね！\n2人 いっしょに おあいて するわ！」",
