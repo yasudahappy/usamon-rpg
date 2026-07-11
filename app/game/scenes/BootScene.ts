@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -579,6 +579,64 @@ export class BootScene extends Phaser.Scene {
         ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
         ctx.fillStyle = "rgba(120,140,170,0.12)";
         ctx.fillRect(0, 0, ts, 2);
+      } else if (id === "100") {
+        // マグマ / あつい裂け目: glowing molten channel (blocked). Bright core
+        // snaking through dark crust so the "danger" reads at a glance.
+        ctx.fillStyle = "#3a1410"; ctx.fillRect(0, 0, ts, ts);
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#c83a10"); grd.addColorStop(0.5, "#f07020"); grd.addColorStop(1, "#c83a10");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.moveTo(0, 10); ctx.quadraticCurveTo(10, 4, 18, 12);
+        ctx.quadraticCurveTo(26, 20, ts, 14);
+        ctx.lineTo(ts, 24); ctx.quadraticCurveTo(20, 30, 10, 24);
+        ctx.quadraticCurveTo(4, 20, 0, 22); ctx.closePath(); ctx.fill();
+        // white-hot core + floating crust plates
+        ctx.fillStyle = "#ffd070";
+        ctx.fillRect(6, 14, 7, 2); ctx.fillRect(20, 17, 6, 2);
+        ctx.fillStyle = "#4a1c14";
+        ctx.fillRect(14, 8, 5, 3); ctx.fillRect(24, 22, 4, 3); ctx.fillRect(2, 24, 5, 3);
+      } else if (id === "101") {
+        // ひえたマグマばし: cooled lava bridge — dark basalt with faint warm seams
+        ctx.fillStyle = "#5c4a44"; ctx.fillRect(0, 0, ts, ts);
+        let s = 71;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#4a3a36";
+        for (let i = 0; i < 30; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.fillStyle = "#6e5a52";
+        for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // hexagonal cooling-crack pattern hint + dying embers
+        ctx.strokeStyle = "rgba(30,20,18,0.8)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(4, 8); ctx.lineTo(14, 6); ctx.lineTo(20, 14); ctx.lineTo(14, 24); ctx.lineTo(5, 22); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(20, 14); ctx.lineTo(28, 10); ctx.stroke();
+        ctx.fillStyle = "rgba(240,110,40,0.5)";
+        ctx.fillRect(9, 15, 2, 1); ctx.fillRect(23, 21, 2, 1);
+      } else if (id === "102") {
+        // ジム床(玄武岩): dark basalt tiles with a warm grid — the fire gym hall
+        ctx.fillStyle = "#4a3c40"; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "#5e4c50"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        ctx.fillStyle = "#56464a";
+        ctx.fillRect(ts / 2 - 1, ts / 2 - 1, 2, 2);
+        ctx.fillStyle = "rgba(240,140,60,0.18)";
+        ctx.fillRect(4, 4, 5, 1); ctx.fillRect(22, 25, 5, 1);
+      } else if (id === "103") {
+        // リルの溝: a dark collapsed groove sunk into the regolith plain
+        ctx.fillStyle = "#c8bfae"; ctx.fillRect(0, 0, ts, ts);
+        const grd = ctx.createLinearGradient(0, 0, 0, ts);
+        grd.addColorStop(0, "#5a5045"); grd.addColorStop(0.45, "#3e362e");
+        grd.addColorStop(0.75, "#4a4038"); grd.addColorStop(1, "#8a8272");
+        ctx.fillStyle = grd; ctx.fillRect(0, 3, ts, ts - 5);
+        // rim shadow (top lip) + lit bottom lip
+        ctx.fillStyle = "#2e2822"; ctx.fillRect(0, 3, ts, 3);
+        ctx.fillStyle = "#d8d0c0"; ctx.fillRect(0, ts - 2, ts, 2);
+        // rocky texture inside the trench
+        let s = 63;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#2a241e";
+        for (let i = 0; i < 16; i++) ctx.fillRect(rand() * ts, 8 + rand() * 16, 2, 1);
+        ctx.fillStyle = "#6e6254";
+        for (let i = 0; i < 8; i++) ctx.fillRect(rand() * ts, 8 + rand() * 14, 1, 1);
       } else if (id === "90") {
         // Frost regolith (ネクタルタウンの霜地面): pale blue-grey soil + frost specks
         let s = 17;
