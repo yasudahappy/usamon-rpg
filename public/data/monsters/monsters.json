@@ -1203,5 +1203,113 @@
     ],
     "color": "#f5e6b8",
     "baseExp": 158
+  },
+  {
+    "id": "genbu",
+    "name": "ゲンブー",
+    "type": "砂",
+    "role": "耐久型",
+    "description": "こうらは 月の海と おなじ げんぶがん。むかし 溶岩だった 岩は とっても かたい。",
+    "baseStats": {
+      "hp": 24,
+      "attack": 13,
+      "defense": 17,
+      "speed": 7
+    },
+    "statsAt50": {
+      "hp": 118,
+      "attack": 70,
+      "defense": 95,
+      "speed": 35
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 6,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 10,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 16,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 24,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 30,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 46,
+        "moveId": "grand_crash"
+      }
+    ],
+    "color": "#c9b489",
+    "baseExp": 70
+  },
+  {
+    "id": "pribo",
+    "name": "プリボ",
+    "type": "金属",
+    "role": "バランス型",
+    "description": "まいごに なった 建設ロボ。レゴリスを すいこんで、なんでも 印刷して なげてくる。",
+    "baseStats": {
+      "hp": 25,
+      "attack": 14,
+      "defense": 16,
+      "speed": 10
+    },
+    "statsAt50": {
+      "hp": 125,
+      "attack": 80,
+      "defense": 92,
+      "speed": 55
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 5,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 9,
+        "moveId": "print_attack"
+      },
+      {
+        "level": 14,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 18,
+        "moveId": "tetsu_no_kiba"
+      },
+      {
+        "level": 24,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 30,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 38,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#dfe3e8",
+    "baseExp": 90
   }
 ]
