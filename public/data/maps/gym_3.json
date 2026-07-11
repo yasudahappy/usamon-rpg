@@ -1190,15 +1190,15 @@
    "x": 9,
    "y": 25,
    "targetMap": "minori_town",
-   "targetX": 15,
-   "targetY": 7
+   "targetX": 25,
+   "targetY": 8
   },
   {
    "x": 10,
    "y": 25,
    "targetMap": "minori_town",
-   "targetX": 15,
-   "targetY": 7
+   "targetX": 25,
+   "targetY": 8
   }
  ]
 }

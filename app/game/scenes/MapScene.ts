@@ -388,6 +388,7 @@ export class MapScene extends Phaser.Scene {
 
     // ミノリタウン — 豊かの海のほとり。ルナ16号と地熱農園の町。
     if (this.currentMapKey === "minori_town") {
+      this.placeMinoriDecor();
       this.placeMinoriTownEvents();
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("minori_arrival_seen")) {
@@ -5021,7 +5022,7 @@ export class MapScene extends Phaser.Scene {
     ]), -4);
   }
 
-  /** ミノリタウン — 看板・ルナ16号きねんひ・農園主・ヴォイス団員（会話のみ）。 */
+  /** ミノリタウン — 看板・ルナ16号きねんひ・農園主・市場・ヴォイス団員（会話のみ）。 */
   private placeMinoriTownEvents(): void {
     this.genNectarEventTextures();
     const ts = this.tileSize;
@@ -5030,17 +5031,24 @@ export class MapScene extends Phaser.Scene {
       this.nectarExam.push({ x, y, fn });
     };
 
-    // 町の看板（広場の南西）
-    put("nectar-sign", 13, 14, () => this.showDialog([
+    // 町の看板（南門のそば）
+    put("nectar-sign", 27, 42, () => this.showDialog([
       "『ミノリタウン』",
       "豊かの海の ほとり。\n地熱農園の めぐみと ともに 生きる町。",
     ]), -4);
 
-    // ジムの看板
-    put("nectar-sign", 13, 7, () => this.showDialog([
+    // ジムの看板（ジム前の広場）
+    put("nectar-sign", 21, 8, () => this.showDialog([
       "『ミノリジム』\nリーダー：ヒノ",
       "「もえる 探究心で むかえうつ！」",
       "※ジムの マグマは バルブで\nながれを きりかえられる らしい。",
+    ]), -4);
+
+    // 農園の看板（段々畑の入口）
+    put("nectar-sign", 12, 17, () => this.showDialog([
+      "『ミノリ地熱農園』",
+      "地下の 熱で 土を あたため、\nライトの 光で そだてる 段々畑。",
+      "収かくした 野菜は となりの\n市場どおりで 売られる。",
     ]), -4);
 
     // ルナ16号きねんひ（広場の中央・教育の柱）
@@ -5066,26 +5074,212 @@ export class MapScene extends Phaser.Scene {
       ctx.beginPath(); ctx.arc(20, 26, 9, 0, Math.PI * 2); ctx.stroke();
       this.textures.addCanvas("luna16-monument", c);
     }
-    put("luna16-monument", 15, 12, () => this.showDialog([
-      "『ルナ16号 きねんひ』",
-      "1970年、ソれんの 探査機 ルナ16号が\nここ 豊かの海に 着陸した。",
-      "世界で はじめて 無人で 月の 土を\n地球へ 持ち帰る ことに 成功——\nその量、101グラム。",
-      "おかえり用の カプセルは 地球へ。\n着陸だいは いまも 月面に のこっている。",
-    ], undefined), -6);
+    // きねんひ本体は広場中央に大きめ表示
+    const mon = this.add.image(26 * ts + ts / 2, 22 * ts + ts / 2 - 8, "luna16-monument").setDepth(8);
+    mon.setScale(1.5);
+    this.nectarExam.push({
+      x: 26, y: 22, fn: () => this.showDialog([
+        "『ルナ16号 きねんひ』",
+        "1970年、ソれんの 探査機 ルナ16号が\nここ 豊かの海に 着陸した。",
+        "世界で はじめて 無人で 月の 土を\n地球へ 持ち帰る ことに 成功——\nその量、101グラム。",
+        "おかえり用の カプセルは 地球へ。\n着陸だいは いまも 月面に のこっている。",
+      ]),
+    });
 
-    // 農園主（地熱×温室の教育）
-    put(this.npcTex("cast-char2-down", "npc-kinoshita"), 9, 20, () => this.showDialog([
-      "農園主「この 農園ドームはね、地下の\nあったかい 熱と ライトの 光で\n野菜を そだてて いるんだ。」",
+    // 農園主（地熱×温室の教育・段々畑のそば）
+    put(this.npcTex("cast-char2-down", "npc-kinoshita"), 14, 18, () => this.showDialog([
+      "農園主「この 段々畑はね、地下の\nあったかい 熱と ライトの 光で\n野菜を そだてて いるんだ。」",
       "農園主「月の砂 レゴリスは そのままじゃ\n作物に きびしい。水と 栄養を まぜて\n土に 作りかえて いるのさ。」",
       "農園主「『豊かの海』の 名前に まけない\n実りを つくる。それが この町の ゆめさ。」",
     ]));
 
+    // 市場の屋台（3けん・調べると売り子の口上）
+    put("minori-stall", 34, 19, () => this.showDialog([
+      "「とれたて 地熱トマト だよ〜！\nひえた 夜の 月でも あまく そだつのさ！」",
+    ]), -6);
+    put("minori-stall", 38, 19, () => this.showDialog([
+      "「レゴリスがま で じっくり やいた\nいしやきいも〜。ホカホカ だよ〜。」",
+    ]), -6);
+    put("minori-stall", 42, 19, () => this.showDialog([
+      "「農園はちみつ の ムーンハニー。\n…はちは ドームの 中に いるんだよ。」",
+    ]), -6);
+
+    // 市場の買いもの客（教育：月の昼夜と作物）
+    put(this.npcTex("cast-char8-down", "npc-mom"), 38, 22, () => this.showDialog([
+      "月の 昼と 夜は それぞれ\n地球の 2週間も つづくの。",
+      "おひさまだけじゃ 野菜は そだたない。\nだから この町は 地熱と ライトの\n二本立て なのよ。かしこいでしょ？",
+    ]));
+
+    // 広場の子ども（ルナ16号あこがれ）
+    put(this.npcTex("cast-char5-down", "npc-mom"), 23, 20, () => this.showDialog([
+      "ぼくね、ルナ16号 みたいな\nロボット探査機を つくるのが ゆめ！",
+      "人が いなくても 月の 土を\nもって帰れるん だよ？ すごくない？",
+    ]));
+
     // ヴォイス団員（会話のみ・追跡型の情報断片 / ヴォイス編v2 §3）
-    put(this.npcTex("cast-voice_grunt3-down", "npc-kinoshita"), 21, 13, () => this.showDialog([
+    put(this.npcTex("cast-voice_grunt3-down", "npc-kinoshita"), 45, 22, () => this.showDialog([
       "……チッ。豊かの海にも\n水の 手がかりは なし、か。",
       "ん？ なんだよ ガキ。おれたちは\nただの 調査員…… そう、\nヴォイスの ちょうさいん さまだ。",
       "おぼえて おけ。『水を 制する ものが\n月を 制する』。ボスたちは もう\n南極の 秘密に 手を かけてるのさ。",
     ]));
+  }
+
+  /** ミノリタウンの点景 — 蒸気の噴気孔・パイプ・市場・広場・アルモンの暮らし。 */
+  private placeMinoriDecor(): void {
+    const ts = this.tileSize;
+
+    // --- 屋台テクスチャ（しましま日よけ＋野菜の木箱） ---
+    if (!this.textures.exists("minori-stall")) {
+      const c = document.createElement("canvas"); c.width = 44; c.height = 40;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(22, 36, 18, 4, 0, 0, Math.PI * 2); ctx.fill();
+      // counter + legs
+      ctx.fillStyle = "#8a6636"; ctx.fillRect(6, 22, 32, 10);
+      ctx.fillStyle = "#a07d45"; ctx.fillRect(6, 22, 32, 3);
+      ctx.fillStyle = "#5a4020"; ctx.fillRect(7, 32, 4, 6); ctx.fillRect(33, 32, 4, 6);
+      // awning (terracotta / cream stripes)
+      for (let i = 0; i < 6; i++) {
+        ctx.fillStyle = i % 2 === 0 ? "#d86038" : "#f2e8d0";
+        ctx.fillRect(2 + i * 7, 6, 7, 8);
+      }
+      ctx.fillStyle = "#b84c28"; ctx.fillRect(2, 12, 40, 2);
+      ctx.fillStyle = "#5a4020"; ctx.fillRect(3, 6, 2, 20); ctx.fillRect(39, 6, 2, 20);
+      // produce crate
+      ctx.fillStyle = "#c9a95d"; ctx.fillRect(12, 16, 20, 8);
+      ctx.fillStyle = "#e05838"; ctx.beginPath(); ctx.arc(16, 19, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e8a030"; ctx.beginPath(); ctx.arc(22, 18, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#68a848"; ctx.beginPath(); ctx.arc(28, 19, 3, 0, Math.PI * 2); ctx.fill();
+      this.textures.addCanvas("minori-stall", c);
+    }
+
+    // --- 噴気孔（岩の口＋のぼる蒸気） ---
+    if (!this.textures.exists("minori-vent")) {
+      const c = document.createElement("canvas"); c.width = 30; c.height = 22;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(15, 18, 12, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#8a8272";
+      ctx.beginPath(); ctx.ellipse(15, 13, 12, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#a89f8c";
+      ctx.beginPath(); ctx.ellipse(15, 11, 10, 5.4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#2e2822";
+      ctx.beginPath(); ctx.ellipse(15, 11, 6, 3, 0, 0, Math.PI * 2); ctx.fill();
+      this.textures.addCanvas("minori-vent", c);
+    }
+    if (!this.textures.exists("steam-puff")) {
+      const c = document.createElement("canvas"); c.width = 16; c.height = 16;
+      const ctx = c.getContext("2d")!;
+      const grd = ctx.createRadialGradient(8, 8, 1, 8, 8, 8);
+      grd.addColorStop(0, "rgba(255,255,255,0.85)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(8, 8, 8, 0, Math.PI * 2); ctx.fill();
+      this.textures.addCanvas("steam-puff", c);
+    }
+    const vents: [number, number][] = [[19.5, 32.5], [6.5, 33.5], [12.5, 37.5], [18.5, 39.8], [30.5, 34.2]];
+    for (const [vx, vy] of vents) {
+      this.add.image(vx * ts, vy * ts, "minori-vent").setDepth(7).setScale(1.15);
+      for (let i = 0; i < 2; i++) {
+        const puff = this.add.image(vx * ts, vy * ts - 6, "steam-puff")
+          .setDepth(27).setAlpha(0).setScale(0.7);
+        this.tweens.add({
+          targets: puff, y: vy * ts - 6 - 34 - Math.random() * 18,
+          alpha: { from: 0.75, to: 0 }, scale: { from: 0.7, to: 1.6 },
+          duration: 1900 + Math.random() * 900, repeat: -1, ease: "Sine.out",
+          delay: i * 1000 + Math.random() * 600,
+          onRepeat: () => { puff.y = vy * ts - 6; puff.x = (vx + (Math.random() - 0.5) * 0.3) * ts; },
+        });
+      }
+    }
+
+    // --- 地熱パイプ（噴気孔の熱を畑へ送る） ---
+    if (!this.textures.exists("geo-pipe-v")) {
+      const c = document.createElement("canvas"); c.width = 10; c.height = 96;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#707888"; ctx.fillRect(2, 0, 6, 96);
+      ctx.fillStyle = "#8a92a4"; ctx.fillRect(2, 0, 2, 96);
+      ctx.fillStyle = "#565e6e";
+      for (let y = 10; y < 96; y += 22) ctx.fillRect(0, y, 10, 4);
+      this.textures.addCanvas("geo-pipe-v", c);
+    }
+    this.add.image(6.5 * ts, 32 * ts - 48, "geo-pipe-v").setDepth(6);
+    this.add.image(12.5 * ts, 36 * ts - 48, "geo-pipe-v").setDepth(6);
+
+    // --- 広場のランタン＆ベンチ＆旗 ---
+    if (!this.textures.exists("pit-lantern")) {
+      const c = document.createElement("canvas"); c.width = 20; c.height = 44;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#5a4020"; ctx.fillRect(9, 10, 3, 32);
+      ctx.fillStyle = "#8a6636"; ctx.fillRect(9, 10, 1, 32);
+      ctx.fillStyle = "#3a3a44"; ctx.fillRect(5, 4, 11, 10);
+      ctx.fillStyle = "#ffdf8a"; ctx.fillRect(7, 6, 7, 6);
+      ctx.fillStyle = "#fff4c8"; ctx.fillRect(9, 7, 3, 4);
+      this.textures.addCanvas("pit-lantern", c);
+    }
+    for (const [x, y] of [[20.5, 17.6], [31.5, 17.6], [20.5, 26.5], [31.5, 26.5]] as [number, number][]) {
+      this.add.image(x * ts, y * ts, "pit-lantern").setDepth(8).setScale(1.2);
+      const glow = this.add.circle(x * ts + 1, y * ts - 12, 9, 0xffd070, 0.26).setDepth(8);
+      this.tweens.add({ targets: glow, alpha: 0.1, scale: 1.3, duration: 950 + Math.random() * 500,
+        yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    if (!this.textures.exists("minori-bench")) {
+      const c = document.createElement("canvas"); c.width = 30; c.height = 14;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#5a4020"; ctx.fillRect(3, 8, 3, 6); ctx.fillRect(24, 8, 3, 6);
+      ctx.fillStyle = "#8a6636"; ctx.fillRect(1, 4, 28, 5);
+      ctx.fillStyle = "#a07d45"; ctx.fillRect(1, 4, 28, 2);
+      this.textures.addCanvas("minori-bench", c);
+    }
+    this.add.image(23 * ts, 25.4 * ts, "minori-bench").setDepth(7).setScale(1.2);
+    this.add.image(29.5 * ts, 25.4 * ts, "minori-bench").setDepth(7).setScale(1.2);
+    if (!this.textures.exists("minori-flag")) {
+      const c = document.createElement("canvas"); c.width = 24; c.height = 46;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#8a92a4"; ctx.fillRect(3, 2, 2, 44);
+      ctx.fillStyle = "#e05838";
+      ctx.beginPath(); ctx.moveTo(5, 4); ctx.lineTo(22, 8); ctx.lineTo(5, 13); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#f2e8d0";
+      ctx.beginPath(); ctx.arc(10, 8.5, 2, 0, Math.PI * 2); ctx.fill();
+      this.textures.addCanvas("minori-flag", c);
+    }
+    this.add.image(24.5 * ts, 21.2 * ts, "minori-flag").setDepth(8);
+    this.add.image(27.5 * ts, 21.2 * ts, "minori-flag").setDepth(8);
+
+    // --- アルモンの暮らし ---
+    // 噴気孔で ひなたぼっこ ならぬ「湯気ぼっこ」するメテコ
+    if (this.textures.exists("monster-meteko")) {
+      const m = this.add.image(13.6 * ts, 36.9 * ts, "monster-meteko").setDepth(8);
+      m.setScale((ts * 0.95) / (m.height || 100));
+      this.tweens.add({ targets: m, y: "-=3", duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    // リルの溝のふちで甲羅干しするゲンブー
+    if (this.textures.exists("monster-genbu")) {
+      const g = this.add.image(41.5 * ts, 7.6 * ts, "monster-genbu").setDepth(8);
+      g.setScale((ts * 1.0) / (g.height || 100));
+      this.tweens.add({ targets: g, y: "-=2", duration: 1150, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    // 畑のそばでレンガを積むプリボ
+    if (this.textures.exists("monster-pribo")) {
+      const p = this.add.image(16.6 * ts, 10.4 * ts, "monster-pribo").setDepth(8);
+      p.setScale((ts * 0.9) / (p.height || 100));
+      this.tweens.add({ targets: p, y: "-=3", duration: 620, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    // 広場の上を舞うホタルナ
+    if (this.textures.exists("monster-hotaruna")) {
+      for (let i = 0; i < 2; i++) {
+        const fly = this.add.image(26 * ts, 20 * ts, "monster-hotaruna").setDepth(27);
+        fly.setScale((ts * 0.5) / (fly.height || 100)).setAlpha(0.9);
+        const rx = 60 + i * 26, dur = 3000 + i * 800;
+        this.tweens.add({ targets: fly, x: { from: 26 * ts - rx, to: 26 * ts + rx }, duration: dur,
+          yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 500,
+          onYoyo: () => fly.setFlipX(true), onRepeat: () => fly.setFlipX(false) });
+        this.tweens.add({ targets: fly, y: { from: 19 * ts, to: 22.5 * ts }, duration: dur * 0.62,
+          yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 300 });
+      }
+    }
+
+    // --- 実りの暖色トーン ---
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xffb070, 0.05)
+      .setOrigin(0).setDepth(26);
   }
 
   /** ミノリタウン初回到着のひとこと。 */
