@@ -840,5 +840,15 @@
       "target": "self"
     },
     "description": "やさしい つきあかりで きずを いやし まもりを かためる"
+  },
+  {
+    "id": "print_attack",
+    "name": "プリントアタック",
+    "type": "金属",
+    "power": 65,
+    "accuracy": 100,
+    "isSupport": false,
+    "effect": null,
+    "description": "レゴリスから ブロックを 印刷して なげつける"
   }
 ]
