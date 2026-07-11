@@ -1104,5 +1104,104 @@
     ],
     "color": "#5f7fb8",
     "baseExp": 220
+  },
+  {
+    "id": "hotaruna",
+    "name": "ホタルナ",
+    "type": "光",
+    "role": "すばやさ型",
+    "description": "くらい ほらあなを てらす 月ボタル。むれで とぶと 星空の ようだ。",
+    "baseStats": {
+      "hp": 18,
+      "attack": 12,
+      "defense": 10,
+      "speed": 16
+    },
+    "statsAt50": {
+      "hp": 95,
+      "attack": 70,
+      "defense": 55,
+      "speed": 95
+    },
+    "evolution": {
+      "level": 28,
+      "to": "lunalux"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 5,
+        "moveId": "hikari_no_tsubu"
+      },
+      {
+        "level": 12,
+        "moveId": "tsukiakari"
+      },
+      {
+        "level": 18,
+        "moveId": "lantern_flash"
+      },
+      {
+        "level": 30,
+        "moveId": "ryuseigun"
+      }
+    ],
+    "color": "#ffe37a",
+    "baseExp": 65
+  },
+  {
+    "id": "lunalux",
+    "name": "ルナルクス",
+    "type": "光",
+    "role": "バランス型",
+    "description": "ランタンを かかげる 月あかりの 長老。まよった 旅人を そっと みちびく。",
+    "baseStats": {
+      "hp": 28,
+      "attack": 20,
+      "defense": 20,
+      "speed": 20
+    },
+    "statsAt50": {
+      "hp": 140,
+      "attack": 100,
+      "defense": 100,
+      "speed": 96
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "hikari_no_tsubu"
+      },
+      {
+        "level": 12,
+        "moveId": "tsukiakari"
+      },
+      {
+        "level": 18,
+        "moveId": "lantern_flash"
+      },
+      {
+        "level": 28,
+        "moveId": "ryuseigun"
+      },
+      {
+        "level": 36,
+        "moveId": "kibou_no_hikari"
+      },
+      {
+        "level": 44,
+        "moveId": "shooting_star"
+      }
+    ],
+    "color": "#f5e6b8",
+    "baseExp": 158
   }
 ]
