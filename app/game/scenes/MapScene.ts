@@ -3525,6 +3525,8 @@ export class MapScene extends Phaser.Scene {
       house_3: "cast-char4-down", house_4: "cast-char8-down",
       // ネクタルタウン (1人1テーマの教育会話: ネクタルタウン設計v1 §11-2)
       house_5: "cast-char6-down", house_6: "cast-char3-down", house_7: "cast-char5-down",
+      // タテアナ村
+      house_8: "cast-char7-down",
     };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
@@ -3570,6 +3572,12 @@ export class MapScene extends Phaser.Scene {
         "氷の ジムは 手ごわいよ。",
         "ほのおや、はがねの ような\nアルモンが 心づよいね。",
         "…そういえば ジムの とびら、\n分厚い 氷で とざされて いたねえ。\nあれも 試練の うちなんだって。",
+      ],
+      // タテアナ村（縦孔の暮らしの教育テーマ）
+      house_8: [
+        "ようこそ タテアナむらへ。",
+        "この 村はね、あなの 中の\n安定した 温度を つかって\n食べものを 保存しているの。",
+        "月では 昼と 夜の 温度差が\n300ど ちかく ある。でも あなの\n中は いつも おだやか なのよ。",
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
@@ -4674,6 +4682,12 @@ export class MapScene extends Phaser.Scene {
         ]);
       }
     });
+
+    // 広場の住人（縦孔の暮らしの小ネタ）
+    put(this.npcTex("cast-colonist_e-down", "npc-mom"), 14, 16, () => this.showDialog([
+      "この 村の じまんは なんといっても\nあの 縦孔（たてあな）さ。",
+      "むかしの 人は 月に あなが あるなんて\n思っても みなかった。かぐや が\n見つけて くれたのさ。",
+    ]));
 
     // ツキヤマ（救助後は村で調査を続ける・教育の再話＋ヴォイスの布石）
     if (this.hasPitFlag("pit_rescue_cleared")) {
