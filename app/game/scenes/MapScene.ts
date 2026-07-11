@@ -4661,7 +4661,7 @@ export class MapScene extends Phaser.Scene {
       col(12, 22, 10); col(24, 32, 12); col(35, 16, 9);
       this.textures.addCanvas("basalt-column", c);
     }
-    for (const [x, y] of [[14.2, 6.1], [19.2, 10.6], [18.6, 5.9]] as [number, number][]) {
+    for (const [x, y] of [[14.2, 6.1], [19.2, 10.6], [13.7, 7.2]] as [number, number][]) {
       this.add.image(x * ts, y * ts, "basalt-column").setDepth(7).setDisplaySize(ts * 1.4, ts * 1.4);
     }
 
@@ -4796,7 +4796,7 @@ export class MapScene extends Phaser.Scene {
     });
 
     // 広場の住人（縦孔の暮らしの小ネタ）
-    put(this.npcTex("cast-colonist_e-down", "npc-mom"), 14, 16, () => this.showDialog([
+    put(this.npcTex("cast-colonist_e-down", "npc-mom"), 10, 15, () => this.showDialog([
       "この 村の じまんは なんといっても\nあの 縦孔（たてあな）さ。",
       "むかしの 人は 月に あなが あるなんて\n思っても みなかった。かぐや が\n見つけて くれたのさ。",
     ]));
