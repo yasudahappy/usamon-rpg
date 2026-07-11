@@ -217,38 +217,44 @@
   "encounterRate": 0.1,
   "monsters": [
    {
+    "id": "solpoka",
+    "weight": 14,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
     "id": "hidaneko",
-    "weight": 18,
+    "weight": 16,
     "minLevel": 25,
     "maxLevel": 28
    },
    {
     "id": "meteko",
-    "weight": 24,
+    "weight": 20,
     "minLevel": 25,
     "maxLevel": 28
    },
    {
     "id": "genbu",
-    "weight": 22,
+    "weight": 20,
     "minLevel": 25,
     "maxLevel": 28
    },
    {
     "id": "rairai",
-    "weight": 15,
+    "weight": 12,
     "minLevel": 25,
     "maxLevel": 27
    },
    {
     "id": "sunagani",
-    "weight": 11,
+    "weight": 9,
     "minLevel": 25,
     "maxLevel": 27
    },
    {
     "id": "hotaruna",
-    "weight": 10,
+    "weight": 9,
     "minLevel": 25,
     "maxLevel": 28
    }

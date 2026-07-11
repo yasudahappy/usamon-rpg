@@ -1485,5 +1485,116 @@
   ],
   "color": "#d8402a",
   "baseExp": 145
+ },
+ {
+  "id": "solpoka",
+  "name": "ソルポカ",
+  "type": "炎",
+  "role": "ためこみ型",
+  "description": "太陽の 熱を ふわふわの 羽毛に ためこむ ヒヨコアルモン。月の 長い 昼のあいだ、2週間 まるごと ひなたぼっこ している。",
+  "baseStats": {
+   "hp": 22,
+   "attack": 12,
+   "defense": 13,
+   "speed": 11
+  },
+  "statsAt50": {
+   "hp": 105,
+   "attack": 70,
+   "defense": 66,
+   "speed": 60
+  },
+  "evolution": {
+   "level": 29,
+   "to": "fureado"
+  },
+  "learnset": [
+   {
+    "level": 1,
+    "moveId": "tataku"
+   },
+   {
+    "level": 1,
+    "moveId": "hinoko"
+   },
+   {
+    "level": 8,
+    "moveId": "kaen_tosshin"
+   },
+   {
+    "level": 14,
+    "moveId": "iwa_yoroi"
+   },
+   {
+    "level": 20,
+    "moveId": "moeru_toushi"
+   },
+   {
+    "level": 26,
+    "moveId": "kaenbullet"
+   },
+   {
+    "level": 34,
+    "moveId": "funka"
+   },
+   {
+    "level": 46,
+    "moveId": "kaen_housha"
+   }
+  ],
+  "color": "#ffd23e",
+  "baseExp": 67
+ },
+ {
+  "id": "fureado",
+  "name": "フレアード",
+  "type": "炎",
+  "role": "速攻アタッカー",
+  "description": "太陽フレアの 火の鳥。ためこんだ 太陽の 熱を、うねる 炎の つばさに 変えて 解きはなつ。",
+  "baseStats": {
+   "hp": 28,
+   "attack": 22,
+   "defense": 16,
+   "speed": 22
+  },
+  "statsAt50": {
+   "hp": 132,
+   "attack": 116,
+   "defense": 80,
+   "speed": 112
+  },
+  "evolution": null,
+  "learnset": [
+   {
+    "level": 1,
+    "moveId": "hinoko"
+   },
+   {
+    "level": 1,
+    "moveId": "kaen_tosshin"
+   },
+   {
+    "level": 1,
+    "moveId": "kaenbullet"
+   },
+   {
+    "level": 34,
+    "moveId": "moeru_toushi"
+   },
+   {
+    "level": 38,
+    "moveId": "funka"
+   },
+   {
+    "level": 46,
+    "moveId": "kaen_housha"
+   },
+   {
+    "level": 56,
+    "moveId": "bakuen"
+   }
+  ],
+  "color": "#e8552a",
+  "baseExp": 140
  }
 ]
