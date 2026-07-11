@@ -5477,21 +5477,13 @@ export class MapScene extends Phaser.Scene {
     this.nectarExam.push({
       x: 11, y: 22, fn: () => this.showDialog([
         "『ミノリジム 心得』",
-        "一、この ジムの しょうぶは すべて\n2たい2の ダブルバトル なり。",
+        "一、リーダー戦は 2たい2の\nダブルバトル なり。アルモンを\n2体 そろえて いどむべし。",
         "一、バルブで マグマの ながれを\nきりかえるべし。",
         "一、バルブが かたほうだけ ONのとき、\n西の たからばしが ひえる との うわさ。",
       ]),
     });
     this.add.image(11 * ts + ts / 2, 22 * ts + ts / 2 - 4, "nectar-sign").setDepth(8);
 
-    // ペア戦の相方（バトルはトレーナー1エントリで2人ぶん扱い）
-    // ヒジリ（キシシタの相方・ジム員コンビ）
-    this.add.image(12 * ts + ts / 2, 15 * ts + ts / 2, this.npcTex("cast-hijiri-left", "npc-kinoshita")).setDepth(9);
-    this.nectarExam.push({
-      x: 12, y: 15, fn: () => this.showDialog([
-        "ヒジリ「しょうぶは キシシタと\nぼくの 2人で ひとつ だよ！」",
-      ]),
-    });
     // シオリ（イシイの相方・リーダーコンビ）
     this.add.image(10 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-shiori-down", "npc-mom")).setDepth(9);
     this.nectarExam.push({

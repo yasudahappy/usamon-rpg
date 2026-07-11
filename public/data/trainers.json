@@ -521,33 +521,6 @@
   "overworldSprite": "char5"
  },
  {
-  "id": "gym3_pair",
-  "name": "ジムトレーナー キシシタ＆ヒジリ",
-  "mapKey": "gym_3",
-  "x": 11,
-  "y": 15,
-  "direction": "left",
-  "sightRange": 4,
-  "prizeMoneyBase": 1400,
-  "doubles": true,
-  "dialogBefore": "キシシタ「おれたち ミノリジムの ジム員コンビ！」\nヒジリ「このジムの しょうぶは ぜんぶ 2たい2の ダブルバトル！ アルモン 2体で かかってきな！」",
-  "dialogWin": "キシシタ「くっ… いいコンビネーションだ…！」\nヒジリ「リーダーの イシイさんと シオリさんは もっと 息ピッタリだよ！ バルブの しかけを といて 会いに いきな！」",
-  "dialogLose": "キシシタ「ダブルバトルは チームワークが すべて だ！」",
-  "party": [
-   {
-    "id": "meteko",
-    "level": 26
-   },
-   {
-    "id": "genbu",
-    "level": 26
-   }
-  ],
-  "battleSprite": "trainer-kishishita",
-  "battleSprite2": "trainer-hijiri",
-  "overworldSprite": "kishishita"
- },
- {
   "id": "ishii_shiori",
   "name": "ジムリーダー イシイ＆シオリ",
   "mapKey": "gym_3",
@@ -581,5 +554,55 @@
   "battleSprite": "trainer-ishii",
   "battleSprite2": "trainer-shiori",
   "overworldSprite": "ishii"
+ },
+ {
+  "id": "gym3_kishishita",
+  "name": "ジムトレーナー キシシタ",
+  "mapKey": "gym_3",
+  "x": 11,
+  "y": 15,
+  "direction": "left",
+  "sightRange": 4,
+  "prizeMoneyBase": 700,
+  "dialogBefore": "おれは キシシタ。ミノリジムの 守りの かなめだ。\nリーダー戦は 2たい2の ダブルバトル——だが その前に、まずは おれと 1たい1で 力を みせてもらう！",
+  "dialogWin": "…やるな。玄武岩のように どっしり かまえた つもりだったが。\nこの先には ヒジリが いる。あいつの アルモンは かわいいが あなどるなよ。",
+  "dialogLose": "基本は シングルバトルから、だ。",
+  "party": [
+   {
+    "id": "genbu",
+    "level": 26
+   },
+   {
+    "id": "meteko",
+    "level": 26
+   }
+  ],
+  "battleSprite": "trainer-kishishita",
+  "overworldSprite": "kishishita"
+ },
+ {
+  "id": "gym3_hijiri",
+  "name": "ジムトレーナー ヒジリ",
+  "mapKey": "gym_3",
+  "x": 13,
+  "y": 13,
+  "direction": "down",
+  "sightRange": 3,
+  "prizeMoneyBase": 700,
+  "dialogBefore": "やあ！ ぼくは ヒジリ！\nぼくの ヒダネコと ソルポカ、かわいいでしょ？ でも つよいんだから！",
+  "dialogWin": "わわ、まけちゃった…！\nリーダーの イシイさんと シオリさんは 2人いっしょの ダブルバトルだよ。アルモンを 2体 そろえて いどんでね！",
+  "dialogLose": "かわいいは つよい！ なんだよ。",
+  "party": [
+   {
+    "id": "hidaneko",
+    "level": 26
+   },
+   {
+    "id": "solpoka",
+    "level": 26
+   }
+  ],
+  "battleSprite": "trainer-hijiri",
+  "overworldSprite": "hijiri"
  }
 ]
