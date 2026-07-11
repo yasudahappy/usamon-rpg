@@ -460,7 +460,7 @@ export class MapScene extends Phaser.Scene {
 
   // Animated tile base IDs (sand sparkle + farm crops + frost twinkle).
   // 70 = farm crop bed, 90 = frost regolith (ネクタルタウン).
-  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70, 90];
+  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70, 90, 100, 104];
   // Base tile -> [frame A, frame B] cycled every 800ms (base -> A -> B).
   // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72. Frost: 90 -> 94/95.
   private static SPARKLE_MAP: Record<number, [number, number]> = {
@@ -468,6 +468,7 @@ export class MapScene extends Phaser.Scene {
     9: [45, 53], 10: [46, 54], 11: [47, 55], 12: [48, 56],
     32: [41, 49], 33: [42, 50], 34: [43, 51], 35: [44, 52],
     36: [45, 53], 70: [71, 72], 90: [94, 95],
+    100: [107, 108], 104: [105, 106],
   };
 
   private drawMap(): void {
@@ -5472,6 +5473,78 @@ export class MapScene extends Phaser.Scene {
     };
     valve(4, 20, "gym3_valve_1", "バルブ1");
     valve(15, 14, "gym3_valve_2", "バルブ2");
+
+    // ---- メラメラ演出: かがり火・火の粉・熱気 ----
+    // かがり火（石の火鉢＋ゆらめく炎）
+    if (!this.textures.exists("gym3-brazier")) {
+      const c = document.createElement("canvas"); c.width = 26; c.height = 22;
+      const ctx2 = c.getContext("2d")!; ctx2.imageSmoothingEnabled = false;
+      ctx2.fillStyle = "rgba(0,0,0,0.35)";
+      ctx2.beginPath(); ctx2.ellipse(13, 19, 10, 3, 0, 0, Math.PI * 2); ctx2.fill();
+      ctx2.fillStyle = "#3a3136"; ctx2.fillRect(5, 10, 16, 8);
+      ctx2.fillStyle = "#554a50"; ctx2.fillRect(5, 10, 16, 3);
+      ctx2.fillStyle = "#2a2226"; ctx2.fillRect(3, 16, 20, 3);
+      this.textures.addCanvas("gym3-brazier", c);
+    }
+    if (!this.textures.exists("gym3-flame")) {
+      const c = document.createElement("canvas"); c.width = 18; c.height = 24;
+      const ctx2 = c.getContext("2d")!; ctx2.imageSmoothingEnabled = false;
+      const flame = (cx: number, base: number, w: number, h: number, col: string) => {
+        ctx2.fillStyle = col;
+        ctx2.beginPath();
+        ctx2.moveTo(cx - w / 2, base);
+        ctx2.quadraticCurveTo(cx - w / 2, base - h * 0.55, cx, base - h);
+        ctx2.quadraticCurveTo(cx + w / 2, base - h * 0.55, cx + w / 2, base);
+        ctx2.closePath(); ctx2.fill();
+      };
+      flame(9, 23, 15, 22, "#e0501e");
+      flame(9, 23, 10, 16, "#f59a2a");
+      flame(9, 23, 5, 10, "#ffe08a");
+      this.textures.addCanvas("gym3-flame", c);
+    }
+    const braziers: [number, number][] = [[7, 23.4], [12, 23.4], [7, 4.3], [12, 4.3], [1.6, 8.6], [17.4, 8.6], [1.6, 19.6], [17.4, 19.6]];
+    for (const [bx, by] of braziers) {
+      this.add.image(bx * ts + ts / 2, by * ts, "gym3-brazier").setDepth(8).setScale(1.25);
+      const fl = this.add.image(bx * ts + ts / 2, by * ts - 12, "gym3-flame").setOrigin(0.5, 1).setDepth(8).setScale(1.15);
+      this.tweens.add({ targets: fl, scaleY: 1.35, scaleX: 1.02, duration: 260 + Math.random() * 160,
+        yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      const glow = this.add.circle(bx * ts + ts / 2, by * ts - 12, 15, 0xffa040, 0.22).setDepth(8);
+      this.tweens.add({ targets: glow, alpha: 0.08, scale: 1.4, duration: 480 + Math.random() * 260,
+        yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+
+    // マグマ川の上を立ちのぼる火の粉
+    if (!this.textures.exists("ember-spark")) {
+      const c = document.createElement("canvas"); c.width = 6; c.height = 6;
+      const ctx2 = c.getContext("2d")!;
+      ctx2.fillStyle = "rgba(255,150,60,0.95)"; ctx2.fillRect(2, 2, 2, 2);
+      ctx2.fillStyle = "rgba(255,110,40,0.45)";
+      ctx2.fillRect(1, 2, 1, 2); ctx2.fillRect(4, 2, 1, 2); ctx2.fillRect(2, 1, 2, 1); ctx2.fillRect(2, 4, 2, 1);
+      this.textures.addCanvas("ember-spark", c);
+    }
+    const emberRows = [17, 11];
+    for (let i = 0; i < 16; i++) {
+      const row = emberRows[i % emberRows.length];
+      const sx = () => (1.5 + Math.random() * 16) * ts;
+      const sy2 = () => (row + 0.2 + Math.random() * 0.6) * ts;
+      const spark = this.add.image(sx(), sy2(), "ember-spark")
+        .setDepth(27).setAlpha(0).setScale(0.8 + Math.random() * 0.9);
+      this.tweens.add({
+        targets: spark, y: `-=${34 + Math.random() * 60}`, alpha: { from: 0.9, to: 0 },
+        duration: 1700 + Math.random() * 1600, repeat: -1, ease: "Sine.out", delay: Math.random() * 1800,
+        onRepeat: () => { spark.x = sx(); spark.y = sy2(); },
+      });
+    }
+    // マグマ川と溶岩だまりの上の熱気の明滅
+    for (const [gx, gy] of [[4, 17], [9.5, 17], [15, 17], [4, 11], [10, 11], [16, 11],
+                            [4, 2.5], [15, 2.5], [1.5, 1], [17.5, 1]] as [number, number][]) {
+      const glow = this.add.circle(gx * ts + ts / 2, gy * ts + ts / 2, ts * 0.85, 0xff6a20, 0.10).setDepth(26);
+      this.tweens.add({ targets: glow, alpha: 0.03, scale: 1.3, duration: 900 + Math.random() * 700,
+        yoyo: true, repeat: -1, ease: "Sine.inOut", delay: Math.random() * 600 });
+    }
+    // 全体の熱気トーン
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xff7030, 0.06)
+      .setOrigin(0).setDepth(26);
 
     // 入口の説明看板
     this.nectarExam.push({
