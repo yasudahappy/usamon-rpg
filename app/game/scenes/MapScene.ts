@@ -355,6 +355,7 @@ export class MapScene extends Phaser.Scene {
 
     // タテアナ村 — 縦孔のふちの村。救助クエスト（第6章 / タテアナ村設計v1）。
     if (this.currentMapKey === "pit_village") {
+      this.placePitVillageDecor();
       this.placePitVillageEvents();
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("pit_arrival_seen")) {
@@ -4633,6 +4634,113 @@ export class MapScene extends Phaser.Scene {
     if (!this.playerState) return;
     this.playerState.pickups = this.playerState.pickups || [];
     if (!this.playerState.pickups.includes(flag)) this.playerState.pickups.push(flag);
+  }
+
+  /** タテアナ村の点景 —「縦孔と生きる村」の個性づけ。
+   *  縦孔から光の粒が立ちのぼり、ホタルナが舞い、プリボがレンガを印刷する。 */
+  private placePitVillageDecor(): void {
+    const ts = this.tileSize;
+    const pitX = 16.5 * ts, pitY = 8.5 * ts;
+
+    // --- 玄武岩の柱クラスタ（ゲンブーの教育ネタと連動する景観） ---
+    if (!this.textures.exists("basalt-column")) {
+      const s = 48;
+      const c = document.createElement("canvas"); c.width = s; c.height = s;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(20,16,22,0.3)";
+      ctx.beginPath(); ctx.ellipse(s / 2, s - 5, s * 0.4, 4, 0, 0, Math.PI * 2); ctx.fill();
+      const col = (bx: number, h: number, w: number) => {
+        ctx.fillStyle = "#3d3540"; ctx.fillRect(bx - w / 2, s - 6 - h, w, h);
+        ctx.fillStyle = "#574c5c"; ctx.fillRect(bx - w / 2, s - 6 - h, 2, h);      // rim light
+        ctx.fillStyle = "#2a2430"; ctx.fillRect(bx + w / 2 - 2, s - 6 - h, 2, h);  // shade
+        ctx.fillStyle = "#6a5f70"; ctx.beginPath();                                // hex top
+        ctx.moveTo(bx - w / 2, s - 6 - h); ctx.lineTo(bx - w / 4, s - 9 - h);
+        ctx.lineTo(bx + w / 4, s - 9 - h); ctx.lineTo(bx + w / 2, s - 6 - h);
+        ctx.closePath(); ctx.fill();
+      };
+      col(12, 22, 10); col(24, 32, 12); col(35, 16, 9);
+      this.textures.addCanvas("basalt-column", c);
+    }
+    for (const [x, y] of [[14.2, 6.1], [19.2, 10.6], [18.6, 5.9]] as [number, number][]) {
+      this.add.image(x * ts, y * ts, "basalt-column").setDepth(7).setDisplaySize(ts * 1.4, ts * 1.4);
+    }
+
+    // --- ホタルナのランタン灯（夜どおし村を照らす） ---
+    if (!this.textures.exists("pit-lantern")) {
+      const c = document.createElement("canvas"); c.width = 20; c.height = 44;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#5a4020"; ctx.fillRect(9, 10, 3, 32);
+      ctx.fillStyle = "#8a6636"; ctx.fillRect(9, 10, 1, 32);
+      ctx.fillStyle = "#3a3a44"; ctx.fillRect(5, 4, 11, 10);
+      ctx.fillStyle = "#ffdf8a"; ctx.fillRect(7, 6, 7, 6);
+      ctx.fillStyle = "#fff4c8"; ctx.fillRect(9, 7, 3, 4);
+      this.textures.addCanvas("pit-lantern", c);
+    }
+    for (const [x, y] of [[10.5, 20.2], [13.6, 12.4], [2.6, 6.3]] as [number, number][]) {
+      const lamp = this.add.image(x * ts, y * ts, "pit-lantern").setDepth(8).setScale(1.2);
+      const glow = this.add.circle(x * ts + 1, y * ts - 12, 9, 0xffd070, 0.28).setDepth(8);
+      this.tweens.add({ targets: glow, alpha: 0.12, scale: 1.25, duration: 900 + Math.random() * 500,
+        yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      void lamp;
+    }
+
+    // --- プリボの工事コーナー（レンガを印刷中） ---
+    if (!this.textures.exists("brick-pile")) {
+      const c = document.createElement("canvas"); c.width = 34; c.height = 22;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      const brick = (x: number, y: number) => {
+        ctx.fillStyle = "#c9a95d"; ctx.fillRect(x, y, 10, 6);
+        ctx.fillStyle = "#e8cf8a"; ctx.fillRect(x, y, 10, 2);
+        ctx.strokeStyle = "#8a7440"; ctx.strokeRect(x + 0.5, y + 0.5, 9, 5);
+      };
+      brick(2, 14); brick(13, 14); brick(24, 14); brick(7, 8); brick(18, 8); brick(12, 2);
+      this.textures.addCanvas("brick-pile", c);
+    }
+    this.add.image(18.4 * ts, 16.6 * ts, "brick-pile").setDepth(7).setScale(1.3);
+    if (this.textures.exists("monster-pribo")) {
+      const worker = this.add.image(19.6 * ts, 16.4 * ts, "monster-pribo").setDepth(8);
+      worker.setScale((ts * 1.0) / (worker.height || 100));
+      this.tweens.add({ targets: worker, y: "-=3", duration: 620, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+
+    // --- 縦孔の上を舞うホタルナの群れ ---
+    if (this.textures.exists("monster-hotaruna")) {
+      for (let i = 0; i < 3; i++) {
+        const fly = this.add.image(pitX, pitY - 8, "monster-hotaruna").setDepth(27);
+        fly.setScale((ts * 0.55) / (fly.height || 100)).setAlpha(0.9);
+        const rx = 34 + i * 16, ry = 18 + i * 8, dur = 2600 + i * 700;
+        this.tweens.add({ targets: fly, x: { from: pitX - rx, to: pitX + rx }, duration: dur,
+          yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 400,
+          onYoyo: () => fly.setFlipX(true), onRepeat: () => fly.setFlipX(false) });
+        this.tweens.add({ targets: fly, y: { from: pitY - 10 - ry, to: pitY + ry * 0.4 }, duration: dur * 0.6,
+          yoyo: true, repeat: -1, ease: "Sine.inOut", delay: i * 250 });
+      }
+    }
+
+    // --- 縦孔から立ちのぼる光の粒 ---
+    if (!this.textures.exists("pit-spark")) {
+      const c = document.createElement("canvas"); c.width = 6; c.height = 6;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "rgba(255,214,130,0.95)"; ctx.fillRect(2, 2, 2, 2);
+      ctx.fillStyle = "rgba(255,214,130,0.4)";
+      ctx.fillRect(1, 2, 1, 2); ctx.fillRect(4, 2, 1, 2); ctx.fillRect(2, 1, 2, 1); ctx.fillRect(2, 4, 2, 1);
+      this.textures.addCanvas("pit-spark", c);
+    }
+    for (let i = 0; i < 12; i++) {
+      const sx = () => (14.3 + Math.random() * 4.4) * ts;
+      const sy = () => (7.0 + Math.random() * 3.0) * ts;
+      const spark = this.add.image(sx(), sy(), "pit-spark")
+        .setDepth(27).setAlpha(0).setScale(0.8 + Math.random() * 0.8);
+      this.tweens.add({
+        targets: spark, y: `-=${60 + Math.random() * 90}`, alpha: { from: 0.85, to: 0 },
+        duration: 2600 + Math.random() * 2400, repeat: -1, ease: "Sine.out", delay: Math.random() * 2500,
+        onRepeat: () => { spark.x = sx(); spark.y = sy(); },
+      });
+    }
+
+    // --- 夕暮れの暖色トーン（ネクタルの寒色キャストの対） ---
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xffa860, 0.06)
+      .setOrigin(0).setDepth(26);
   }
 
   private placePitVillageEvents(): void {
