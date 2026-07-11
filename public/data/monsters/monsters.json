@@ -1222,7 +1222,10 @@
       "defense": 95,
       "speed": 35
     },
-    "evolution": null,
+    "evolution": {
+      "level": 30,
+      "to": "ganburos"
+    },
     "learnset": [
       {
         "level": 1,
@@ -1311,5 +1314,61 @@
     ],
     "color": "#dfe3e8",
     "baseExp": 90
+  },
+  {
+    "id": "ganburos",
+    "name": "ガンブロス",
+    "type": "砂",
+    "role": "パワー耐久型",
+    "description": "こうらは 柱状節理の 岩の とりで。月の 大地の かたさを そのまま せおっている。",
+    "baseStats": {
+      "hp": 38,
+      "attack": 22,
+      "defense": 28,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 170,
+      "attack": 105,
+      "defense": 135,
+      "speed": 40
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 10,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 16,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 24,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 30,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 40,
+        "moveId": "grand_crash"
+      },
+      {
+        "level": 52,
+        "moveId": "daisabaku"
+      }
+    ],
+    "color": "#8a8378",
+    "baseExp": 162
   }
 ]
