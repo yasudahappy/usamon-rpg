@@ -109,6 +109,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-gym", `${base}/assets/buildings/sprites/gym.png`);
     this.load.image("bldg-medical", `${base}/assets/buildings/sprites/medical_center.png`);
     this.load.image("bldg-farm", `${base}/assets/buildings/sprites/farm_dome.png`);
+    // ミノリタウン限定の建物（温室・地熱プラント・サイロ・太陽光・蓄電池）
+    this.load.image("bldg-greenhouse", `${base}/assets/buildings/sprites/greenhouse.png`);
+    this.load.image("bldg-geo-plant", `${base}/assets/buildings/sprites/geo_plant.png`);
+    this.load.image("bldg-silo", `${base}/assets/buildings/sprites/silo.png`);
+    this.load.image("bldg-solar-array", `${base}/assets/buildings/sprites/solar_array.png`);
+    this.load.image("bldg-battery", `${base}/assets/buildings/sprites/battery_box.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
     ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4"].forEach(t => {
