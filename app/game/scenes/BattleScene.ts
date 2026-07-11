@@ -654,6 +654,11 @@ export class BattleScene extends Phaser.Scene {
     prominence: 1.3,
   };
 
+  // Extra multiplier applied ONLY to the back-view (the player's own monster).
+  private static MONSTER_SCALE_BACK: Record<string, number> = {
+    prominence: 0.9,
+  };
+
   // Species that hover above their platform (design px, scaled by sy).
   private static MONSTER_LIFT: Record<string, number> = {
     meteko: 14,
@@ -665,8 +670,10 @@ export class BattleScene extends Phaser.Scene {
     const h = sprite.height || 64;
     let scale = Math.min((maxW * this.sy) / w, (maxH * this.sy) / h);
     // Derive the species id from the texture key ("monster-<id>" / "monster-<id>-back").
+    const isBack = sprite.texture.key.endsWith("-back");
     const id = sprite.texture.key.replace(/^monster-/, "").replace(/-back$/, "");
     scale *= BattleScene.MONSTER_SCALE[id] ?? 1;
+    if (isBack) scale *= BattleScene.MONSTER_SCALE_BACK[id] ?? 1;
     sprite.setScale(scale);
     // Apply a hover offset for floating species (baseline captured once, so
     // repeated re-sizes don't compound the lift).
