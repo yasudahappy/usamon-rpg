@@ -117,7 +117,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-battery", `${base}/assets/buildings/sprites/battery_box.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
-    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4"].forEach(t => {
+    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4", "ishii", "shiori", "kishishita", "hijiri"].forEach(t => {
       this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
     });
     // Player battle back-illustration (shown before sending out the almon)
