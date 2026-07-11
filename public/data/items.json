@@ -1,56 +1,63 @@
 [
-  {
-    "id": "repair_gel",
-    "name": "リペアジェル",
-    "description": "HPを 20 かいふくする",
-    "price": 200,
-    "category": "recovery"
-  },
-  {
-    "id": "hi_repair_gel",
-    "name": "ハイリペアジェル",
-    "description": "HPを 50 かいふくする",
-    "price": 500,
-    "category": "recovery"
-  },
-  {
-    "id": "full_repair_gel",
-    "name": "フルリペアジェル",
-    "description": "HPを ぜんかいふくする",
-    "price": 1500,
-    "category": "recovery"
-  },
-  {
-    "id": "revive_star",
-    "name": "リバイブスター",
-    "description": "ひんしの アルモンを ふっかつさせる",
-    "price": 1000,
-    "category": "recovery"
-  },
-  {
-    "id": "moon_capsule",
-    "name": "ムーンカプセル",
-    "description": "やせいの アルモンを つかまえる",
-    "price": 200,
-    "category": "capsule"
-  },
-  {
-    "id": "star_capsule",
-    "name": "スターカプセル",
-    "description": "ムーンカプセルより つかまえやすい",
-    "price": 600,
-    "category": "capsule"
-  },
-  {
-    "id": "moon_sand",
-    "name": "つきのすな",
-    "description": "月の クレーターで とれる ふしぎな すな。アルモンが よろこぶ という。",
-    "price": 0
-  },
-  {
-    "id": "debris_fragment",
-    "name": "デブリのはへん",
-    "description": "隕石とともに 落ちてきた 金属片。リサイクルショップで お金に なるらしい。",
-    "price": 0
-  }
+ {
+  "id": "repair_gel",
+  "name": "リペアジェル",
+  "description": "HPを 20 かいふくする",
+  "price": 200,
+  "category": "recovery"
+ },
+ {
+  "id": "hi_repair_gel",
+  "name": "ハイリペアジェル",
+  "description": "HPを 50 かいふくする",
+  "price": 500,
+  "category": "recovery"
+ },
+ {
+  "id": "full_repair_gel",
+  "name": "フルリペアジェル",
+  "description": "HPを ぜんかいふくする",
+  "price": 1500,
+  "category": "recovery"
+ },
+ {
+  "id": "moon_honey",
+  "name": "ムーンハニー",
+  "description": "温室そだちの はちみつ。HPを 40 かいふくする",
+  "price": 300,
+  "category": "recovery"
+ },
+ {
+  "id": "revive_star",
+  "name": "リバイブスター",
+  "description": "ひんしの アルモンを ふっかつさせる",
+  "price": 1000,
+  "category": "recovery"
+ },
+ {
+  "id": "moon_capsule",
+  "name": "ムーンカプセル",
+  "description": "やせいの アルモンを つかまえる",
+  "price": 200,
+  "category": "capsule"
+ },
+ {
+  "id": "star_capsule",
+  "name": "スターカプセル",
+  "description": "ムーンカプセルより つかまえやすい",
+  "price": 600,
+  "category": "capsule"
+ },
+ {
+  "id": "moon_sand",
+  "name": "つきのすな",
+  "description": "月の クレーターで とれる ふしぎな すな。アルモンが よろこぶ という。",
+  "price": 0
+ },
+ {
+  "id": "debris_fragment",
+  "name": "デブリのはへん",
+  "description": "隕石とともに 落ちてきた 金属片。リサイクルショップで お金に なるらしい。",
+  "price": 0
+ }
 ]
