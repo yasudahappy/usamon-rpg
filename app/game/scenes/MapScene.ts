@@ -2103,7 +2103,8 @@ export class MapScene extends Phaser.Scene {
     // HP recovery gels
     if (m.currentHp <= 0) return { ok: false, msg: "ひんしの アルモンには\nつかえない！" };
     if (m.currentHp >= m.maxHp) return { ok: false, msg: "HPは まんたんだ！" };
-    const amount = itemId === "repair_gel" ? 20 : itemId === "hi_repair_gel" ? 50 : m.maxHp;
+    const amount = itemId === "repair_gel" ? 20 : itemId === "hi_repair_gel" ? 50
+      : itemId === "moon_honey" ? 40 : m.maxHp;
     const before = m.currentHp;
     m.currentHp = Math.min(m.maxHp, m.currentHp + amount);
     return { ok: true, msg: `${nameOf()}の HPが ${m.currentHp - before} かいふくした！\n（${itemName}）` };
@@ -5131,11 +5132,18 @@ export class MapScene extends Phaser.Scene {
       "※南極には 『ほぼ 一日じゅう 日の当たる 峰』が あるらしい。発電の 聖地だ。",
     ]), -4);
 
-    // 太陽光ファームの整備員（レゴリスの静電気の教育）
-    put(this.npcTex("cast-char3-down", "npc-kinoshita"), 40, 38, () => this.showDialog([
-      "整備員「パネルの そうじが 毎日\n大しごとさ。月の ちり——レゴリスは\n静電気で ペタペタ くっつくんだ。」",
-      "整備員「ちりが つもると 発電が\nガクンと おちる。だから ほうきロボと\n二人三きゃくで ピカピカに してる。」",
-    ]));
+    // 太陽光ファームの整備員（レゴリスの静電気の教育＋初回はデブリのかけら）
+    put(this.npcTex("cast-char3-down", "npc-kinoshita"), 40, 38, () => {
+      const given = this.awardNectarItem("minori_solar_gift", "debris_fragment", "デブリのはへん", [
+        "整備員「パネルの そうじが 毎日\n大しごとさ。月の ちり——レゴリスは\n静電気で ペタペタ くっつくんだ。」",
+        "整備員「こないだは 小さな デブリが\nパネルの わくに コツンと あたってな。\nひろった かけら、きみに やるよ。」",
+        "整備員「リサイクルショップで\nいい 値が つくらしいぜ。」",
+      ]);
+      if (!given) this.showDialog([
+        "整備員「ちりが つもると 発電が\nガクンと おちる。だから ほうきロボと\n二人三きゃくで ピカピカに してる。」",
+        "整備員「かけらは 役に立ったかい？」",
+      ]);
+    });
 
     // 地熱プラントの作業員（夜の2週間の心臓）
     put(this.npcTex("cast-char7-down", "npc-kinoshita"), 27, 36, () => this.showDialog([
@@ -5149,6 +5157,40 @@ export class MapScene extends Phaser.Scene {
       "デリケートな 野菜と くだものは\nガラスの 中で そだてる。",
       "市場の 『ムーンハニー』の ミツバチも\nこの 温室に すんでいる。",
     ]), -4);
+
+    // 温室前のミツバチ係（左下の施設イベント：初回ムーンハニー×2）
+    put(this.npcTex("cast-char4-down", "npc-mom"), 5, 37, () => {
+      if (!this.hasPitFlag("minori_honey_gift")) {
+        this.setPitFlag("minori_honey_gift");
+        if (this.playerState) {
+          const it = this.playerState.items.find(i => i.id === "moon_honey");
+          if (it) it.count += 2;
+          else this.playerState.items.push({ id: "moon_honey", count: 2 });
+        }
+        this.showDialog([
+          "ミツバチ係「この 温室の ハチは\n月そだち。地球の ハチより ゆっくり\n飛ぶのが かわいいのよ。」",
+          "ミツバチ係「今日は はちみつが\nとれたての とれたて。おすそわけ！」",
+          "「ムーンハニー」を 2つ てにいれた！",
+          "ミツバチ係「アルモンの HPが 40\nかいふくするわ。どうぐ から つかってね。」",
+        ]);
+      } else {
+        this.showDialog([
+          "ミツバチ係「ハチも 野菜も 人も、\nみんな 温室の おかげで 元気元気。」",
+        ]);
+      }
+    });
+
+    // 北東のリル研究者（右上の施設イベント：初回スターカプセル）
+    put(this.npcTex("cast-char9-down", "npc-kinoshita"), 38, 7, () => {
+      const given = this.awardNectarItem("minori_rille_gift", "star_capsule", "スターカプセル", [
+        "研究者「この 大きな 溝が リルだ。\n大むかしの 溶岩の 通り道——\n地下トンネルの 天井が 落ちて\nできた と 考えられている。」",
+        "研究者「タテアナ村の 縦孔も、こういう\nトンネルに あいた 天まどなのさ。\n月は ぜんぶ つながっている！」",
+        "研究者「調査を 手つだって くれた\nお礼だ。もって いきなさい。」",
+      ]);
+      if (!given) this.showDialog([
+        "研究者「リルの 全長は 数百キロに\nなる ものも ある。月は ほんとうに\nスケールが でかいなあ。」",
+      ]);
+    });
   }
 
   /** ミノリタウンの点景 — 蒸気の噴気孔・パイプ・市場・広場・アルモンの暮らし。 */
