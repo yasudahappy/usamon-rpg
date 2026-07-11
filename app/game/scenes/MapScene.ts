@@ -4758,7 +4758,7 @@ export class MapScene extends Phaser.Scene {
     ]), -4);
 
     // 看板②（縦孔のふち・教育①）
-    put("nectar-sign", 16, 12, () => this.showDialog([
+    put("nectar-sign", 16, 11, () => this.showDialog([
       "『月の縦孔』",
       "日本の 探査機 かぐや が 見つけた\n大きな あな。",
       "下には 溶岩が 流れた あとの\nトンネル——溶岩洞（ようがんどう）が\n広がっている。",
