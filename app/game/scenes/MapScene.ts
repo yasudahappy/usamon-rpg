@@ -159,7 +159,7 @@ export class MapScene extends Phaser.Scene {
     { flag: "route2_cap_1", mapKey: "sand_route_2", x: 18, y: 2, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
     { flag: "route2_cap_2", mapKey: "sand_route_2", x: 9, y: 8, item: "moon_sand", itemName: "つきのすな" },
     { flag: "route2_cap_3", mapKey: "sand_route_2", x: 2, y: 17, item: "full_repair_gel", itemName: "フルリペアジェル" },
-    { flag: "lava_cap_1", mapKey: "lava_tube", x: 4, y: 9, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "lava_cap_1", mapKey: "lava_tube", x: 4, y: 12, item: "full_repair_gel", itemName: "フルリペアジェル" },
   ];
 
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
@@ -979,6 +979,10 @@ export class MapScene extends Phaser.Scene {
 
         // Nectar Town step-on triggers (overlook / eavesdrop cutscenes)
         this.checkNectarStepTriggers();
+
+        // 溶岩洞: stepping into the final chamber makes the surveying grunts
+        // rush the player (wide halls would let sight-lines be side-stepped).
+        this.checkLavaTubeAmbush();
 
         // Ice (tile 91): keep sliding in the same direction until something
         // blocks the way (RSE-style skating — ネクタルタウンの凍った池 etc.).
@@ -4715,10 +4719,24 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
+  /** 溶岩洞の広間(x>=12, y>=13)に踏み込むと、未撃破の団員が順に駆け寄って
+   *  強制バトル。広いホールでは視線式だけだと横を すり抜けられるための保険。 */
+  private checkLavaTubeAmbush(): void {
+    if (this.currentMapKey !== "lava_tube") return;
+    if (this.dialogActive || this.inCutscene || this.trainerApproaching ||
+        this.startingBattle || this.isWarping) return;
+    if (this.gridX < 12 || this.gridY < 13) return;
+    for (const id of ["voice_grunt_a", "voice_grunt_b"]) {
+      if (this.playerState?.defeatedTrainers.includes(id)) continue;
+      const trainer = this.allTrainers.find(t => t.id === id && t.mapKey === "lava_tube");
+      if (trainer) { this.beginTrainerApproach(trainer); return; }
+    }
+  }
+
   private placeLavaTubeEvents(): void {
     if (this.hasPitFlag("pit_rescue_cleared")) return;
     const ts = this.tileSize;
-    const tx = 16, ty = 11;
+    const tx = 20, ty = 16;
     const img = this.add.image(
       tx * ts + ts / 2, ty * ts + ts / 2,
       this.npcTex("cast-colonist_m-left", "npc-kinoshita")
