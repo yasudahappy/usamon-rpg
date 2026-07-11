@@ -66,13 +66,8 @@ export class MapScene extends Phaser.Scene {
   private static SEALED_EXITS: Record<string, { tiles: { x: number; y: number }[]; messages: string[] }[]> = {
     // NOTE: nectar_town's gym door (15,6) is handled dynamically (ice-melt
     // trial ⑦), see tryMeltGymDoor().
-    frost_route_1: [
-      {
-        // North exit — the road to the next sea (豊かの海方面・未開放).
-        tiles: [{ x: 10, y: 0 }, { x: 11, y: 0 }],
-        messages: ["この先は まだ 道が ひらけて\nいないようだ…。"],
-      },
-    ],
+    // frost_route_1's north exit is open (タテアナ村へ). The village itself has
+    // no further exit yet — the road to 豊かの海 opens with the gym-3 chapter.
   };
   // Nectar gym door: frozen shut until a fire/metal almon melts it (試練 その1).
   private static NECTAR_GYM_DOOR = { x: 15, y: 6 };
@@ -164,6 +159,7 @@ export class MapScene extends Phaser.Scene {
     { flag: "route2_cap_1", mapKey: "sand_route_2", x: 18, y: 2, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
     { flag: "route2_cap_2", mapKey: "sand_route_2", x: 9, y: 8, item: "moon_sand", itemName: "つきのすな" },
     { flag: "route2_cap_3", mapKey: "sand_route_2", x: 2, y: 17, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "lava_cap_1", mapKey: "lava_tube", x: 4, y: 9, item: "full_repair_gel", itemName: "フルリペアジェル" },
   ];
 
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
