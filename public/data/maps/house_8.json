@@ -228,14 +228,14 @@
    "x": 4,
    "y": 7,
    "targetMap": "pit_village",
-   "targetX": 4,
+   "targetX": 2,
    "targetY": 11
   },
   {
    "x": 5,
    "y": 7,
    "targetMap": "pit_village",
-   "targetX": 4,
+   "targetX": 2,
    "targetY": 11
   }
  ]
