@@ -171,5 +171,75 @@
     "maxLevel": 25
    }
   ]
+ },
+ "lava_tube_deep": {
+  "encounterRate": 0.12,
+  "monsters": [
+   {
+    "id": "meteko",
+    "weight": 40,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "genbu",
+    "weight": 22,
+    "minLevel": 24,
+    "maxLevel": 27
+   },
+   {
+    "id": "pribo",
+    "weight": 15,
+    "minLevel": 24,
+    "maxLevel": 27
+   },
+   {
+    "id": "hotaruna",
+    "weight": 13,
+    "minLevel": 24,
+    "maxLevel": 27
+   },
+   {
+    "id": "regonyas",
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 26
+   }
+  ]
+ },
+ "rill_route": {
+  "encounterRate": 0.1,
+  "monsters": [
+   {
+    "id": "meteko",
+    "weight": 30,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
+    "id": "genbu",
+    "weight": 25,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
+    "id": "rairai",
+    "weight": 20,
+    "minLevel": 25,
+    "maxLevel": 27
+   },
+   {
+    "id": "sunagani",
+    "weight": 15,
+    "minLevel": 25,
+    "maxLevel": 27
+   },
+   {
+    "id": "hotaruna",
+    "weight": 10,
+    "minLevel": 25,
+    "maxLevel": 28
+   }
+  ]
  }
 }

@@ -160,7 +160,13 @@ export class MapScene extends Phaser.Scene {
     { flag: "route2_cap_2", mapKey: "sand_route_2", x: 9, y: 8, item: "moon_sand", itemName: "つきのすな" },
     { flag: "route2_cap_3", mapKey: "sand_route_2", x: 2, y: 17, item: "full_repair_gel", itemName: "フルリペアジェル" },
     { flag: "lava_cap_1", mapKey: "lava_tube", x: 4, y: 12, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "deep_cap_1", mapKey: "lava_tube_deep", x: 2, y: 7, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "gym3_cap_1", mapKey: "gym_3", x: 2, y: 13, item: "star_capsule", itemName: "スターカプセル" },
   ];
+
+  // 溶岩洞→深部の岩の門（ツキヤマ救出で開通）
+  private deepGateRock?: Phaser.GameObjects.Image;
+  private deepGateExam?: { x: number; y: number; fn: () => void };
 
   // Lab researcher NPCs (Moonbase = 博士の研究所) — talk-only
   private labRes1Sprite?: Phaser.GameObjects.Image;
@@ -363,9 +369,36 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
-    // 溶岩洞 — 行方不明のツキヤマ研究員（救助対象）。
+    // 溶岩洞 — 行方不明のツキヤマ研究員（救助対象）＋深部への岩の門。
     if (this.currentMapKey === "lava_tube") {
       this.placeLavaTubeEvents();
+      this.placeLavaDeepGate();
+    }
+
+    // 溶岩洞・深部 — あつい裂け目の洞窟（豊かの海への抜け道）。
+    if (this.currentMapKey === "lava_tube_deep") {
+      this.placeCaveCapsules();
+      this.placeLavaTubeDeepDecor();
+    }
+
+    // リルの谷 — 溶岩が流れた跡の溝をたどる地上ルート。
+    if (this.currentMapKey === "rill_route") {
+      this.placeRillRouteEvents();
+    }
+
+    // ミノリタウン — 豊かの海のほとり。ルナ16号と地熱農園の町。
+    if (this.currentMapKey === "minori_town") {
+      this.placeMinoriTownEvents();
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("minori_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playMinoriArrival());
+      }
+    }
+
+    // ミノリジム — 溶岩バルブのしかけ（ジム3・炎）。
+    if (this.currentMapKey === "gym_3") {
+      this.placeGym3Events();
+      this.placeCaveCapsules();
     }
 
 
@@ -3532,6 +3565,8 @@ export class MapScene extends Phaser.Scene {
       house_5: "cast-char6-down", house_6: "cast-char3-down", house_7: "cast-char5-down",
       // タテアナ村
       house_8: "cast-char7-down",
+      // ミノリタウン
+      house_9: "cast-char6-down",
     };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
@@ -3583,6 +3618,12 @@ export class MapScene extends Phaser.Scene {
         "ようこそ タテアナむらへ。",
         "この 村はね、あなの 中の\n安定した 温度を つかって\n食べものを 保存しているの。",
         "月では 昼と 夜の 温度差が\n300ど ちかく ある。でも あなの\n中は いつも おだやか なのよ。",
+      ],
+      // ミノリタウン（豊かの海＝ルナ16号の教育テーマ）
+      house_9: [
+        "ようこそ ミノリタウンへ。",
+        "むかし ルナ16号という 探査機が\nこの 豊かの海に おりて、月の 土を\nはじめて 無人で 地球へ とどけたの。",
+        "うちの 農園の 野菜も いつか\n地球に とどけたい ものだわ。",
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
@@ -4635,6 +4676,12 @@ export class MapScene extends Phaser.Scene {
     this.playerState.pickups = this.playerState.pickups || [];
     if (!this.playerState.pickups.includes(flag)) this.playerState.pickups.push(flag);
   }
+  private clearPitFlag(flag: string): void {
+    const pk = this.playerState?.pickups;
+    if (!pk) return;
+    const idx = pk.indexOf(flag);
+    if (idx >= 0) pk.splice(idx, 1);
+  }
 
   /** タテアナ村の点景 —「縦孔と生きる村」の個性づけ。
    *  縦孔から光の粒が立ちのぼり、ホタルナが舞い、プリボがレンガを印刷する。 */
@@ -4858,9 +4905,11 @@ export class MapScene extends Phaser.Scene {
           "ツキヤマ「昼は 110ど、夜は マイナス\n170どの 月面でも、溶岩洞の 中は\n岩が まもって くれる。放射線も\n隕石も とどかない。」",
           "ツキヤマ「未来の 月の 家は、\nこういう 場所に 作られるかも\nしれないよ。」",
           "ツキヤマ「材料なら 足もとに いくらでも\nある。月の砂（レゴリス）を 3Dプリンタに\n入れて、家の 部品を その場で\n印刷するのさ。」",
+          "ツキヤマ「それと——東の 奥を ふさいでいた\n岩は、アルモンに たのんで どかしておいた。\nあの 先の 深部を ぬければ 豊かの海だ。」",
           "ツキヤマ「さあ、先に 村へ もどるよ。\nきみも 気を つけて！」",
         ], () => {
           this.setPitFlag("pit_rescue_cleared");
+          this.removeLavaDeepGate();
           // 彼は先にロープで帰る（すっと消える）
           const idx = this.nectarExam.indexOf(exam);
           if (idx >= 0) this.nectarExam.splice(idx, 1);
@@ -4869,6 +4918,270 @@ export class MapScene extends Phaser.Scene {
       },
     };
     this.nectarExam.push(exam);
+  }
+
+  // ========== ジム3・豊かの海編（設計書: ジム3・豊かの海編v1） ==========
+
+  /** 溶岩洞→深部の通路（東奥）。ツキヤマ救出前は岩でふさがっている。 */
+  private placeLavaDeepGate(): void {
+    this.deepGateRock = undefined;
+    this.deepGateExam = undefined;
+    if (this.hasPitFlag("pit_rescue_cleared")) return;
+    const ts = this.tileSize;
+    if (!this.textures.exists("deep-gate-rock")) {
+      const c = document.createElement("canvas"); c.width = 36; c.height = 36;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.ellipse(18, 31, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+      for (const [bx, by, br, col] of [[13, 20, 11, "#4a3f50"], [24, 22, 9, "#3d3442"], [19, 12, 8, "#574c5c"]] as [number, number, number, string][]) {
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#6a5f70"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(bx, by, br, Math.PI * 1.05, Math.PI * 1.7); ctx.stroke();
+      }
+      this.textures.addCanvas("deep-gate-rock", c);
+    }
+    this.deepGateRock = this.add.image(22 * ts + ts / 2, 16 * ts + ts / 2, "deep-gate-rock")
+      .setDepth(8).setDisplaySize(ts * 1.05, ts * 1.05);
+    const exam = {
+      x: 22, y: 16, fn: () => this.showDialog([
+        "大きな 岩が 通路を ふさいでいる。\n岩の すきまから あたたかい 風が\nふいてくる…。",
+        "（くずれそうで あぶない。\nいまは 通れそうに ない）",
+      ]),
+    };
+    this.deepGateExam = exam;
+    this.nectarExam.push(exam);
+  }
+
+  /** 救出イベント直後に岩をどかす（同一シーン内での開通）。 */
+  private removeLavaDeepGate(): void {
+    if (this.deepGateExam) {
+      const idx = this.nectarExam.indexOf(this.deepGateExam);
+      if (idx >= 0) this.nectarExam.splice(idx, 1);
+      this.deepGateExam = undefined;
+    }
+    if (this.deepGateRock) {
+      const rock = this.deepGateRock;
+      this.deepGateRock = undefined;
+      this.cameras.main.shake(280, 0.004);
+      this.tweens.add({ targets: rock, alpha: 0, scale: 0.6, duration: 500, onComplete: () => rock.destroy() });
+    }
+  }
+
+  /** 深部の点景 — 裂け目の熱・立ちのぼる火の粉・暖色トーン。 */
+  private placeLavaTubeDeepDecor(): void {
+    const ts = this.tileSize;
+    if (!this.textures.exists("ember-spark")) {
+      const c = document.createElement("canvas"); c.width = 6; c.height = 6;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "rgba(255,150,60,0.95)"; ctx.fillRect(2, 2, 2, 2);
+      ctx.fillStyle = "rgba(255,110,40,0.45)";
+      ctx.fillRect(1, 2, 1, 2); ctx.fillRect(4, 2, 1, 2); ctx.fillRect(2, 1, 2, 1); ctx.fillRect(2, 4, 2, 1);
+      this.textures.addCanvas("ember-spark", c);
+    }
+    // fissure hotspots (must match the tile-100 cells in lava_tube_deep.json)
+    const spots: [number, number][] = [[17.5, 8.5], [16.5, 10], [19, 7.5], [17.5, 12], [3, 8.5], [6, 7]];
+    for (const [hx, hy] of spots) {
+      const glow = this.add.circle(hx * ts, hy * ts, ts * 0.7, 0xff7830, 0.16).setDepth(6);
+      this.tweens.add({ targets: glow, alpha: 0.07, scale: 1.25, duration: 1000 + Math.random() * 600,
+        yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    for (let i = 0; i < 10; i++) {
+      const src = spots[i % spots.length];
+      const sx = () => (src[0] + (Math.random() - 0.5) * 2) * ts;
+      const sy = () => (src[1] + (Math.random() - 0.5)) * ts;
+      const spark = this.add.image(sx(), sy(), "ember-spark")
+        .setDepth(27).setAlpha(0).setScale(0.8 + Math.random() * 0.9);
+      this.tweens.add({
+        targets: spark, y: `-=${40 + Math.random() * 70}`, alpha: { from: 0.9, to: 0 },
+        duration: 2000 + Math.random() * 2000, repeat: -1, ease: "Sine.out", delay: Math.random() * 2200,
+        onRepeat: () => { spark.x = sx(); spark.y = sy(); },
+      });
+    }
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xff8040, 0.08)
+      .setOrigin(0).setDepth(26);
+  }
+
+  /** リルの谷 — 看板2枚（教育: リル＝溶岩が流れた跡の溝）。 */
+  private placeRillRouteEvents(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+    put("nectar-sign", 11, 21, () => this.showDialog([
+      "『リルのたに』",
+      "リル とは 月の 溝（みぞ）のこと。",
+      "大むかしに 溶岩が 川のように 流れ、\nその あとが 谷に なって のこった。",
+    ]), -4);
+    put("nectar-sign", 11, 3, () => this.showDialog([
+      "↑ この先 ミノリタウン",
+      "豊かの海（Fecunditatis）の ほとり。\n地熱農園と ルナ16号の 町。",
+    ]), -4);
+  }
+
+  /** ミノリタウン — 看板・ルナ16号きねんひ・農園主・ヴォイス団員（会話のみ）。 */
+  private placeMinoriTownEvents(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+
+    // 町の看板（広場の南西）
+    put("nectar-sign", 13, 14, () => this.showDialog([
+      "『ミノリタウン』",
+      "豊かの海の ほとり。\n地熱農園の めぐみと ともに 生きる町。",
+    ]), -4);
+
+    // ジムの看板
+    put("nectar-sign", 13, 7, () => this.showDialog([
+      "『ミノリジム』\nリーダー：ヒノ",
+      "「もえる 探究心で むかえうつ！」",
+      "※ジムの マグマは バルブで\nながれを きりかえられる らしい。",
+    ]), -4);
+
+    // ルナ16号きねんひ（広場の中央・教育の柱）
+    if (!this.textures.exists("luna16-monument")) {
+      const c = document.createElement("canvas"); c.width = 40; c.height = 52;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      // pedestal
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(20, 48, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#8a8272"; ctx.fillRect(8, 40, 24, 8);
+      ctx.fillStyle = "#a89f8c"; ctx.fillRect(8, 40, 24, 3);
+      // descent stage: 4 legs + tank body + antenna dish
+      ctx.strokeStyle = "#6e6658"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(12, 40); ctx.lineTo(16, 30); ctx.moveTo(28, 40); ctx.lineTo(24, 30); ctx.stroke();
+      ctx.fillStyle = "#b8b0a0";
+      ctx.beginPath(); ctx.arc(20, 26, 9, 0, Math.PI * 2); ctx.fill();   // spherical tank
+      ctx.fillStyle = "#d8d2c4";
+      ctx.beginPath(); ctx.arc(17, 23, 3.5, 0, Math.PI * 2); ctx.fill(); // highlight
+      ctx.fillStyle = "#7a7264"; ctx.fillRect(17, 10, 6, 8);             // return-capsule stem
+      ctx.fillStyle = "#e8e2d4";
+      ctx.beginPath(); ctx.arc(20, 8, 5, 0, Math.PI * 2); ctx.fill();    // return capsule
+      ctx.strokeStyle = "#5e574c"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(20, 26, 9, 0, Math.PI * 2); ctx.stroke();
+      this.textures.addCanvas("luna16-monument", c);
+    }
+    put("luna16-monument", 15, 12, () => this.showDialog([
+      "『ルナ16号 きねんひ』",
+      "1970年、ソれんの 探査機 ルナ16号が\nここ 豊かの海に 着陸した。",
+      "世界で はじめて 無人で 月の 土を\n地球へ 持ち帰る ことに 成功——\nその量、101グラム。",
+      "おかえり用の カプセルは 地球へ。\n着陸だいは いまも 月面に のこっている。",
+    ], undefined), -6);
+
+    // 農園主（地熱×温室の教育）
+    put(this.npcTex("cast-char2-down", "npc-kinoshita"), 9, 20, () => this.showDialog([
+      "農園主「この 農園ドームはね、地下の\nあったかい 熱と ライトの 光で\n野菜を そだてて いるんだ。」",
+      "農園主「月の砂 レゴリスは そのままじゃ\n作物に きびしい。水と 栄養を まぜて\n土に 作りかえて いるのさ。」",
+      "農園主「『豊かの海』の 名前に まけない\n実りを つくる。それが この町の ゆめさ。」",
+    ]));
+
+    // ヴォイス団員（会話のみ・追跡型の情報断片 / ヴォイス編v2 §3）
+    put(this.npcTex("cast-voice_grunt3-down", "npc-kinoshita"), 21, 13, () => this.showDialog([
+      "……チッ。豊かの海にも\n水の 手がかりは なし、か。",
+      "ん？ なんだよ ガキ。おれたちは\nただの 調査員…… そう、\nヴォイスの ちょうさいん さまだ。",
+      "おぼえて おけ。『水を 制する ものが\n月を 制する』。ボスたちは もう\n南極の 秘密に 手を かけてるのさ。",
+    ]));
+  }
+
+  /** ミノリタウン初回到着のひとこと。 */
+  private playMinoriArrival(): void {
+    if (this.hasPitFlag("minori_arrival_seen")) return;
+    this.setPitFlag("minori_arrival_seen");
+    this.inCutscene = true;
+    this.showDialog([
+      "（あたたかい 風…。リルの谷を ぬけて\nついに 豊かの海へ 出たんだ）",
+      "ここが ミノリタウン——\n地熱農園と ルナ16号の 町。",
+    ], () => { this.inCutscene = false; });
+  }
+
+  // ---- ミノリジム（ジム3・炎）: 溶岩バルブのしかけ ----
+  // チャンネル1(y17)はバルブ1、チャンネル2(y11)はバルブ2で冷える。
+  // 西の「たからばし」(x3)は バルブが片方だけONのとき(XOR)だけ冷える。
+  private static GYM3_SEGS: { cells: [number, number][]; cool: (v1: boolean, v2: boolean) => boolean }[] = [
+    { cells: [[9, 17], [10, 17]], cool: (v1) => v1 },
+    { cells: [[5, 11], [6, 11]], cool: (_v1, v2) => v2 },
+    { cells: [[3, 13], [3, 14]], cool: (v1, v2) => v1 !== v2 },
+  ];
+  private gym3SegSprites: Map<string, Phaser.GameObjects.Image> = new Map();
+
+  /**
+   * バルブ状態(pickupsフラグ)を床タイル/衝突に反映する。mapDataはセッション
+   * キャッシュ共有なので、氷ジム扉と同じく両方向に冪等であること。
+   */
+  private applyGym3LavaState(): void {
+    const v1 = this.hasPitFlag("gym3_valve_1");
+    const v2 = this.hasPitFlag("gym3_valve_2");
+    for (const seg of MapScene.GYM3_SEGS) {
+      const cool = seg.cool(v1, v2);
+      for (const [x, y] of seg.cells) {
+        this.mapData.layers.floor[y][x] = cool ? 101 : 100;
+        this.mapData.layers.collision[y][x] = cool ? 0 : 1;
+        const spr = this.gym3SegSprites.get(`${x},${y}`);
+        if (spr) spr.setTexture(cool ? "tile-101" : "tile-100");
+      }
+    }
+  }
+
+  private placeGym3Events(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    this.gym3SegSprites.clear();
+
+    // 切り替えセルのオーバーレイ（drawMapの上に載せ、状態でテクスチャを差し替える）
+    for (const seg of MapScene.GYM3_SEGS) {
+      for (const [x, y] of seg.cells) {
+        const spr = this.add.image(x * ts + ts / 2, y * ts + ts / 2, "tile-100").setDepth(1);
+        this.gym3SegSprites.set(`${x},${y}`, spr);
+      }
+    }
+    this.applyGym3LavaState();
+
+    // バルブのテクスチャ（パイプ＋赤いハンドル）
+    if (!this.textures.exists("gym3-valve")) {
+      const c = document.createElement("canvas"); c.width = 30; c.height = 34;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(15, 30, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#707888"; ctx.fillRect(12, 14, 6, 18);          // pipe
+      ctx.fillStyle = "#8a92a4"; ctx.fillRect(12, 14, 2, 18);
+      ctx.strokeStyle = "#c83a30"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(15, 10, 7, 0, Math.PI * 2); ctx.stroke(); // wheel
+      ctx.strokeStyle = "#e85a4a"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(15, 3); ctx.lineTo(15, 17); ctx.moveTo(8, 10); ctx.lineTo(22, 10); ctx.stroke();
+      this.textures.addCanvas("gym3-valve", c);
+    }
+    const valve = (x: number, y: number, flag: string, label: string) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 - 4, "gym3-valve").setDepth(8);
+      this.nectarExam.push({
+        x, y, fn: () => {
+          if (this.hasPitFlag(flag)) this.clearPitFlag(flag);
+          else this.setPitFlag(flag);
+          this.cameras.main.shake(200, 0.003);
+          this.applyGym3LavaState();
+          const on = this.hasPitFlag(flag);
+          this.showDialog([
+            `${label}を まわした！ ……ゴゴゴ。\nどこかで マグマの ながれる 音が\nかわった！（${on ? "ON" : "OFF"}）`,
+          ]);
+        },
+      });
+    };
+    valve(4, 20, "gym3_valve_1", "バルブ1");
+    valve(15, 14, "gym3_valve_2", "バルブ2");
+
+    // 入口の説明看板
+    this.nectarExam.push({
+      x: 11, y: 22, fn: () => this.showDialog([
+        "『ミノリジム 心得』",
+        "一、バルブで マグマの ながれを\nきりかえるべし。",
+        "一、バルブが かたほうだけ ONのとき、\n西の たからばしが ひえる との うわさ。",
+      ]),
+    });
+    this.add.image(11 * ts + ts / 2, 22 * ts + ts / 2 - 4, "nectar-sign").setDepth(8);
   }
 
   /** Step-on triggers: ①②展望+地球の出 / ⑬ヴォイスの影 */
