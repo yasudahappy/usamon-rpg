@@ -604,5 +604,111 @@
   ],
   "battleSprite": "trainer-hijiri",
   "overworldSprite": "hijiri"
+ },
+ {
+  "id": "taurus_takeru",
+  "name": "やまのぼり タケル",
+  "mapKey": "taurus_pass",
+  "x": 6,
+  "y": 20,
+  "direction": "left",
+  "sightRange": 4,
+  "prizeMoneyBase": 600,
+  "dialogBefore": "タウルス山地に ようこそ！\nここは 晴れの海の ふちに つらなる 本物の 山脈だぜ。のぼる 前に 一勝負！",
+  "dialogWin": "いい足腰だ！ 上の 展望スポットから\n晴れの海が 一望できるぜ。ぜったい 見てけよ！",
+  "dialogLose": "山は あせらず 一歩ずつ、だ。",
+  "party": [
+   {
+    "id": "genbu",
+    "level": 28
+   },
+   {
+    "id": "lobsner",
+    "level": 28
+   }
+  ],
+  "battleSprite": "trainer-casual",
+  "overworldSprite": "char2"
+ },
+ {
+  "id": "taurus_midori",
+  "name": "けんきゅういん ミドリ",
+  "mapKey": "taurus_pass",
+  "x": 10,
+  "y": 8,
+  "direction": "right",
+  "sightRange": 4,
+  "prizeMoneyBase": 620,
+  "dialogBefore": "上で ヴォイスの 2人組が 調査員さんに\nからんでるの…。わたしじゃ 歯が立たなくて。\nあなた、腕だめしさせて！",
+  "dialogWin": "つよい…！ おねがい、上の 調査員さんを\n助けてあげて！ 2人組は 2たい2で 来るわよ！",
+  "dialogLose": "だめ…この つよさじゃ 2人組には…",
+  "party": [
+   {
+    "id": "hotaruna",
+    "level": 28
+   },
+   {
+    "id": "ikarion",
+    "level": 29
+   }
+  ],
+  "battleSprite": "trainer-girl",
+  "overworldSprite": "char5"
+ },
+ {
+  "id": "eezen_taurus",
+  "name": "ライバル イーゼン",
+  "mapKey": "taurus_pass",
+  "x": 12,
+  "y": 14,
+  "direction": "left",
+  "sightRange": 4,
+  "prizeMoneyBase": 2500,
+  "dialogBefore": "おや——きみですか。えぇ、大変恐縮です が、\nこんな ところで 会うとは 運が ない。\nぼくは ジム4の 下見の 帰りでしてね。\nバッジ3つ ていどで 追いついた つもりですか？\n勝てば ダブル、負ければ トラブル。……行きますよ！",
+  "dialogWin": "……えぇ、まさかの トラブルの ほう ですか。\n大変恐縮です。きみの アルモン、前より ずっと 息が あってる。\n晴れの海の 町は 光の ジムだ。それと——黒ずくめの 連中が 山道を うろついてる。ぼくの 邪魔だけは しないで もらいたい。",
+  "dialogLose": "えぇ、当然の 結果です。精進なさい。",
+  "party": [
+   {
+    "id": "sharisu",
+    "level": 30
+   },
+   {
+    "id": "roubau",
+    "level": 30
+   },
+   {
+    "id": "ikarion",
+    "level": 31
+   }
+  ],
+  "battleSprite": "trainer-eezen",
+  "overworldSprite": "eezen"
+ },
+ {
+  "id": "voice_pair_taurus",
+  "name": "ヴォイスだんいん コンビ",
+  "mapKey": "taurus_pass",
+  "x": 10,
+  "y": 3,
+  "direction": "left",
+  "sightRange": 4,
+  "prizeMoneyBase": 1300,
+  "doubles": true,
+  "dialogBefore": "「おい、見られたぞ」「かまうもんか」\n「おれたちは 参謀キヨハラさまの 命令で、この 調査員から 『水』の データを いただくところでね」\n「じゃまする ガキは——2たい2で つぶす！」",
+  "dialogWin": "「くっ… ガキが 2体も そろえてやがった…」\n「おぼえてろ！ キヨハラさまは もう 晴れの海の 先まで 手を のばしてるんだ！」",
+  "dialogLose": "「ヴォイスに さからうからだ」",
+  "party": [
+   {
+    "id": "sharisu",
+    "level": 29
+   },
+   {
+    "id": "shakuros",
+    "level": 28
+   }
+  ],
+  "battleSprite": "trainer-voice_grunt3",
+  "battleSprite2": "trainer-voice_grunt4",
+  "overworldSprite": "voice_grunt3"
  }
 ]
