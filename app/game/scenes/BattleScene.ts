@@ -365,7 +365,8 @@ export class BattleScene extends Phaser.Scene {
             [`${t.name}が しょうぶを しかけてきた！`, t.dialogBefore],
             () => this.showMessages(
               [`${t.name}は ${enemyData.name}を くりだした！`],
-              () => this.throwCapsuleAndReveal(() => this.hideTrainerPortrait(sendOutPlayer))
+              // トレーナーはカプセルを投げながら右へフェードアウトする
+              () => this.throwCapsuleAndReveal(sendOutPlayer)
             )
           );
         });
@@ -422,9 +423,115 @@ export class BattleScene extends Phaser.Scene {
     this.textures.addCanvas("capsule-moon", c);
   }
 
-  /** Trainer tosses a moon-capsule from their hand; it bursts and the almon appears. */
-  private throwCapsuleAndReveal(onDone: () => void): void {
+  /** カプセルが弾けた瞬間の光の輪と星くず。 */
+  private burstFx(x: number, y: number): void {
+    const sy = this.sy;
+    const flash = this.add.circle(x, y, 8 * sy, 0xffffff).setDepth(7);
+    this.tweens.add({ targets: flash, scale: 6, alpha: 0, duration: 320, ease: "Cubic.out",
+      onComplete: () => flash.destroy() });
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 0.4;
+      const star = this.add.circle(x, y, (i % 2 ? 2.4 : 3.4) * sy, i % 2 ? 0xfff2b0 : 0xffffff).setDepth(8);
+      this.tweens.add({
+        targets: star, x: x + Math.cos(a) * 52 * sy, y: y + Math.sin(a) * 40 * sy - 10 * sy,
+        alpha: 0, scale: 0.3, duration: 420, ease: "Cubic.out", onComplete: () => star.destroy(),
+      });
+    }
+  }
+
+  /** カプセルを (fromX,fromY)→(toX,toY) へ放物線で投げ、弾けたら onBurst。 */
+  private throwCapsuleArc(
+    fromX: number, fromY: number, toX: number, toY: number,
+    onBurst: () => void, delay = 0
+  ): void {
     this.genCapsuleTexture();
+    const sy = this.sy;
+    const cap = this.add.image(fromX, fromY, "capsule-moon")
+      .setDepth(8).setScale(sy * 1.1).setVisible(delay === 0);
+    const o = { t: 0 };
+    this.tweens.add({
+      targets: o, t: 1, duration: 480, delay, ease: "Sine.in",
+      onStart: () => cap.setVisible(true),
+      onUpdate: () => {
+        cap.x = fromX + (toX - fromX) * o.t;
+        cap.y = (fromY + (toY - fromY) * o.t) - Math.sin(o.t * Math.PI) * 70 * sy;
+        cap.rotation += 0.35;
+      },
+      onComplete: () => { cap.destroy(); this.burstFx(toX, toY); onBurst(); },
+    });
+  }
+
+  /** カプセルの弾けた点からスプライトをぽんっと登場させる。 */
+  private popInSprite(sprite: Phaser.GameObjects.Image, onDone?: () => void): void {
+    const s = sprite.scaleX;
+    sprite.setVisible(true).setAlpha(1).setScale(s * 0.1);
+    this.tweens.add({ targets: sprite, scaleX: s, scaleY: s, duration: 260, ease: "Back.out",
+      onComplete: () => onDone && onDone() });
+  }
+
+  /**
+   * 画面外（自分側は左・相手側は右）からカプセルが飛んできて弾け、
+   * スプライトが登場する。交代や2体目以降のくりだしで使う共通演出。
+   */
+  private capsuleRevealSprite(
+    sprite: Phaser.GameObjects.Image, isPlayer: boolean, onDone?: () => void
+  ): void {
+    // A still-running faint tween would keep squashing the reused sprite.
+    this.tweens.killTweensOf(sprite);
+    sprite.clearTint();
+    sprite.setVisible(false);
+    const fromX = isPlayer ? -24 : 664;
+    const fromY = sprite.y - 90 * this.sy;
+    this.throwCapsuleArc(fromX, fromY, sprite.x, sprite.y + sprite.displayHeight * 0.2,
+      () => this.popInSprite(sprite, onDone));
+  }
+
+  /** モンスターをカプセルに回収する（光って縮んで消える）。 */
+  private recallSprite(sprite: Phaser.GameObjects.Image, onDone: () => void): void {
+    this.tweens.killTweensOf(sprite);
+    const glow = this.add.circle(sprite.x, sprite.y, 10 * this.sy, 0xffd7d0, 0.9).setDepth(7);
+    this.tweens.add({ targets: glow, scale: 4, alpha: 0, duration: 300, ease: "Cubic.out",
+      onComplete: () => glow.destroy() });
+    this.tweens.add({
+      targets: sprite, scaleX: sprite.scaleX * 0.05, scaleY: sprite.scaleY * 0.05, alpha: 0,
+      duration: 240, ease: "Cubic.in",
+      onComplete: () => { sprite.setVisible(false); onDone(); },
+    });
+  }
+
+  /**
+   * ひんし演出: 赤く点滅→くずれ落ちて消え、足もとに砂ぼこりが舞う。
+   * scale/y を崩すので、次に使う側は sizeMonsterSprite と位置リセットを通すこと。
+   */
+  private playFaintFx(sprite: Phaser.GameObjects.Image): void {
+    const sy = this.sy;
+    const baseY = sprite.y + sprite.displayHeight * 0.35;
+    sprite.setTint(0xff7a7a);
+    this.time.delayedCall(130, () => sprite.clearTint());
+    this.cameras.main.shake(140, 0.004);
+    this.tweens.add({
+      targets: sprite, y: sprite.y + sprite.displayHeight * 0.45,
+      scaleY: sprite.scaleY * 0.25, alpha: 0,
+      duration: 430, delay: 140, ease: "Cubic.in",
+      onComplete: () => sprite.setVisible(false),
+    });
+    this.time.delayedCall(320, () => {
+      for (let i = 0; i < 5; i++) {
+        const px = sprite.x + (i - 2) * 14 * sy;
+        const p = this.add.circle(px, baseY, (5 + (i % 3) * 2) * sy, 0xd8d2c4, 0.85).setDepth(7);
+        this.tweens.add({
+          targets: p, y: baseY - (18 + (i % 2) * 10) * sy, scale: 1.8, alpha: 0,
+          duration: 480, ease: "Cubic.out", onComplete: () => p.destroy(),
+        });
+      }
+    });
+  }
+
+  /**
+   * Trainer tosses a moon-capsule and the almon appears. The trainer slides
+   * off to the RIGHT edge (fading out) WHILE the capsule is in the air.
+   */
+  private throwCapsuleAndReveal(onDone: () => void): void {
     const sy = this.sy;
     const startX = (this.trainerPortrait?.x ?? this.EPLAT_X) - 22 * sy;
     const startY = this.trainerPortrait
@@ -432,29 +539,17 @@ export class BattleScene extends Phaser.Scene {
       : Math.round(this.EPLAT_Y * sy);
     const endX = this.EPLAT_X;
     const endY = Math.round((this.EPLAT_Y + 2) * sy);
-    const cap = this.add.image(startX, startY, "capsule-moon").setDepth(8).setScale(sy * 1.1);
-    const o = { t: 0 };
-    this.tweens.add({
-      targets: o, t: 1, duration: 480, ease: "Sine.in",
-      onUpdate: () => {
-        cap.x = startX + (endX - startX) * o.t;
-        cap.y = (startY + (endY - startY) * o.t) - Math.sin(o.t * Math.PI) * 70 * sy;
-        cap.rotation += 0.35;
-      },
-      onComplete: () => {
-        cap.destroy();
-        // burst
-        const flash = this.add.circle(endX, endY, 8 * sy, 0xffffff).setDepth(7);
-        this.tweens.add({ targets: flash, scale: 6, alpha: 0, duration: 320, ease: "Cubic.out",
-          onComplete: () => flash.destroy() });
-        this.cameras.main.flash(160, 200, 240, 255);
-        // reveal the almon, scaling up from the capsule point
-        const s = this.enemySprite.scaleX;
-        this.enemySprite.setVisible(true).setAlpha(1).setScale(s * 0.1);
-        this.enemyInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
-        this.tweens.add({ targets: this.enemySprite, scaleX: s, scaleY: s, duration: 260,
-          ease: "Back.out", onComplete: onDone });
-      },
+    const tp = this.trainerPortrait;
+    if (tp && tp.visible) {
+      this.tweens.add({
+        targets: tp, x: tp.x + 130, alpha: 0, duration: 520, ease: "Cubic.in",
+        onComplete: () => { tp.setVisible(false); tp.setAlpha(1); },
+      });
+    }
+    this.throwCapsuleArc(startX, startY, endX, endY, () => {
+      this.cameras.main.flash(160, 200, 240, 255);
+      this.enemyInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
+      this.popInSprite(this.enemySprite, onDone);
     });
   }
 
@@ -591,29 +686,12 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.add({
       targets: bp, x: bp.x - 72 * sy, y: bp.y + 20 * sy, duration: 430, ease: "Sine.out",
     });
-    const cap = this.add.image(startX, startY, "capsule-moon").setDepth(8).setScale(sy * 1.1);
-    const o = { t: 0 };
-    this.tweens.add({
-      targets: o, t: 1, duration: 460, ease: "Sine.in",
-      onUpdate: () => {
-        cap.x = startX + (endX - startX) * o.t;
-        cap.y = (startY + (endY - startY) * o.t) - Math.sin(o.t * Math.PI) * 70 * sy;
-        cap.rotation += 0.35;
-      },
-      onComplete: () => {
-        cap.destroy();
-        const flash = this.add.circle(endX, endY, 8 * sy, 0xffffff).setDepth(7);
-        this.tweens.add({ targets: flash, scale: 6, alpha: 0, duration: 300, ease: "Cubic.out",
-          onComplete: () => flash.destroy() });
-        // Hero has already stepped back; now fade the back-view out.
-        this.tweens.add({ targets: bp, alpha: 0, duration: 260, ease: "Cubic.in",
-          onComplete: () => bp.setVisible(false) });
-        this.playerInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
-        const s = this.playerSprite.scaleX;
-        this.playerSprite.setVisible(true).setAlpha(1).setScale(s * 0.1);
-        this.tweens.add({ targets: this.playerSprite, scaleX: s, scaleY: s, duration: 250,
-          ease: "Back.out", onComplete: onDone });
-      },
+    this.throwCapsuleArc(startX, startY, endX, endY, () => {
+      // Hero has already stepped back; now fade the back-view out.
+      this.tweens.add({ targets: bp, alpha: 0, duration: 260, ease: "Cubic.in",
+        onComplete: () => bp.setVisible(false) });
+      this.playerInfoObjects.forEach(x => (x as Phaser.GameObjects.Image).setVisible(true));
+      this.popInSprite(this.playerSprite, onDone);
     });
   }
 
@@ -1495,12 +1573,7 @@ export class BattleScene extends Phaser.Scene {
   private checkBattleEnd(): void {
     if (this.enemyMon.currentHp <= 0) {
       this.phase = "victory";
-      this.tweens.add({
-        targets: this.enemySprite,
-        alpha: 0,
-        y: this.enemySprite.y + 30,
-        duration: 500,
-      });
+      this.playFaintFx(this.enemySprite);
       const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
       this.showMessages([`${enemyData.name} を たおした！`], () => {
         if (this.trainerData && this.trainerPartyIndex < this.trainerData.party.length - 1) {
@@ -1518,12 +1591,7 @@ export class BattleScene extends Phaser.Scene {
       // otherwise send out the next healthy party member.
       this.phase = "defeat";
       this.playerInstance.currentHp = 0;
-      this.tweens.add({
-        targets: this.playerSprite,
-        alpha: 0,
-        y: this.playerSprite.y + 30,
-        duration: 500,
-      });
+      this.playFaintFx(this.playerSprite);
       const faintedData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
       const hasAlive = this.playerState.party.some((m) => m.currentHp > 0);
       if (hasAlive) {
@@ -1555,15 +1623,17 @@ export class BattleScene extends Phaser.Scene {
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
     this.playerSprite.setTexture(this.playerTexKey(playerData.id));
     this.sizeMonsterSprite(this.playerSprite, 128, 132);
-    this.playerSprite.setAlpha(1);
+    this.playerSprite.setAlpha(1).setVisible(false);
     this.playerSprite.setY(Math.round((this.PPLAT_Y + 8) * this.sy));
     this.playerNameText.setText(`${playerData.name}`);
     this.playerLvText.setText(`Lv${this.playerMon.level}`);
     this.refreshPlayerHp();
 
     this.showMessages([`ゆけっ！ ${this.playerMon.name}！`], () => {
-      this.phase = "command";
-      this.showCommandWindow();
+      this.capsuleRevealSprite(this.playerSprite, true, () => {
+        this.phase = "command";
+        this.showCommandWindow();
+      });
     });
   }
 
@@ -2103,37 +2173,41 @@ export class BattleScene extends Phaser.Scene {
     const oldData = this.allMonsters.find(m => m.id === this.playerInstance.dataId)!;
     const newData = this.allMonsters.find(m => m.id === newMon.dataId)!;
 
-    this.playerInstance = newMon;
-    this.playerMon = this.instanceToBattleMonster(this.playerInstance);
-
-    // Update sprite
-    this.playerSprite.setTexture(this.playerTexKey(newMon.dataId));
-    this.sizeMonsterSprite(this.playerSprite, 128, 132);
-    this.playerNameText.setText(`${newData.name}`);
-    this.playerLvText.setText(`Lv${newMon.level}`);
-    this.refreshPlayerHp();
-
-    this.showMessages(
-      [`${oldData.name} もどれ！ ゆけっ！${newData.name}！`],
-      () => {
-        // Enemy gets a turn
-        const enemyMove = this.enemyMon.moves[
-          Math.floor(Math.random() * this.enemyMon.moves.length)
-        ];
-        this.executeAction(
-          this.enemyMon, enemyMove, this.playerMon, this.playerSprite,
-          () => {
-            if (this.playerMon.currentHp <= 0) {
-              this.checkBattleEnd();
-            } else {
-              this.rebuildCommandWindow();
-              this.phase = "command";
-              this.showCommandWindow();
-            }
+    const afterSwitch = () => {
+      // Enemy gets a turn
+      const enemyMove = this.enemyMon.moves[
+        Math.floor(Math.random() * this.enemyMon.moves.length)
+      ];
+      this.executeAction(
+        this.enemyMon, enemyMove, this.playerMon, this.playerSprite,
+        () => {
+          if (this.playerMon.currentHp <= 0) {
+            this.checkBattleEnd();
+          } else {
+            this.rebuildCommandWindow();
+            this.phase = "command";
+            this.showCommandWindow();
           }
-        );
-      }
-    );
+        }
+      );
+    };
+
+    // もどれ！（カプセルに回収）→ ゆけっ！（カプセルから登場）
+    this.showMessages([`${oldData.name} もどれ！`], () => {
+      this.recallSprite(this.playerSprite, () => {
+        this.playerInstance = newMon;
+        this.playerMon = this.instanceToBattleMonster(this.playerInstance);
+        this.playerSprite.setTexture(this.playerTexKey(newMon.dataId));
+        this.sizeMonsterSprite(this.playerSprite, 128, 132);
+        this.playerSprite.setAlpha(1).setVisible(false);
+        this.playerNameText.setText(`${newData.name}`);
+        this.playerLvText.setText(`Lv${newMon.level}`);
+        this.refreshPlayerHp();
+        this.showMessages([`ゆけっ！ ${newData.name}！`], () => {
+          this.capsuleRevealSprite(this.playerSprite, true, afterSwitch);
+        });
+      });
+    });
   }
 
   // ---- End Battle ----
@@ -2205,7 +2279,7 @@ export class BattleScene extends Phaser.Scene {
     const enemyData = this.allMonsters.find(m => m.id === next.id)!;
     this.enemySprite.setTexture(`monster-${next.id}`);
     this.sizeMonsterSprite(this.enemySprite, 110, 116);
-    this.enemySprite.setAlpha(1).setVisible(true);
+    this.enemySprite.setAlpha(1).setVisible(false);
     this.enemySprite.setPosition(this.EPLAT_X, Math.round((this.EPLAT_Y + 6) * this.sy));
     // The player's almon stays on the field between the trainer's switches.
     this.playerSprite.setVisible(true).setAlpha(1);
@@ -2216,8 +2290,10 @@ export class BattleScene extends Phaser.Scene {
     this.showMessages(
       [`${this.trainerData!.name}は ${enemyData.name}を くりだした！`],
       () => {
-        this.phase = "command";
-        this.showCommandWindow();
+        this.capsuleRevealSprite(this.enemySprite, false, () => {
+          this.phase = "command";
+          this.showCommandWindow();
+        });
       }
     );
   }
@@ -2347,6 +2423,29 @@ export class BattleScene extends Phaser.Scene {
       } });
   }
 
+  /** 2人がそれぞれカプセルを投げながら、右へフェードアウトして退場する。 */
+  private throwPairCapsulesD(onDone: () => void): void {
+    const ports = [this.trainerPortrait, this.trainerPortrait2];
+    for (const p of ports) {
+      if (!p || !p.visible) continue;
+      this.tweens.add({
+        targets: p, x: p.x + 130, alpha: 0, duration: 520, ease: "Cubic.in",
+        onComplete: () => { p.setVisible(false); p.setAlpha(1); },
+      });
+    }
+    let pending = 0;
+    this.dE.forEach((s, i) => {
+      if (!s) return;
+      pending++;
+      const src = ports[i] && ports[i]!.visible ? ports[i]! : null;
+      const fromX = src ? src.x - 20 * this.sy : 664;
+      const fromY = src ? src.y - src.displayHeight * 0.55 : s.sprite.y - 90 * this.sy;
+      this.throwCapsuleArc(fromX, fromY, s.sprite.x, s.sprite.y + s.sprite.displayHeight * 0.2,
+        () => { if (--pending === 0) onDone(); }, i * 150);
+    });
+    if (pending === 0) onDone();
+  }
+
   private revealSideD(arr: (DSlot | null)[], onDone: () => void): void {
     let pending = 0;
     arr.forEach(s => {
@@ -2372,11 +2471,16 @@ export class BattleScene extends Phaser.Scene {
         [`${t.name}が しょうぶを しかけてきた！`, t.dialogBefore],
         () => this.showMessages(
           [`2人は ${eNames.join("と ")}を くりだした！`],
-          () => this.hidePairPortraitsD(() => this.revealSideD(this.dE, () => {
+          // 2人はカプセルを投げながら右へフェードアウトする
+          () => this.throwPairCapsulesD(() => this.revealSideD(this.dE, () => {
             // 主人公の後ろ姿 → 2体同時くりだし
             if (this.textures.exists(this.playerBackKey())) this.showPlayerBack();
             this.showMessages([`ゆけっ！ ${pNames.join("と ")}！`], () => {
-              if (this.playerBackPortrait) this.playerBackPortrait.setVisible(false);
+              const bp = this.playerBackPortrait;
+              if (bp && bp.visible) {
+                this.tweens.add({ targets: bp, alpha: 0, x: bp.x - 60 * this.sy, duration: 380,
+                  ease: "Cubic.in", onComplete: () => { bp.setVisible(false); bp.setAlpha(1); } });
+              }
               this.revealSideD(this.dP, () => this.beginCommandD(0));
             });
           }))
@@ -2599,7 +2703,7 @@ export class BattleScene extends Phaser.Scene {
 
   private faintD(slot: DSlot, side: "p" | "e", cb: () => void): void {
     const line = side === "e" ? `${slot.mon.name}を たおした！` : `${slot.mon.name}は たおれた！`;
-    this.tweens.add({ targets: slot.sprite, alpha: 0, y: slot.sprite.y + 26, duration: 450 });
+    this.playFaintFx(slot.sprite);
     slot.panel.objs.forEach(o => (o as Phaser.GameObjects.Image).setAlpha(0.35));
     if (side === "p") slot.inst.currentHp = 0;
     this.showMessages([line], cb);
@@ -2636,7 +2740,10 @@ export class BattleScene extends Phaser.Scene {
         const inst = this.createInstance(nxt.id, nxt.level);
         this.replaceSlotD(this.dE, i, inst, false);
         markSeen(this.playerState, inst.dataId);
-        this.showMessages([`${t.name}は ${this.dMonName(inst)}を くりだした！`], runNext);
+        const spr = this.dE[i]!.sprite;
+        spr.setVisible(false);
+        this.showMessages([`${t.name}は ${this.dMonName(inst)}を くりだした！`],
+          () => this.capsuleRevealSprite(spr, false, runNext));
       });
     });
     // 味方側の補充（ベンチから自動で前へ）
@@ -2648,7 +2755,10 @@ export class BattleScene extends Phaser.Scene {
         if (!bench) { runNext(); return; }
         this.replaceSlotD(this.dP, i, bench, true);
         this.dParticipants.add(bench);
-        this.showMessages([`ゆけっ！ ${this.dMonName(bench)}！`], runNext);
+        const spr = this.dP[i]!.sprite;
+        spr.setVisible(false);
+        this.showMessages([`ゆけっ！ ${this.dMonName(bench)}！`],
+          () => this.capsuleRevealSprite(spr, true, runNext));
       });
     });
     runNext();
@@ -2658,6 +2768,9 @@ export class BattleScene extends Phaser.Scene {
   private replaceSlotD(arr: (DSlot | null)[], i: number, inst: MonsterInstance, isPlayer: boolean): void {
     const old = arr[i];
     if (!old) return;
+    // ひんし演出のトゥイーンが残っていると差し替え後もつぶれ続ける
+    this.tweens.killTweensOf(old.sprite);
+    old.sprite.clearTint();
     old.mon = this.instanceToBattleMonster(inst);
     old.inst = inst;
     old.sprite.setTexture(isPlayer ? this.playerTexKey(inst.dataId) : `monster-${inst.dataId}`);
@@ -2734,16 +2847,23 @@ export class BattleScene extends Phaser.Scene {
     this.hideCommandWindow();
     const slot = this.dP[this.dCmdSlot]!;
     const oldName = slot.mon.name;
-    this.replaceSlotD(this.dP, this.dCmdSlot, newMon, true);
-    this.dParticipants.add(newMon);
-    this.playerMon = slot.mon;
-    this.playerInstance = slot.inst;
     this.phase = "executing";
-    this.showMessages([`${oldName} もどれ！ ゆけっ！${slot.mon.name}！`], () => {
-      // こうたいはそのスロットの行動を消費する
-      const nextAlive = this.dAliveSlots(this.dP).filter(i => i > this.dCmdSlot);
-      if (nextAlive.length > 0) this.beginCommandD(nextAlive[0]);
-      else { this.queueEnemyActionsD(); this.resolveRoundD(); }
+    // もどれ！（回収）→ ゆけっ！（カプセルから登場）。こうたいは行動を消費する。
+    this.showMessages([`${oldName} もどれ！`], () => {
+      this.recallSprite(slot.sprite, () => {
+        this.replaceSlotD(this.dP, this.dCmdSlot, newMon, true);
+        this.dParticipants.add(newMon);
+        this.playerMon = slot.mon;
+        this.playerInstance = slot.inst;
+        slot.sprite.setVisible(false);
+        this.showMessages([`ゆけっ！ ${slot.mon.name}！`], () => {
+          this.capsuleRevealSprite(slot.sprite, true, () => {
+            const nextAlive = this.dAliveSlots(this.dP).filter(i => i > this.dCmdSlot);
+            if (nextAlive.length > 0) this.beginCommandD(nextAlive[0]);
+            else { this.queueEnemyActionsD(); this.resolveRoundD(); }
+          });
+        });
+      });
     });
   }
 
