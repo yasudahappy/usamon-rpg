@@ -300,5 +300,87 @@
     "maxLevel": 29
    }
   ]
+ },
+ "taurus_cave": {
+  "encounterRate": 0.13,
+  "monsters": [
+   {
+    "id": "regonyas",
+    "weight": 25,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "sharisu",
+    "weight": 18,
+    "minLevel": 28,
+    "maxLevel": 31
+   },
+   {
+    "id": "pribo",
+    "weight": 15,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "roubau",
+    "weight": 14,
+    "minLevel": 28,
+    "maxLevel": 31
+   },
+   {
+    "id": "hotaruna",
+    "weight": 14,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "genbu",
+    "weight": 14,
+    "minLevel": 28,
+    "maxLevel": 30
+   }
+  ]
+ },
+ "taurus_cave_b1": {
+  "encounterRate": 0.13,
+  "monsters": [
+   {
+    "id": "regonyas",
+    "weight": 25,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "sharisu",
+    "weight": 18,
+    "minLevel": 28,
+    "maxLevel": 31
+   },
+   {
+    "id": "pribo",
+    "weight": 15,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "roubau",
+    "weight": 14,
+    "minLevel": 28,
+    "maxLevel": 31
+   },
+   {
+    "id": "hotaruna",
+    "weight": 14,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "genbu",
+    "weight": 14,
+    "minLevel": 28,
+    "maxLevel": 30
+   }
+  ]
  }
 }

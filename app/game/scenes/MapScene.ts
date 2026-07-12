@@ -40,6 +40,8 @@ export class MapScene extends Phaser.Scene {
   private animatedTileSprites: Map<string, Phaser.GameObjects.Image> = new Map();
   private gridX = 0;
   private gridY = 0;
+  // タウルスのどうくつ: たいまつの明かり風オーバーレイ（プレイヤー追従）
+  private caveDarkness?: Phaser.GameObjects.Image;
 
   // Map transition
   private currentMapKey = "moonbase";
@@ -163,6 +165,8 @@ export class MapScene extends Phaser.Scene {
     { flag: "deep_cap_1", mapKey: "lava_tube_deep", x: 2, y: 7, item: "full_repair_gel", itemName: "フルリペアジェル" },
     { flag: "gym3_cap_1", mapKey: "gym_3", x: 2, y: 13, item: "star_capsule", itemName: "スターカプセル" },
     { flag: "taurus_cap_1", mapKey: "taurus_pass", x: 4, y: 14, item: "full_repair_gel", itemName: "フルリペアジェル" },
+    { flag: "tcave_cap_1", mapKey: "taurus_cave", x: 17, y: 4, item: "hi_repair_gel", itemName: "ハイリペアジェル" },
+    { flag: "tcave_cap_2", mapKey: "taurus_cave_b1", x: 16, y: 14, item: "revive_star", itemName: "リバイブスター" },
   ];
 
   // 溶岩洞→深部の岩の門（ツキヤマ救出で開通）
@@ -247,6 +251,7 @@ export class MapScene extends Phaser.Scene {
     this.labRes1Sprite = undefined;
     this.labRes2Sprite = undefined;
     this.nectarExam = [];
+    this.caveDarkness = undefined;
     this.quizAwaiting = null;
     this.shopOpen = false;
     if (data.playerState) {
@@ -401,6 +406,13 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "taurus_pass") {
       this.placeTaurusPassEvents();
       this.placeCaveCapsules();
+    }
+
+    // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
+    if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
+      this.placeCaveCapsules();
+      if (this.currentMapKey === "taurus_cave_b1") this.placeTaurusCaveBoss();
+      this.placeCaveDarkness();
     }
 
     // ミノリジム — 溶岩バルブのしかけ（ジム3・炎）。
@@ -1056,6 +1068,11 @@ export class MapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // Cave darkness follows the player every frame (even mid-step between tiles).
+    if (this.caveDarkness && this.player) {
+      this.caveDarkness.setPosition(this.player.x, this.player.y);
+    }
+
     // Accumulate play time while on the overworld (persisted on レポート/save,
     // shown on the title screen's つづきから panel).
     if (this.playerState) {
@@ -5483,6 +5500,71 @@ export class MapScene extends Phaser.Scene {
         ]),
       });
     }
+  }
+
+  // ---- タウルスのどうくつ: 暗闇＋ぬし ----
+
+  /**
+   * たいまつの明かり風の視界オーバーレイ。プレイヤーを中心に半径1.5タイル
+   * ほどが明るく、そこから外は暗く沈む（updateで毎フレーム追従）。
+   * カメラzoom2.5で見える範囲は約172×252ワールドpxなので、512pxの
+   * 1枚絵をプレイヤー中心に置けば画面全体を必ず覆える。
+   */
+  private placeCaveDarkness(): void {
+    if (!this.textures.exists("cave-darkness")) {
+      const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+      const ctx = c.getContext("2d")!;
+      const g = ctx.createRadialGradient(256, 256, 46, 256, 256, 126);
+      g.addColorStop(0, "rgba(6,4,12,0)");
+      g.addColorStop(0.55, "rgba(6,4,12,0.55)");
+      g.addColorStop(1, "rgba(6,4,12,0.88)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 512, 512);
+      this.textures.addCanvas("cave-darkness", c);
+    }
+    this.caveDarkness = this.add.image(this.player.x, this.player.y, "cave-darkness")
+      .setDepth(60);
+  }
+
+  /** 地下フロアの最奥、ぬしのガンブロス（レベル33・1回きりの野生ボス）。 */
+  private placeTaurusCaveBoss(): void {
+    if (this.hasPitFlag("taurus_boss_done")) return;
+    const ts = this.tileSize;
+    const bx = 16, by = 4;
+    if (!this.textures.exists("taurus-boss-rock")) {
+      const c = document.createElement("canvas"); c.width = 44; c.height = 44;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath(); ctx.ellipse(22, 38, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+      for (const [rx, ry, rr, col] of [[15, 26, 13, "#5a5348"], [30, 28, 11, "#4a443c"], [22, 15, 12, "#6e6658"]] as [number, number, number, string][]) {
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(rx, ry, rr, 0, Math.PI * 2); ctx.fill();
+      }
+      // ひび割れから赤い光（ぬしの気配）
+      ctx.strokeStyle = "#ff5a30"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(18, 10); ctx.lineTo(22, 18); ctx.lineTo(19, 24); ctx.stroke();
+      ctx.fillStyle = "#ff8850";
+      ctx.fillRect(26, 20, 3, 3); ctx.fillRect(12, 30, 3, 2);
+      this.textures.addCanvas("taurus-boss-rock", c);
+    }
+    const rock = this.add.image(bx * ts + ts / 2, by * ts + ts / 2 - 4, "taurus-boss-rock").setDepth(8);
+    this.tweens.add({
+      targets: rock, alpha: { from: 1, to: 0.86 },
+      duration: 900, yoyo: true, repeat: -1, ease: "Sine.easeInOut",
+    });
+    this.nectarExam.push({
+      x: bx, y: by, fn: () => {
+        this.showDialog([
+          "岩の おくで なにかが 光っている……。",
+          "ゴゴゴゴ……！！",
+          "どうくつの ぬし ガンブロスが\nすがたを あらわした！",
+        ], () => {
+          // 1回きり: 勝っても 負けても にげても ぬしは いなくなる。
+          this.setPitFlag("taurus_boss_done");
+          this.startBattle("ganburos", 33);
+        });
+      },
+    });
   }
 
   /** ミノリタウン初回到着のひとこと。 */

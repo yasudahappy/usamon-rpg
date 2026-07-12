@@ -15,12 +15,18 @@ export default function PhaserGame() {
   // guards kill the gesture without blocking the game's own pointer input.
   useEffect(() => {
     let lastTouchEnd = 0;
+    // If the page somehow DID get pinch-zoomed, we must NOT block the gestures
+    // that zoom it back out — otherwise the player is stuck at high zoom.
+    const isZoomed = () => {
+      const vv = window.visualViewport;
+      return !!vv && vv.scale > 1.02;
+    };
     const onTouchEnd = (e: TouchEvent) => {
       const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault(); // second rapid tap → no zoom
+      if (now - lastTouchEnd <= 300 && !isZoomed()) e.preventDefault(); // second rapid tap → no zoom
       lastTouchEnd = now;
     };
-    const onGesture = (e: Event) => e.preventDefault(); // iOS pinch-zoom
+    const onGesture = (e: Event) => { if (!isZoomed()) e.preventDefault(); }; // iOS pinch-zoom
     document.addEventListener("touchend", onTouchEnd, { passive: false });
     document.addEventListener("gesturestart", onGesture as EventListener);
     document.addEventListener("gesturechange", onGesture as EventListener);
