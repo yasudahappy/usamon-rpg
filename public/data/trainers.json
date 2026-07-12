@@ -710,5 +710,30 @@
   "battleSprite": "trainer-voice_grunt3",
   "battleSprite2": "trainer-voice_grunt4",
   "overworldSprite": "voice_grunt3"
+ },
+ {
+  "id": "taurus_tsubasa",
+  "name": "どうくつマニア ツバサ",
+  "mapKey": "taurus_cave_b1",
+  "x": 9,
+  "y": 10,
+  "direction": "up",
+  "sightRange": 3,
+  "prizeMoneyBase": 680,
+  "dialogBefore": "暗やみの 中でも 気配で わかるぜ…！\nこの 洞くつの 奥には 『ぬし』が いる。\n会いたきゃ おれを たおして いきな！",
+  "dialogWin": "やるな…！ 奥の 大岩を しらべてみろ。\nぬしの ガンブロス——岩の 王さまだ。\nつかまえられたら 大したもんだぜ。",
+  "dialogLose": "暗やみを なめるなよ。",
+  "party": [
+   {
+    "id": "sharisu",
+    "level": 29
+   },
+   {
+    "id": "pribo",
+    "level": 29
+   }
+  ],
+  "battleSprite": "trainer-hoodie",
+  "overworldSprite": "char3"
  }
 ]

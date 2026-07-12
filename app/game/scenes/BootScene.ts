@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -694,6 +694,24 @@ export class BootScene extends Phaser.Scene {
         for (let i = 0; i < 16; i++) ctx.fillRect(rand() * ts, 8 + rand() * 16, 2, 1);
         ctx.fillStyle = "#6e6254";
         for (let i = 0; i < 8; i++) ctx.fillRect(rand() * ts, 8 + rand() * 14, 1, 1);
+      } else if (id === "84") {
+        // 洞くつの入口: dark cave mouth opening in the mountain rock
+        ctx.fillStyle = "#8a8272"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#6e6658"; ctx.fillRect(0, ts - 5, ts, 5);
+        // arch of darkness
+        ctx.fillStyle = "#0c0910";
+        ctx.beginPath();
+        ctx.moveTo(5, ts); ctx.lineTo(5, 14);
+        ctx.quadraticCurveTo(ts / 2, 2, ts - 5, 14);
+        ctx.lineTo(ts - 5, ts); ctx.closePath(); ctx.fill();
+        // faint inner glow at the floor
+        ctx.fillStyle = "rgba(90,80,100,0.35)";
+        ctx.fillRect(8, ts - 6, ts - 16, 3);
+        // rocky rim highlight
+        ctx.strokeStyle = "#a89f8c"; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(4, 15); ctx.quadraticCurveTo(ts / 2, 2, ts - 4, 15);
+        ctx.stroke();
       } else if (id === "90") {
         // Frost regolith (ネクタルタウンの霜地面): pale blue-grey soil + frost specks
         let s = 17;
