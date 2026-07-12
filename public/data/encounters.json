@@ -259,5 +259,46 @@
     "maxLevel": 28
    }
   ]
+ },
+ "taurus_pass": {
+  "encounterRate": 0.11,
+  "monsters": [
+   {
+    "id": "roubau",
+    "weight": 20,
+    "minLevel": 27,
+    "maxLevel": 30
+   },
+   {
+    "id": "genbu",
+    "weight": 22,
+    "minLevel": 27,
+    "maxLevel": 30
+   },
+   {
+    "id": "hidaneko",
+    "weight": 15,
+    "minLevel": 27,
+    "maxLevel": 29
+   },
+   {
+    "id": "meteko",
+    "weight": 15,
+    "minLevel": 27,
+    "maxLevel": 29
+   },
+   {
+    "id": "hotaruna",
+    "weight": 14,
+    "minLevel": 27,
+    "maxLevel": 30
+   },
+   {
+    "id": "rairai",
+    "weight": 14,
+    "minLevel": 27,
+    "maxLevel": 29
+   }
+  ]
  }
 }

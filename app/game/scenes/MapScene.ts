@@ -162,6 +162,7 @@ export class MapScene extends Phaser.Scene {
     { flag: "lava_cap_1", mapKey: "lava_tube", x: 4, y: 12, item: "full_repair_gel", itemName: "フルリペアジェル" },
     { flag: "deep_cap_1", mapKey: "lava_tube_deep", x: 2, y: 7, item: "full_repair_gel", itemName: "フルリペアジェル" },
     { flag: "gym3_cap_1", mapKey: "gym_3", x: 2, y: 13, item: "star_capsule", itemName: "スターカプセル" },
+    { flag: "taurus_cap_1", mapKey: "taurus_pass", x: 4, y: 14, item: "full_repair_gel", itemName: "フルリペアジェル" },
   ];
 
   // 溶岩洞→深部の岩の門（ツキヤマ救出で開通）
@@ -394,6 +395,12 @@ export class MapScene extends Phaser.Scene {
       if (this.playerState && !pk.includes("minori_arrival_seen")) {
         this.time.delayedCall(700, () => this.playMinoriArrival());
       }
+    }
+
+    // タウルスさんどう — ジム4への道（イーゼン再戦・したっぱペア・展望）。
+    if (this.currentMapKey === "taurus_pass") {
+      this.placeTaurusPassEvents();
+      this.placeCaveCapsules();
     }
 
     // ミノリジム — 溶岩バルブのしかけ（ジム3・炎）。
@@ -5181,6 +5188,25 @@ export class MapScene extends Phaser.Scene {
       }
     });
 
+    // 東門の警備員 — フェカンドバッジ（ジム3制覇）までタウルス山道は通行止め
+    if (!this.playerState?.defeatedTrainers.includes("ishii_shiori")) {
+      put(this.npcTex("cast-astronaut-left", "npc-kinoshita"), 50, 20, () => this.showDialog([
+        "警備員「この先は タウルスさんどう。\n晴れの海へ つづく 山道だが、\n野生アルモンが 強くてな。」",
+        "警備員「ミノリジムの 『フェカンドバッジ』を\n持った トレーナーしか 通せない きまりだ。」",
+      ]));
+    } else {
+      put(this.npcTex("cast-astronaut-down", "npc-kinoshita"), 50, 19, () => this.showDialog([
+        "警備員「おっ、フェカンドバッジ！\nイシイ＆シオリの 2人を やぶったのか。\nたいしたもんだ、通って いいぞ。」",
+        "警備員「山道には 黒ずくめの 連中が\nうろついてる って 話だ。気を つけてな。」",
+      ]));
+    }
+
+    // 東門の看板
+    put("nectar-sign", 47, 19, () => this.showDialog([
+      "→ タウルスさんどう",
+      "晴れの海（うみ）方面。\nつづら折りの 山道に つき 注意。",
+    ]), -4);
+
     // 北東のリル研究者（右上の施設イベント：初回スターカプセル）
     put(this.npcTex("cast-char9-down", "npc-kinoshita"), 38, 7, () => {
       const given = this.awardNectarItem("minori_rille_gift", "star_capsule", "スターカプセル", [
@@ -5387,6 +5413,76 @@ export class MapScene extends Phaser.Scene {
     // --- 実りの暖色トーン ---
     this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xffb070, 0.05)
       .setOrigin(0).setDepth(26);
+  }
+
+  /** タウルスさんどう — 看板・展望スポット・岩くずれ・調査員救出（ジム4への道v1）。 */
+  private placeTaurusPassEvents(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+
+    // 入口の看板（教育: タウルス山地）
+    put("nectar-sign", 2, 19, () => this.showDialog([
+      "『タウルスさんどう』",
+      "晴れの海の 南の ふちに つらなる\n本物の 山地。月の 山は 隕石の\n衝突で もり上がった 地形だ。",
+    ]), -4);
+
+    // 展望スポット（教育: アポロ17号・最後の有人月面着陸）
+    put("nectar-sign", 21, 8, () => this.showDialog([
+      "『展望スポット』",
+      "見わたす かぎりの 晴れの海——。",
+      "むこうの 谷は タウルス・リットロウ渓谷。\n1972年、アポロ17号が 降りた 場所だ。",
+      "人類が 最後に 月を 歩いてから、\nもう 50年い上。……つぎに 歩くのは、\nあなたかも しれない。",
+    ]), -4);
+
+    // 北端の岩くずれ（晴れの海タウンへは次フェーズで開通）
+    if (!this.textures.exists("deep-gate-rock")) {
+      const c = document.createElement("canvas"); c.width = 36; c.height = 36;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.ellipse(18, 31, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+      for (const [bx, by, br, col] of [[13, 20, 11, "#8a8272"], [24, 22, 9, "#6e6658"], [19, 12, 8, "#a89f8c"]] as [number, number, number, string][]) {
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+      }
+      this.textures.addCanvas("deep-gate-rock", c);
+    }
+    put("deep-gate-rock", 12, 1, () => this.showDialog([
+      "大きな 岩くずれが 道を ふさいでいる。",
+      "『復旧作業中。開通したら この先は\n晴れの海タウン——光の ジムの 町だ。\nもう しばらく 待ってくれ！』",
+    ]));
+
+    // 調査員（したっぱペアに絡まれている → 撃破後に救出・お礼）
+    const rescued = this.playerState?.defeatedTrainers.includes("voice_pair_taurus");
+    put(this.npcTex("cast-char8-down", "npc-kinoshita"), 11, 2, () => {
+      if (!rescued) {
+        this.showDialog([
+          "調査員「た、たすけて…！ この 2人組、\nわたしの 『水しらべの データ』を\nよこせって…！」",
+        ]);
+        return;
+      }
+      const given = this.awardNectarItem("taurus_rescue_gift", "star_capsule", "スターカプセル", [
+        "調査員「たすかった…！ ありがとう！」",
+        "調査員「あいつら『参謀キヨハラ』の 部下だと\n名のっていた。晴れの海の 先の 『水』を\nかぎまわって いるらしい…。」",
+        "調査員「あなたのような 人が いれば 心強い。\nこれ、お礼に うけとって！」",
+      ]);
+      if (!given) this.showDialog([
+        "調査員「データは ぶじだった。\n『キヨハラ』…… その名前、\nおぼえておいた ほうが いい。」",
+      ]);
+    });
+
+    // したっぱペアの相方（バトルは1エントリで2人ぶん）
+    if (!rescued) {
+      this.add.image(10 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-voice_grunt4-down", "npc-kinoshita")).setDepth(9);
+      this.nectarExam.push({
+        x: 10, y: 2, fn: () => this.showDialog([
+          "「あ？ おれたちに 用なら\n相棒に 声を かけな。2たい2だ」",
+        ]),
+      });
+    }
   }
 
   /** ミノリタウン初回到着のひとこと。 */
