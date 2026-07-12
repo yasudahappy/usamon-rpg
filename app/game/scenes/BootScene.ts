@@ -166,7 +166,12 @@ export class BootScene extends Phaser.Scene {
       { name: string; color: string; walkable: boolean }
     > = {};
     MAP_KEYS.forEach((name) => {
-      const mapData = this.cache.json.get(`map-${name}`) as MapData;
+      const mapData = this.cache.json.get(`map-${name}`) as MapData | undefined;
+      // ネットワーク不調で1枚のJSONが落ちても、全タイル生成を道連れにしない
+      if (!mapData || !mapData.tileTypes) {
+        console.warn(`map JSON missing or invalid: ${name}`);
+        return;
+      }
       Object.entries(mapData.tileTypes).forEach(([id, tile]) => {
         if (!allTileTypes[id]) {
           allTileTypes[id] = tile;

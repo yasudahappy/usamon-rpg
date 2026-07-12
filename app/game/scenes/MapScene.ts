@@ -1084,6 +1084,9 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
+    // オートレポート（条件が揃った最初のフレームで保存する）
+    this.maybeAutoSave();
+
     if (this.isWarping || this.startingBattle || this.trainerApproaching) return;
 
     // --- Gamepad button reads ---
@@ -2238,17 +2241,56 @@ export class MapScene extends Phaser.Scene {
     this.applyTextResolution(this.menuElements);
   }
 
-  private doSave(): void {
+  private writeSaveData(): boolean {
     try {
-      const saveData = {
+      localStorage.setItem("usamon-save-data", JSON.stringify({
         playerState: this.playerState,
         mapKey: this.currentMapKey,
         gridX: this.gridX,
         gridY: this.gridY,
         timestamp: Date.now(),
-      };
-      localStorage.setItem("usamon-save-data", JSON.stringify(saveData));
-    } catch(e) { /* ignore */ }
+      }));
+      return true;
+    } catch { return false; }
+  }
+
+  // ---- オートレポート: 15分ごとに安全なタイミングで自動セーブ ----
+  private static AUTOSAVE_INTERVAL_MS = 15 * 60 * 1000;
+
+  private maybeAutoSave(): void {
+    if (!this.playerState) return;
+    const now = Date.now();
+    // registry はシーン再起動（戦闘・ワープ）をまたいで生きる
+    const next = this.registry.get("autosaveNext") as number | undefined;
+    if (next === undefined) {
+      this.registry.set("autosaveNext", now + MapScene.AUTOSAVE_INTERVAL_MS);
+      return;
+    }
+    if (now < next) return;
+    // 会話・カットシーン・メニュー・移動中などは見送り、安全になった次のフレームで保存
+    if (this.dialogActive || this.inCutscene || this.isWarping || this.startingBattle ||
+        this.trainerApproaching || this.menuOpen || this.shopOpen || this.isMoving ||
+        this.quizAwaiting) return;
+    if (!this.writeSaveData()) return;
+    this.registry.set("autosaveNext", now + MapScene.AUTOSAVE_INTERVAL_MS);
+    this.showAutoSaveToast();
+  }
+
+  private showAutoSaveToast(): void {
+    const t = this.add.text(this.uiX(this.scale.width / 2), this.uiY(62),
+      "オートレポートに きろくしました！", {
+        fontSize: `${this.uiS(13)}px`, color: "#aef0c8",
+        fontFamily: "'DotGothic16', monospace", stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(205).setOrigin(0.5).setAlpha(0);
+    this.applyTextResolution([t]);
+    this.tweens.add({ targets: t, alpha: 1, duration: 250, yoyo: true, hold: 1700,
+      onComplete: () => t.destroy() });
+  }
+
+  private doSave(): void {
+    this.writeSaveData();
+    // 手動レポート直後にオートレポートが重ならないようタイマーを仕切り直す
+    this.registry.set("autosaveNext", Date.now() + MapScene.AUTOSAVE_INTERVAL_MS);
 
     // Show success
     this.clearMenuElements();
