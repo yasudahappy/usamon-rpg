@@ -140,6 +140,9 @@ export class BattleScene extends Phaser.Scene {
   private isWild = true;
   private trainerData: TrainerData | null = null;
   private trainerPartyIndex = 0;
+  // トレーナーの残り手持ち数を示すボール表示。
+  private trainerPips: Phaser.GameObjects.GameObject[] = [];
+  private trainerRemaining = 0;
   private trainerPortrait?: Phaser.GameObjects.Image;
   private playerBackPortrait?: Phaser.GameObjects.Image;
   private enemyInfoObjects: Phaser.GameObjects.GameObject[] = [];
@@ -193,6 +196,8 @@ export class BattleScene extends Phaser.Scene {
     this.isWild = data.isWild !== false;
     this.trainerData = data.trainerData || null;
     this.trainerPartyIndex = 0;
+    this.trainerPips = [];
+    this.trainerRemaining = this.trainerData ? this.trainerData.party.length : 0;
     this.trainerPortrait = undefined;   // display object is recreated per battle
     this.playerBackPortrait = undefined;
     // Double battle reset
@@ -366,7 +371,7 @@ export class BattleScene extends Phaser.Scene {
             () => this.showMessages(
               [`${t.name}は ${enemyData.name}を くりだした！`],
               // トレーナーはカプセルを投げながら右へフェードアウトする
-              () => this.throwCapsuleAndReveal(sendOutPlayer)
+              () => { this.drawTrainerPips(); this.throwCapsuleAndReveal(sendOutPlayer); }
             )
           );
         });
@@ -407,6 +412,44 @@ export class BattleScene extends Phaser.Scene {
         this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(true));
         onDone && onDone();
       } });
+  }
+
+  private genPipTextures(): void {
+    if (this.textures.exists("pip-on")) return;
+    const mk = (key: string, on: boolean) => {
+      const c = document.createElement("canvas"); c.width = 16; c.height = 16;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = on ? "#e8edf3" : "#39404e";
+      ctx.beginPath(); ctx.arc(8, 8, 6, 0, Math.PI * 2); ctx.fill();
+      if (on) {
+        ctx.fillStyle = "#2b3a63";
+        ctx.beginPath(); ctx.arc(8, 8, 6, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#f4c95a"; ctx.beginPath(); ctx.arc(6, 5, 2, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = on ? "#8a94a8" : "#525a68"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(8, 8, 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = on ? "#30384a" : "#464e5c";
+      ctx.beginPath(); ctx.moveTo(2.5, 8); ctx.lineTo(13.5, 8); ctx.stroke();
+      this.textures.addCanvas(key, c);
+    };
+    mk("pip-on", true); mk("pip-off", false);
+  }
+
+  /** トレーナーの残り手持ち数を、敵ステータス枠の下にボールで並べて表示。 */
+  private drawTrainerPips(): void {
+    if (!this.trainerData) return;
+    this.genPipTextures();
+    this.trainerPips.forEach(o => o.destroy());
+    this.trainerPips = [];
+    const total = this.trainerData.party.length;
+    const s = this.sy;
+    const startX = 26, y = Math.round(86 * s);
+    for (let i = 0; i < total; i++) {
+      const on = i < this.trainerRemaining;
+      const img = this.add.image(startX + i * 20, y, on ? "pip-on" : "pip-off")
+        .setDepth(22).setScrollFactor(0).setScale(s * 0.9);
+      this.trainerPips.push(img);
+    }
   }
 
   private genCapsuleTexture(): void {
@@ -1607,6 +1650,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.enemyMon.currentHp <= 0) {
       this.phase = "victory";
       this.playFaintFx(this.enemySprite);
+      if (this.trainerData) { this.trainerRemaining = Math.max(0, this.trainerRemaining - 1); this.drawTrainerPips(); }
       const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
       this.showMessages([`${enemyData.name} を たおした！`], () => {
         if (this.trainerData && this.trainerPartyIndex < this.trainerData.party.length - 1) {
@@ -2512,6 +2556,7 @@ export class BattleScene extends Phaser.Scene {
           [`2人は ${eNames.join("と ")}を くりだした！`],
           // 2人はカプセルを投げながら右へフェードアウトする
           () => this.throwPairCapsulesD(() => this.revealSideD(this.dE, () => {
+            this.drawTrainerPips();
             // 主人公の後ろ姿 → 2体同時くりだし
             if (this.textures.exists(this.playerBackKey())) this.showPlayerBack();
             this.showMessages([`ゆけっ！ ${pNames.join("と ")}！`], () => {
@@ -2744,6 +2789,7 @@ export class BattleScene extends Phaser.Scene {
     const line = side === "e" ? `${slot.mon.name}を たおした！` : `${slot.mon.name}は たおれた！`;
     this.playFaintFx(slot.sprite);
     slot.panel.objs.forEach(o => (o as Phaser.GameObjects.Image).setAlpha(0.35));
+    if (side === "e") { this.trainerRemaining = Math.max(0, this.trainerRemaining - 1); this.drawTrainerPips(); }
     if (side === "p") slot.inst.currentHp = 0;
     this.showMessages([line], cb);
   }
