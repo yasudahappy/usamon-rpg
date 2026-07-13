@@ -732,6 +732,12 @@ export class MapScene extends Phaser.Scene {
     );
 
     for (const trainer of mapTrainers) {
+      // ライバル・イーゼンは 隕石洞窟の 撃破後、忘れ物を残して 先に
+      // 出ていく（eezen_debris）。以降は 洞窟に いないので 配置しない。
+      if (trainer.id === "eezen" && trainer.mapKey === "crater_cave_b2" &&
+          this.playerState?.pickups?.includes("eezen_debris")) {
+        continue;
+      }
       const facing = this.resolveTrainerFacing(trainer);
       this.trainerFacing.set(trainer.id, facing);
       // Defeated trainers stay on the map. If a side tile is free they step
@@ -3279,18 +3285,64 @@ export class MapScene extends Phaser.Scene {
   /** Reward for beating イーゼン at the bottom of the cave: his dropped debris. */
   private awardEezenDebris(): void {
     if (!this.playerState) return;
-    this.playerState.pickups = this.playerState.pickups || [];
-    if (this.playerState.pickups.includes("eezen_debris")) return;
-    this.playerState.pickups.push("eezen_debris");
-    const existing = this.playerState.items.find(i => i.id === "debris_fragment");
-    if (existing) existing.count++;
-    else this.playerState.items.push({ id: "debris_fragment", count: 1 });
+    const pickups = this.playerState.pickups = this.playerState.pickups || [];
+    if (pickups.includes("eezen_debris")) return;
     this.inCutscene = true;
+    const ts = this.tileSize;
+
+    // 忘れ物（デブリのはへん）を渡して、カットシーンを閉じる。
+    const grant = () => {
+      pickups.push("eezen_debris");
+      const existing = this.playerState!.items.find(i => i.id === "debris_fragment");
+      if (existing) existing.count++;
+      else this.playerState!.items.push({ id: "debris_fragment", count: 1 });
+      this.showDialog([
+        "イーゼンが 落としていった\nかけらが 落ちている……。",
+        "「デブリのはへん」を てにいれた！",
+        "隕石とともに 落ちてきた 金属片だ。\nリサイクルショップで お金に なるらしい…。",
+      ], () => { this.inCutscene = false; });
+    };
+
+    const spr = this.trainerSprites.get("eezen");
+    if (!spr) { grant(); return; }
+
+    // イーゼンが 捨てゼリフ → 出口へ 歩いて 先に 出ていく → 忘れ物のきらめき
     this.showDialog([
-      "イーゼンが あわてて 出て いった あと、\nたいせつ そうな かけらが 落ちていた。",
-      "「デブリのはへん」を てにいれた！",
-      "隕石とともに 落ちてきた 金属片だ。\nリサイクルショップで お金に なるらしい…。",
-    ], () => { this.inCutscene = false; });
+      "イーゼン「ぼくの まけだ…！ えぇ、みとめるよ。」",
+      "イーゼン「先に 行かせて もらう。\n……ぼくは まだ 強く なる。大変 恐縮です。」",
+    ], () => {
+      spr.setPosition(7 * ts + ts / 2, 7 * ts + ts / 2);
+      const path: [number, number][] = [[7, 6], [7, 5], [7, 4], [7, 3], [7, 2], [6, 2], [5, 2], [4, 2], [3, 2], [2, 2]];
+      const walk = (i: number) => {
+        if (i >= path.length) {
+          // 出口で フェードアウト → スプライトを消して 通行可に
+          this.tweens.add({
+            targets: spr, alpha: 0, duration: 300,
+            onComplete: () => {
+              spr.destroy();
+              this.trainerSprites.delete("eezen");
+              const gx = 7 * ts + ts / 2, gy = 7 * ts + ts / 2;
+              const glint = this.add.circle(gx, gy, 4, 0xffe08a, 0.9).setDepth(8);
+              this.tweens.add({
+                targets: glint, scale: 1.7, alpha: 0.25, yoyo: true, repeat: 2, duration: 300,
+                onComplete: () => { glint.destroy(); grant(); },
+              });
+            },
+          });
+          return;
+        }
+        const [tx, ty] = path[i];
+        const px = spr.x / ts - 0.5, py = spr.y / ts - 0.5;
+        const dir: Direction = tx > px ? "right" : tx < px ? "left" : ty > py ? "down" : "up";
+        const key = `cast-eezen-${dir}`;
+        if (this.textures.exists(key)) spr.setTexture(key);
+        this.tweens.add({
+          targets: spr, x: tx * ts + ts / 2, y: ty * ts + ts / 2,
+          duration: 200, ease: "Linear", onComplete: () => walk(i + 1),
+        });
+      };
+      walk(0);
+    });
   }
 
   /** Right after the gym leader falls, the ground shakes: a meteor has struck. */
