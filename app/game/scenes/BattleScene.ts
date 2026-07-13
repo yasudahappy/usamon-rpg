@@ -9,7 +9,7 @@ import {
   PlayerState,
   TrainerData,
 } from "../data/types";
-import { attemptCapture } from "../data/encounterSystem";
+import { calculateCaptureRate } from "../data/encounterSystem";
 import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
@@ -32,6 +32,7 @@ type BattlePhase =
   | "exp_gain"
   | "learn_move"
   | "switch_mon"
+  | "item_select"
   | "evolution";
 
 // ---- Double battle (2vs2) runtime types ----
@@ -1292,6 +1293,18 @@ export class BattleScene extends Phaser.Scene {
       if (confirm) {
         this.handleMoveLearnChoice(this.selectedCommand);
       }
+    } else if (this.phase === "item_select") {
+      // Bag selection (2-column grid of usable items + もどる).
+      const maxSlots = Math.min(this.commandSlots.length, 6);
+      if (justUp && this.selectedCommand >= 2) { this.selectedCommand -= 2; this.highlightLearnSlots(this.selectedCommand); }
+      if (justDown && this.selectedCommand + 2 < maxSlots) { this.selectedCommand += 2; this.highlightLearnSlots(this.selectedCommand); }
+      if (justLeft && this.selectedCommand % 2 === 1) { this.selectedCommand -= 1; this.highlightLearnSlots(this.selectedCommand); }
+      if (justRight && this.selectedCommand % 2 === 0 && this.selectedCommand + 1 < maxSlots) { this.selectedCommand += 1; this.highlightLearnSlots(this.selectedCommand); }
+      if (confirm) {
+        this.chooseBattleItem(this.selectedCommand);
+      } else if (kbEsc || gpB) {
+        this.chooseBattleItem(this.battleItems().length);   // もどる
+      }
     } else if (this.phase === "switch_mon") {
       // Party-switch selection (2-column grid of alive members + もどる).
       const activeInsts = this.isDouble
@@ -2098,85 +2111,235 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Item Use (Capture) ----
 
+  // バトルで つかえる どうぐ（カプセル＝捕獲／リカバリー＝回復）の一覧を作る。
+  private battleItems(): { id: string; name: string; count: number; category: string }[] {
+    const defs = (this.cache.json.get("items") || []) as { id: string; name: string; category?: string }[];
+    const out: { id: string; name: string; count: number; category: string }[] = [];
+    for (const it of this.playerState.items) {
+      const def = defs.find(d => d.id === it.id);
+      const cat = def?.category;
+      if ((cat === "capsule" || cat === "recovery") && it.count > 0) {
+        out.push({ id: it.id, name: def!.name, count: it.count, category: cat });
+      }
+    }
+    return out;
+  }
+
+  // 「どうぐ」→ 道具一覧を ひらく（カプセル・回復アイテムから選ぶ）。
   private handleItemUse(): void {
     this.hideCommandWindow();
-
-    if (!this.isWild) {
-      this.showMessages(["トレーナーのモンスターには 使えない！"], () => {
+    const items = this.battleItems();
+    if (items.length === 0) {
+      this.showMessages(["つかえる どうぐを もっていない！"], () => {
         this.phase = "command";
         this.showCommandWindow();
       });
       return;
     }
-
-    const capsuleItem = this.playerState.items.find(i => i.id === "moon_capsule");
-    if (!capsuleItem || capsuleItem.count <= 0) {
-      this.showMessages(["ムーンカプセルを もっていない！"], () => {
-        this.phase = "command";
-        this.showCommandWindow();
-      });
-      return;
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+    const positions = [
+      { x: 160, y: Math.round(360 * this.sy) }, { x: 480, y: Math.round(360 * this.sy) },
+      { x: 160, y: Math.round(405 * this.sy) }, { x: 480, y: Math.round(405 * this.sy) },
+      { x: 160, y: Math.round(450 * this.sy) }, { x: 480, y: Math.round(450 * this.sy) },
+    ];
+    const labels = [...items.map(it => `${it.name} ×${it.count}`), "もどる"];
+    this.phase = "item_select";
+    this.selectedCommand = 0;
+    for (let i = 0; i < labels.length; i++) {
+      const px = positions[i % positions.length].x;
+      const py = positions[i % positions.length].y;
+      const bg = this.add.graphics().setDepth(20);
+      const text = this.add.text(px, py, labels[i], {
+        fontSize: "18px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(21);
+      const zone = this.add.zone(px, py, 290, 40).setInteractive().setDepth(22).setOrigin(0.5);
+      const idx = i;
+      zone.on("pointerdown", () => this.chooseBattleItem(idx));
+      this.commandSlots.push({ label: labels[i], x: px, y: py, bg, text, zone });
     }
+    this.highlightLearnSlots(0);
+    this.setMessage("どの どうぐを つかう？");
+  }
 
-    capsuleItem.count--;
+  private chooseBattleItem(idx: number): void {
+    const items = this.battleItems();
+    const backToCmd = () => {
+      this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+      this.commandSlots = [];
+      this.rebuildCommandWindow();
+      this.phase = "command";
+      this.showCommandWindow();
+    };
+    if (idx >= items.length) { backToCmd(); return; }   // もどる
+    const sel = items[idx];
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+    if (sel.category === "capsule") {
+      if (!this.isWild) {
+        this.phase = "executing";
+        this.showMessages(["トレーナーの アルモンには\nカプセルを つかえない！"], () => this.handleItemUse());
+        return;
+      }
+      this.throwCaptureCapsule(sel.id, sel.name);
+    } else {
+      this.useRecoveryItem(sel.id, sel.name);
+    }
+  }
+
+  /** 回復アイテムを つかう（ターンを消費して敵が こうげき）。 */
+  private useRecoveryItem(itemId: string, itemName: string): void {
     this.phase = "executing";
+    let ok = false, msg = "";
+    if (itemId === "revive_star") {
+      const fainted = this.playerState.party.find(m => m.currentHp <= 0);
+      if (!fainted) { msg = "ひんしの アルモンが いない！"; }
+      else {
+        fainted.currentHp = Math.max(1, Math.floor(fainted.maxHp / 2));
+        const nm = this.allMonsters.find(md => md.id === fainted.dataId)?.name ?? fainted.dataId;
+        ok = true; msg = `${nm}は げんきを とりもどした！`;
+      }
+    } else {
+      const mon = this.playerMon;
+      if (mon.currentHp >= mon.maxHp) { msg = "HPは まんたんだ！"; }
+      else {
+        const amount = itemId === "repair_gel" ? 20 : itemId === "hi_repair_gel" ? 50
+          : itemId === "moon_honey" ? 40 : mon.maxHp;
+        const before = mon.currentHp;
+        mon.currentHp = Math.min(mon.maxHp, mon.currentHp + amount);
+        this.playerInstance.currentHp = mon.currentHp;
+        ok = true; msg = `${this.playerMon.name}の HPが\n${mon.currentHp - before} かいふくした！`;
+        this.refreshPlayerHp();
+      }
+    }
+    if (!ok) {
+      // むだ打ちしない: 一覧に もどる
+      this.showMessages([msg], () => this.handleItemUse());
+      return;
+    }
+    this.consumeBattleItem(itemId);
+    this.showMessages([`${itemName}を つかった！`, msg], () => {
+      // アイテム使用は 1ターン消費 → 敵の こうげき
+      const enemyMove = this.enemyMon.moves[Math.floor(Math.random() * this.enemyMon.moves.length)];
+      this.executeAction(this.enemyMon, enemyMove, this.playerMon, this.playerSprite, () => {
+        if (this.playerMon.currentHp <= 0) this.checkBattleEnd();
+        else { this.phase = "command"; this.showCommandWindow(); }
+      });
+    });
+  }
+
+  private consumeBattleItem(itemId: string): void {
+    const e = this.playerState.items.find(i => i.id === itemId);
+    if (e) { e.count--; if (e.count <= 0) this.playerState.items = this.playerState.items.filter(i => i.count > 0); }
+  }
+
+  /**
+   * カプセルを投げてアルモンを吸い込み、ゆれてから 成功/失敗する演出つき捕獲。
+   * star_capsule は 捕まえやすい（成功率＋）。
+   */
+  private throwCaptureCapsule(itemId: string, itemName: string): void {
+    this.phase = "executing";
+    this.consumeBattleItem(itemId);
+    this.genCapsuleTexture();
+    const sy = this.sy;
     const enemyData = this.allMonsters.find(m => m.id === this.enemyInstance.dataId)!;
 
-    const { success, shakes } = attemptCapture(
-      this.enemyMon.currentHp,
-      this.enemyMon.maxHp
-    );
+    // 捕獲判定（スターカプセルは成功率1.5倍）。
+    const base = calculateCaptureRate(this.enemyMon.currentHp, this.enemyMon.maxHp);
+    const rate = Math.min(0.95, base * (itemId === "star_capsule" ? 1.5 : 1));
+    const roll = Math.random();
+    const success = roll < rate;
+    const shakes = success ? 3 : roll < rate * 1.4 ? 2 : roll < rate * 2 ? 1 : 0;
 
-    const msgs: string[] = [`ムーンカプセルを なげた！`];
+    const ex = this.enemySprite.x, ey = this.enemySprite.y;
+    const restY = ey;                                  // 吸い込み後カプセルが置かれる床
+    const fromX = -20, fromY = ey - 120 * sy;
 
-    // Shake animation messages
-    for (let i = 0; i < shakes; i++) {
-      msgs.push("コロン…");
-    }
+    this.setMessage(`${itemName}を なげた！`);
+    const cap = this.add.image(fromX, fromY, "capsule-moon").setDepth(9).setScale(sy * 1.1);
+    const o = { t: 0 };
+    this.tweens.add({
+      targets: o, t: 1, duration: 460, ease: "Sine.in",
+      onUpdate: () => {
+        cap.x = fromX + (ex - fromX) * o.t;
+        cap.y = (fromY + (ey - fromY) * o.t) - Math.sin(o.t * Math.PI) * 80 * sy;
+        cap.rotation += 0.3;
+      },
+      onComplete: () => {
+        this.burstFx(ex, ey);
+        this.cameras.main.flash(120, 200, 230, 255);
+        // アルモンを カプセルに 吸い込む（縮んで消える）
+        this.tweens.add({
+          targets: this.enemySprite, x: ex, y: ey, scaleX: this.enemySprite.scaleX * 0.05,
+          scaleY: this.enemySprite.scaleY * 0.05, alpha: 0, duration: 260, ease: "Cubic.in",
+          onComplete: () => {
+            this.enemySprite.setVisible(false);
+            cap.setPosition(ex, ey - 4 * sy);
+            // 床に すとん
+            this.tweens.add({ targets: cap, y: restY, duration: 180, ease: "Bounce.out",
+              onComplete: () => this.captureShake(cap, shakes, success, enemyData, itemName) });
+          },
+        });
+      },
+    });
+  }
 
-    if (success) {
-      msgs.push(`やった！ ${enemyData.name}を つかまえた！`);
-      markCaught(this.playerState, this.enemyInstance.dataId);
-
-      this.showMessages(msgs, () => {
-        // Add to party or box
-        if (this.playerState.party.length < 6) {
-          this.playerState.party.push(this.enemyInstance);
-          this.showMessages(
-            [`${enemyData.name}が なかまに くわわった！`],
-            () => this.endBattle()
-          );
-        } else {
-          this.playerState.box.push(this.enemyInstance);
-          this.showMessages(
-            [
-              `手持ちが いっぱいだ！`,
-              `${enemyData.name}は あずかりボックスに おくられた！`,
-            ],
-            () => this.endBattle()
-          );
+  /** カプセルが shakes 回 ゆれて、成功なら固定、失敗ならアルモンが出てくる。 */
+  private captureShake(
+    cap: Phaser.GameObjects.Image, shakes: number, success: boolean,
+    enemyData: MonsterData, _itemName: string
+  ): void {
+    const doShake = (n: number, done: () => void) => {
+      if (n <= 0) { done(); return; }
+      this.time.delayedCall(260, () => {
+        this.tweens.add({
+          targets: cap, angle: -18, duration: 90, yoyo: true, ease: "Sine.inOut",
+          onComplete: () => this.tweens.add({
+            targets: cap, angle: 18, duration: 90, yoyo: true, ease: "Sine.inOut",
+            onComplete: () => { cap.setAngle(0); doShake(n - 1, done); },
+          }),
+        });
+      });
+    };
+    doShake(shakes, () => {
+      if (success) {
+        // カチッ → 星がはじけて 確定
+        this.cameras.main.flash(140, 255, 240, 170);
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const st = this.add.circle(cap.x, cap.y, 3 * this.sy, 0xfff2b0).setDepth(10);
+          this.tweens.add({ targets: st, x: cap.x + Math.cos(a) * 46 * this.sy, y: cap.y + Math.sin(a) * 46 * this.sy,
+            alpha: 0, duration: 480, ease: "Cubic.out", onComplete: () => st.destroy() });
         }
-      });
-    } else {
-      msgs.push(`だめだ！ ${enemyData.name}に にげられた！`);
-      this.showMessages(msgs, () => {
-        // Enemy gets a turn
-        const enemyMove = this.enemyMon.moves[
-          Math.floor(Math.random() * this.enemyMon.moves.length)
-        ];
-        this.executeAction(
-          this.enemyMon, enemyMove, this.playerMon, this.playerSprite,
-          () => {
-            if (this.playerMon.currentHp <= 0) {
-              this.checkBattleEnd();
-            } else {
-              this.phase = "command";
-              this.showCommandWindow();
-            }
+        markCaught(this.playerState, this.enemyInstance.dataId);
+        this.showMessages([`やった！ ${enemyData.name}を\nつかまえた！`], () => {
+          cap.destroy();
+          if (this.playerState.party.length < 6) {
+            this.playerState.party.push(this.enemyInstance);
+            this.showMessages([`${enemyData.name}が なかまに くわわった！`], () => this.endBattle());
+          } else {
+            this.playerState.box.push(this.enemyInstance);
+            this.showMessages([`手持ちが いっぱい！`,
+              `${enemyData.name}は あずかりボックスへ おくられた！`], () => this.endBattle());
           }
-        );
-      });
-    }
+        });
+      } else {
+        // カプセルが はじけて アルモンが 出てくる（スケールを元に戻してから）
+        this.burstFx(cap.x, cap.y);
+        cap.destroy();
+        this.enemySprite.setVisible(true).setAlpha(1);
+        this.sizeMonsterSprite(this.enemySprite, 110, 116);
+        this.popInSprite(this.enemySprite);
+        this.showMessages([`ああっ！ ${enemyData.name}が\nカプセルから でてきちゃった！`], () => {
+          const enemyMove = this.enemyMon.moves[Math.floor(Math.random() * this.enemyMon.moves.length)];
+          this.executeAction(this.enemyMon, enemyMove, this.playerMon, this.playerSprite, () => {
+            if (this.playerMon.currentHp <= 0) this.checkBattleEnd();
+            else { this.phase = "command"; this.showCommandWindow(); }
+          });
+        });
+      }
+    });
   }
 
   // ---- Monster Switch ----
