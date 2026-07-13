@@ -999,6 +999,9 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private showCommandWindow(): void {
+    // どうぐ／こうたい画面などでコマンドスロットを破棄した後に戻ってきた場合、
+    // スロットが空だとコマンド枠が表示されない（＝空の枠）ので作り直す。
+    if (this.commandSlots.length === 0) this.drawCommandWindow();
     this.commandSlots.forEach((slot) => {
       slot.bg.setVisible(true);
       slot.text.setVisible(true);
@@ -2258,7 +2261,12 @@ export class BattleScene extends Phaser.Scene {
     const fromX = -20, fromY = ey - 120 * sy;
 
     this.setMessage(`${itemName}を なげた！`);
-    const cap = this.add.image(fromX, fromY, "capsule-moon").setDepth(9).setScale(sy * 1.1);
+    // 捕獲演出のあいだは両方の情報枠を隠し（カプセルの軌道・着地と重なるのを
+    // 防ぐ）、カプセルと敵スプライトを情報枠（depth 11）より前面に出す。
+    this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(false));
+    this.playerInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(false));
+    this.enemySprite.setDepth(12);
+    const cap = this.add.image(fromX, fromY, "capsule-moon").setDepth(12).setScale(sy * 1.1);
     const o = { t: 0 };
     this.tweens.add({
       targets: o, t: 1, duration: 460, ease: "Sine.in",
@@ -2309,7 +2317,7 @@ export class BattleScene extends Phaser.Scene {
         this.cameras.main.flash(140, 255, 240, 170);
         for (let i = 0; i < 8; i++) {
           const a = (i / 8) * Math.PI * 2;
-          const st = this.add.circle(cap.x, cap.y, 3 * this.sy, 0xfff2b0).setDepth(10);
+          const st = this.add.circle(cap.x, cap.y, 3 * this.sy, 0xfff2b0).setDepth(13);
           this.tweens.add({ targets: st, x: cap.x + Math.cos(a) * 46 * this.sy, y: cap.y + Math.sin(a) * 46 * this.sy,
             alpha: 0, duration: 480, ease: "Cubic.out", onComplete: () => st.destroy() });
         }
@@ -2331,6 +2339,10 @@ export class BattleScene extends Phaser.Scene {
         cap.destroy();
         this.enemySprite.setVisible(true).setAlpha(1);
         this.sizeMonsterSprite(this.enemySprite, 110, 116);
+        // 逃げられたので両方の情報枠を復帰し、敵スプライトの奥行きも元に戻す。
+        this.enemySprite.setDepth(5);
+        this.enemyInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(true));
+        this.playerInfoObjects.forEach(o => (o as Phaser.GameObjects.Image).setVisible(true));
         this.popInSprite(this.enemySprite);
         this.showMessages([`ああっ！ ${enemyData.name}が\nカプセルから でてきちゃった！`], () => {
           const enemyMove = this.enemyMon.moves[Math.floor(Math.random() * this.enemyMon.moves.length)];
