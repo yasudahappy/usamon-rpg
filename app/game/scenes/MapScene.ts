@@ -2605,12 +2605,22 @@ export class MapScene extends Phaser.Scene {
   }
 
   /** 話しかけられたNPC/トレーナーを、プレイヤーの方へ振り向かせる。
-   *  cast-<名前>-<向き> のスプライトのみ対象（看板などは無視）。 */
-  private faceSpriteToPlayer(sprite?: Phaser.GameObjects.Image): void {
+   *  cast-<名前>-<向き> のスプライトのみ対象（看板などは無視）。
+   *  タイル座標を渡すと その位置→プレイヤー の向きに、省略時は
+   *  プレイヤーの向きの逆（正面から向き合う）にする。 */
+  private faceSpriteToPlayer(sprite?: Phaser.GameObjects.Image, at?: { x: number; y: number }): void {
     if (!sprite) return;
-    const opposite: Record<Direction, Direction> =
-      { up: "down", down: "up", left: "right", right: "left" };
-    const want = opposite[this.facingDirection];
+    let want: Direction;
+    if (at) {
+      const dx = this.gridX - at.x, dy = this.gridY - at.y;
+      want = Math.abs(dx) >= Math.abs(dy)
+        ? (dx >= 0 ? "right" : "left")
+        : (dy >= 0 ? "down" : "up");
+    } else {
+      const opposite: Record<Direction, Direction> =
+        { up: "down", down: "up", left: "right", right: "left" };
+      want = opposite[this.facingDirection];
+    }
     const m = /^cast-(.+)-(up|down|left|right)$/.exec(sprite.texture.key);
     if (!m) return;
     const key = `cast-${m[1]}-${want}`;
@@ -3013,6 +3023,25 @@ export class MapScene extends Phaser.Scene {
     }
     if (this.labRes2Sprite && fx === this.labRes2X && fy === this.labRes2Y) {
       this.triggerLabRes2Event();
+      return;
+    }
+    // 倒したトレーナーは 撃破後に 横へ どく（道をあける）ので、元の
+    // 立ち位置を向いても会話できないことがある。となり（自分のタイルを
+    // 含む）に いれば Aボタンで 話しかけられるようにする。他の対象より
+    // 優先度は低い（フォールバック）。
+    const beaten = this.allTrainers
+      .filter(t =>
+        t.mapKey === this.currentMapKey &&
+        !MapScene.GYM_LEADER_GATES[t.id] &&
+        this.trainerSprites.has(t.id) &&
+        this.playerState?.defeatedTrainers.includes(t.id))
+      .find(t => {
+        const p = this.trainerTile(t);
+        return Math.abs(p.x - this.gridX) + Math.abs(p.y - this.gridY) <= 1;
+      });
+    if (beaten) {
+      this.faceSpriteToPlayer(this.trainerSprites.get(beaten.id), this.trainerTile(beaten));
+      this.showDialog([beaten.dialogWin || "いい しょうぶ だったね！"]);
       return;
     }
   }
@@ -4467,25 +4496,40 @@ export class MapScene extends Phaser.Scene {
     this.drawDialogMessage();
   }
 
+  private measureCtx?: CanvasRenderingContext2D;
+  /** 文字単位で折り返す（日本語はスペースが無く Phaser の 標準ラップが
+   *  効かないため）。既存の改行は尊重しつつ、幅を超える手前で改行する。 */
+  private wrapCJK(text: string, maxWidthPx: number, fontPx: number): string[] {
+    if (!this.measureCtx) this.measureCtx = document.createElement("canvas").getContext("2d")!;
+    const ctx = this.measureCtx;
+    ctx.font = `${fontPx}px 'DotGothic16', monospace`;
+    const out: string[] = [];
+    for (const rawLine of text.split("\n")) {
+      let line = "";
+      for (const ch of Array.from(rawLine)) {
+        if (line && ctx.measureText(line + ch).width > maxWidthPx) { out.push(line); line = ch; }
+        else line += ch;
+      }
+      out.push(line);
+    }
+    return out;
+  }
+
   /** メッセージ箱に収まる行数を超える文章は、収まる行数ごとの複数ページに
-   *  分割する（Aボタン/タップで送る）。箱からはみ出すのを防ぐ。 */
+   *  分割する（Aボタン/タップで送る）。横も縦もはみ出すのを防ぐ。 */
   private paginateDialog(messages: string[]): string[] {
     const W = this.scale.width;
     const margin = 20;
     const maxLines = 3;   // 166pxの箱にフォント24px+行間8pxで収まる行数
-    const probe = this.add.text(0, 0, "", {
-      fontSize: `${this.uiS(24)}px`, fontFamily: "'DotGothic16', monospace",
-      wordWrap: { width: this.uiS(W - margin * 2 - 52) }, lineSpacing: this.uiS(8),
-    }).setVisible(false);
+    const maxW = this.uiS(W - margin * 2 - 52);
+    const fontPx = this.uiS(24);
     const out: string[] = [];
     for (const msg of messages) {
-      const lines = probe.getWrappedText(msg);
-      if (lines.length <= maxLines) { out.push(msg); continue; }
+      const lines = this.wrapCJK(msg, maxW, fontPx);
       for (let i = 0; i < lines.length; i += maxLines) {
-        out.push(lines.slice(i, i + maxLines).join("\n").trimEnd());
+        out.push(lines.slice(i, i + maxLines).join("\n"));
       }
     }
-    probe.destroy();
     return out.length ? out : messages;
   }
 
