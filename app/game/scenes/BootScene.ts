@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -685,6 +685,32 @@ export class BootScene extends Phaser.Scene {
         ctx.fillRect(8 + shift, 14, 3, 1);
         ctx.fillStyle = "#4a1c14";
         ctx.fillRect(14 - shift, 8, 5, 3); ctx.fillRect(24 - shift, 22, 4, 3); ctx.fillRect(2 + shift, 24, 5, 3);
+      } else if (id === "120") {
+        // 星石の床（セレネジム）: 深い紺に 小さな星
+        ctx.fillStyle = "#20263f"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#2a3150"; ctx.fillRect(0, 0, ts, 2); ctx.fillRect(0, 0, 2, ts);
+        ctx.strokeStyle = "#171c30"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        let s120 = 91;
+        const r120 = () => { s120 = (s120 * 16807) % 2147483647; return s120 / 2147483647; };
+        for (let i = 0; i < 5; i++) {
+          const bx = r120() * ts, by = r120() * ts;
+          ctx.fillStyle = `rgba(220,232,255,${0.5 + r120() * 0.5})`;
+          ctx.fillRect(bx, by, 1, 1);
+        }
+      } else if (id === "121") {
+        // 光の橋（点灯・歩行可）: 淡い金の 発光パネル
+        const grd = ctx.createLinearGradient(0, 0, 0, ts);
+        grd.addColorStop(0, "#fff6cf"); grd.addColorStop(0.5, "#ffe89a"); grd.addColorStop(1, "#f4cf72");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.fillRect(0, 0, ts, 3);
+        ctx.strokeStyle = "rgba(255,214,120,0.9)"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.fillRect(ts / 2 - 1, 4, 2, ts - 8);
+      } else if (id === "122") {
+        // 暗闇（通行不可）: ほぼ真っ黒＋うっすら縁
+        ctx.fillStyle = "#0a0c16"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#141830"; ctx.fillRect(0, 0, ts, 2);
+        ctx.strokeStyle = "#05060d"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
       } else if (id === "110" || id === "111" || id === "112") {
         // 晴れの海 (110) + きらめきフレーム (111/112): dark basalt "sea" plain
         // with wrinkle ridges and drifting glints of reflected sunlight.

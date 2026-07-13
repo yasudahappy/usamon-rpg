@@ -433,6 +433,11 @@ export class MapScene extends Phaser.Scene {
       this.placeCaveCapsules();
     }
 
+    // セレネジム — プリズムで光の橋を通すしかけ（ジム4・光）。
+    if (this.currentMapKey === "gym_4") {
+      this.placeGym4Events();
+    }
+
 
     // Farm dome interior — a researcher tending the plants
     if (this.currentMapKey === "farm_dome") {
@@ -6079,6 +6084,101 @@ export class MapScene extends Phaser.Scene {
     { cells: [[3, 13], [3, 14]], cool: (v1, v2) => v1 !== v2 },
   ];
   private gym3SegSprites: Map<string, Phaser.GameObjects.Image> = new Map();
+
+  // ---- セレネジム（ジム4・光）: プリズムで「光の橋」を通すしかけ ----
+  // ジム3と同じセグメント方式。prism1=南チャンネル / prism2=北チャンネル /
+  // 西の宝への橋はXOR（片方だけON）。両方ONでリーダーへ到達。
+  private static GYM4_SEGS: { cells: [number, number][]; lit: (p1: boolean, p2: boolean) => boolean }[] = [
+    { cells: [[9, 17], [10, 17]], lit: (p1) => p1 },
+    { cells: [[5, 11], [6, 11]], lit: (_p1, p2) => p2 },
+    { cells: [[3, 13], [3, 14]], lit: (p1, p2) => p1 !== p2 },
+  ];
+  private gym4SegSprites: Map<string, Phaser.GameObjects.Image> = new Map();
+
+  /** プリズム状態(pickups)を床/衝突に反映。氷ジム扉と同じく両方向に冪等。 */
+  private applyGym4LightState(): void {
+    const p1 = this.hasPitFlag("prism_1");
+    const p2 = this.hasPitFlag("prism_2");
+    for (const seg of MapScene.GYM4_SEGS) {
+      const on = seg.lit(p1, p2);
+      for (const [x, y] of seg.cells) {
+        this.mapData.layers.floor[y][x] = on ? 121 : 122;
+        this.mapData.layers.collision[y][x] = on ? 0 : 1;
+        const spr = this.gym4SegSprites.get(`${x},${y}`);
+        if (spr) spr.setTexture(on ? "tile-121" : "tile-122");
+      }
+    }
+  }
+
+  private placeGym4Events(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    this.gym4SegSprites.clear();
+
+    for (const seg of MapScene.GYM4_SEGS) {
+      for (const [x, y] of seg.cells) {
+        const spr = this.add.image(x * ts + ts / 2, y * ts + ts / 2, "tile-122").setDepth(1);
+        this.gym4SegSprites.set(`${x},${y}`, spr);
+      }
+    }
+    this.applyGym4LightState();
+
+    // プリズム装置（クリスタル＋台座）
+    if (!this.textures.exists("gym4-prism")) {
+      const c = document.createElement("canvas"); c.width = 30; c.height = 36;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(15, 33, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5a6478"; ctx.fillRect(11, 24, 8, 9);            // 台座
+      ctx.fillStyle = "#8a94a8"; ctx.fillRect(11, 24, 8, 2);
+      // 三角プリズム
+      ctx.fillStyle = "#dff2ff";
+      ctx.beginPath(); ctx.moveTo(15, 4); ctx.lineTo(24, 24); ctx.lineTo(6, 24); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath(); ctx.moveTo(15, 4); ctx.lineTo(18, 24); ctx.lineTo(12, 24); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "#9ec7e0"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(15, 4); ctx.lineTo(24, 24); ctx.lineTo(6, 24); ctx.closePath(); ctx.stroke();
+      this.textures.addCanvas("gym4-prism", c);
+    }
+    const prism = (x: number, y: number, flag: string, label: string) => {
+      const img = this.add.image(x * ts + ts / 2, y * ts + ts / 2 - 4, "gym4-prism").setDepth(8);
+      const glow = this.add.circle(x * ts + ts / 2, y * ts + ts / 2 - 10, 12, 0xbfe8ff, 0.25).setDepth(8);
+      this.tweens.add({ targets: glow, alpha: { from: 0.3, to: 0.1 }, scale: { from: 1, to: 1.4 },
+        duration: 1200, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      void img;
+      this.nectarExam.push({
+        x, y, fn: () => {
+          if (this.hasPitFlag(flag)) this.clearPitFlag(flag);
+          else this.setPitFlag(flag);
+          this.applyGym4LightState();
+          this.cameras.main.flash(160, 220, 240, 255);
+          const on = this.hasPitFlag(flag);
+          this.showDialog([
+            `${label}を まわした！\n光の むきが かわり、どこかの 橋が\n${on ? "ひかった" : "きえた"}！（${on ? "ON" : "OFF"}）`,
+          ]);
+        },
+      });
+    };
+    prism(4, 20, "prism_1", "プリズム1");
+    prism(15, 14, "prism_2", "プリズム2");
+
+    // 看板（しかけの説明）
+    this.nectarExam.push({ x: 11, y: 22, fn: () => this.showDialog([
+      "『プリズムを まわして 光の 橋を\nつくり、おくの リーダーを めざせ。』",
+      "白い光は プリズムで まがる。\n2つの プリズムを うまく あわせよう。",
+    ]) });
+
+    // 星のきらめき（床の演出）
+    for (let i = 0; i < 14; i++) {
+      const gx = (2 + Math.random() * 16) * ts, gy = (2 + Math.random() * 22) * ts;
+      const st = this.add.circle(gx, gy, 1.5, 0xdfeaff, 0.9).setDepth(2);
+      this.tweens.add({ targets: st, alpha: { from: 0.9, to: 0.15 }, duration: 800 + Math.random() * 1200,
+        yoyo: true, repeat: -1, delay: Math.random() * 1500, ease: "Sine.easeInOut" });
+    }
+    // ひんやり青い光のトーン
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0x6088ff, 0.05)
+      .setOrigin(0).setDepth(26);
+  }
 
   /**
    * バルブ状態(pickupsフラグ)を床タイル/衝突に反映する。mapDataはセッション
