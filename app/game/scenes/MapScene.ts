@@ -1696,44 +1696,45 @@ export class MapScene extends Phaser.Scene {
         this.menuElements.push(img);
       }
 
-      // Row 1: name + Lv (left) — full width to itself so long names never
-      // collide with a right-aligned number. ひんし時は右端に「ひんし」表示。
-      // Rows 2/3: HP / EXP bars; HP の現在値/最大値はHPバーの行の右端に置く。
+      // Row 1: name + Lv (left, auto-shrink) と 現在HP/最大HP（右端）。
+      // HP数値を1行目に置くことで、下のHP/EXPバーはカード幅いっぱいの
+      // 長いバーにして見やすくする。ひんし時は数値の代わりに「ひんし」。
       const tx = cx + rightIconSize + Math.round(10 * s);
       const row1Y = cy + Math.round(4 * s);
-      // 名前＋Lv。長い名前でも右端で切れないよう、カード幅に収まるフォントに縮小する。
+      // 名前＋Lv（1行目・左）。数値と競合しないよう行を独占。長い名前は
+      // 実測幅でカードに収まるところまで自動縮小する。
       const nameStr = `${data.name}  Lv${mon.level}`;
-      const nameAvail = this.uiS((cx + rightW - 8) - tx);
-      const nameBasePx = this.uiS(12 * fsScale);
-      let em = 0;
-      for (const ch of nameStr) em += ch.charCodeAt(0) > 0xff ? 1.0 : 0.55;
-      const namePx = Math.max(8, Math.min(nameBasePx, Math.floor(nameAvail / Math.max(1, em))));
-      this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(row1Y), nameStr, {
-          fontSize: `${namePx}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
-        }).setScrollFactor(0).setDepth(204)
-      );
+      const nameText = this.add.text(this.uiX(tx), this.uiY(row1Y), nameStr, {
+        fontSize: `${this.uiS(12 * fsScale)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
+      }).setScrollFactor(0).setDepth(204);
+      const nameAvailPx = (this.uiX(cx + rightW - 6) - this.uiS(4)) - this.uiX(tx);
+      if (nameText.width > nameAvailPx && nameAvailPx > 0) {
+        nameText.setFontSize(Math.max(8, Math.floor(this.uiS(12 * fsScale) * nameAvailPx / nameText.width)));
+      }
+      this.menuElements.push(nameText);
+
+      // 2行目：HPラベル＋カード幅いっぱいの長いHPバー。現在HP/最大HP（または
+      // ひんし）はバー右端に重ねて表示し、バーを短くしないで見やすく保つ。
       const row2Y = cy + Math.round(22 * s);
-      const rBarH = Math.max(6, Math.round(7 * s));
-      // "HP" label at the left, long bar, then HP numbers at the far right.
+      const rBarH = Math.max(9, Math.round(11 * s));
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(row2Y), "HP", {
           fontSize: fs(9), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
       const hpBx = tx + Math.round(26 * s);
-      const hpNumW = Math.round(40 * fsScale);
-      const hpBarEndX = cx + rightW - 6 - hpNumW;
+      const hpBarEndX = cx + rightW - 6;
       const hpBarLen = Math.max(20, hpBarEndX - hpBx);
       const hpRatio = mon.currentHp / mon.maxHp;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
       drawCapsuleBar(hpG, hpBx, row2Y + 2, hpBarLen, rBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
-      // HPバー右端：通常は現在HP/最大HP、ひんし時は「ひんし」を表示
+      // 現在HP/最大HP（ひんし時は「ひんし」）をHPバー右端に重ねて表示
       this.menuElements.push(
-        this.add.text(this.uiX(cx + rightW - 6), this.uiY(row2Y + 2 + rBarH / 2),
+        this.add.text(this.uiX(hpBarEndX - 4), this.uiY(row2Y + 2 + rBarH / 2),
           fainted ? "ひんし" : `${mon.currentHp}/${mon.maxHp}`, {
-          fontSize: fs(9), color: fainted ? "#fff0f0" : "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
+          fontSize: fs(9), color: "#ffffff", fontFamily: F, fontStyle: "bold",
+          stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(204).setOrigin(1, 0.5)
       );
       // EXP label + bar (third row), same long span
