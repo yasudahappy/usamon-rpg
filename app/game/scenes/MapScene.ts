@@ -1559,15 +1559,16 @@ export class MapScene extends Phaser.Scene {
     // ===== Slot 0: Lead card (small card at top-left) =====
     const lead = party[0];
     const leadData = allMonsters.find(m => m.id === lead.dataId);
+    const leadFainted = lead.currentHp <= 0;
     if (leadData) {
       const card = this.add.graphics().setScrollFactor(0).setDepth(201);
       // Orange highlight border
       card.lineStyle(3, 0xf8a830);
       card.strokeRoundedRect(this.uiX(leadX - 3), this.uiY(leadY - 3), this.uiS(leadW + 6), this.uiS(leadH + 6), this.uiS(10));
-      // Inner panel
-      card.fillStyle(0x4080c0);
+      // Inner panel（ひんし時は赤背景でひと目でわかるように）
+      card.fillStyle(leadFainted ? 0xc0443c : 0x4080c0);
       card.fillRoundedRect(this.uiX(leadX), this.uiY(leadY), this.uiS(leadW), this.uiS(leadH), this.uiS(8));
-      card.fillStyle(0x58a0e0, 0.4);
+      card.fillStyle(leadFainted ? 0xd86058 : 0x58a0e0, 0.4);
       card.fillRect(this.uiX(leadX + 3), this.uiY(leadY + 3), this.uiS(leadW - 6), this.uiS(14));
       this.menuElements.push(card);
 
@@ -1580,6 +1581,15 @@ export class MapScene extends Phaser.Scene {
       const hpLX = leadX + pad;
       const barBx = hpLX + Math.round(leadW * 0.20);
       const barW = Math.max(20, leadX + leadW - pad - barBx);
+
+      // ひんしバッジ（右上）
+      if (leadFainted) {
+        this.menuElements.push(
+          this.add.text(this.uiX(leadX + leadW - pad), this.uiY(leadY + pad), "ひんし", {
+            fontSize: `${this.uiS(Math.round(leadH * 0.05))}px`, color: "#fff0f0", fontFamily: F, fontStyle: "bold", ...STK,
+          }).setScrollFactor(0).setDepth(205).setOrigin(1, 0)
+        );
+      }
 
       // Icon (top, centered)
       const iconS = Math.min(leadW - pad * 2, Math.round(leadH * 0.34));
@@ -1656,11 +1666,13 @@ export class MapScene extends Phaser.Scene {
       const cy = rightStartY + slotIdx * (rightSlotH + gap);
       const cx = rightX;
 
-      // Row card
+      const fainted = mon.currentHp <= 0;
+
+      // Row card（ひんし時は赤背景でひと目でわかるように）
       const card = this.add.graphics().setScrollFactor(0).setDepth(201);
-      card.fillStyle(0x5898d0);
+      card.fillStyle(fainted ? 0xc85850 : 0x5898d0);
       card.fillRoundedRect(this.uiX(cx), this.uiY(cy), this.uiS(rightW), this.uiS(rightSlotH), this.uiS(5));
-      card.fillStyle(0x68a8e0, 0.3);
+      card.fillStyle(fainted ? 0xe07868 : 0x68a8e0, 0.3);
       card.fillRect(this.uiX(cx + 3), this.uiY(cy + 3), this.uiS(rightW - 6), this.uiS(8));
       this.menuElements.push(card);
 
@@ -1684,37 +1696,46 @@ export class MapScene extends Phaser.Scene {
         this.menuElements.push(img);
       }
 
-      // Row 1: name + Lv (left) and HP numbers (right). Rows 2/3: long HP / EXP
-      // bars that span almost the full card width (RSE party-screen style).
+      // Row 1: name + Lv (left) — full width to itself so long names never
+      // collide with a right-aligned number. ひんし時は右端に「ひんし」表示。
+      // Rows 2/3: HP / EXP bars; HP の現在値/最大値はHPバーの行の右端に置く。
       const tx = cx + rightIconSize + Math.round(10 * s);
       const row1Y = cy + Math.round(4 * s);
+      // 名前＋Lv。長い名前でも右端で切れないよう、カード幅に収まるフォントに縮小する。
+      const nameStr = `${data.name}  Lv${mon.level}`;
+      const nameAvail = this.uiS((cx + rightW - 8) - tx);
+      const nameBasePx = this.uiS(12 * fsScale);
+      let em = 0;
+      for (const ch of nameStr) em += ch.charCodeAt(0) > 0xff ? 1.0 : 0.55;
+      const namePx = Math.max(8, Math.min(nameBasePx, Math.floor(nameAvail / Math.max(1, em))));
       this.menuElements.push(
-        this.add.text(this.uiX(tx), this.uiY(row1Y), `${data.name}  Lv${mon.level}`, {
-          fontSize: fs(12), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
+        this.add.text(this.uiX(tx), this.uiY(row1Y), nameStr, {
+          fontSize: `${namePx}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
-      // HP numbers right-aligned on the name row (above the long bar)
-      this.menuElements.push(
-        this.add.text(this.uiX(cx + rightW - 6), this.uiY(row1Y), `${mon.currentHp}/${mon.maxHp}`, {
-          fontSize: fs(10), color: "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
-        }).setScrollFactor(0).setDepth(204).setOrigin(1, 0)
-      );
-
       const row2Y = cy + Math.round(22 * s);
       const rBarH = Math.max(6, Math.round(7 * s));
-      // "HP" label at the left, long bar filling the rest of the row
+      // "HP" label at the left, long bar, then HP numbers at the far right.
       this.menuElements.push(
         this.add.text(this.uiX(tx), this.uiY(row2Y), "HP", {
           fontSize: fs(9), color: "#f8a830", fontFamily: F, fontStyle: "bold", ...STK2,
         }).setScrollFactor(0).setDepth(204)
       );
       const hpBx = tx + Math.round(26 * s);
-      const hpBarEndX = cx + rightW - 6;
+      const hpNumW = Math.round(40 * fsScale);
+      const hpBarEndX = cx + rightW - 6 - hpNumW;
       const hpBarLen = Math.max(20, hpBarEndX - hpBx);
       const hpRatio = mon.currentHp / mon.maxHp;
       const hpG = this.add.graphics().setScrollFactor(0).setDepth(203);
       drawCapsuleBar(hpG, hpBx, row2Y + 2, hpBarLen, rBarH, hpRatio, hpColor(hpRatio));
       this.menuElements.push(hpG);
+      // HPバー右端：通常は現在HP/最大HP、ひんし時は「ひんし」を表示
+      this.menuElements.push(
+        this.add.text(this.uiX(cx + rightW - 6), this.uiY(row2Y + 2 + rBarH / 2),
+          fainted ? "ひんし" : `${mon.currentHp}/${mon.maxHp}`, {
+          fontSize: fs(9), color: fainted ? "#fff0f0" : "#ffffff", fontFamily: F, fontStyle: "bold", ...STK2,
+        }).setScrollFactor(0).setDepth(204).setOrigin(1, 0.5)
+      );
       // EXP label + bar (third row), same long span
       const row3Y = cy + Math.round(34 * s);
       const rExpBarH = Math.max(4, Math.round(5 * s));
