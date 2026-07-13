@@ -1146,10 +1146,10 @@ export class BattleScene extends Phaser.Scene {
       Phaser.Geom.Rectangle.Contains
     );
     this.msgBg.on("pointerdown", () => {
-      if (this.waitingForInput) {
-        this.waitingForInput = false;
-        this.processMessageQueue();
-      }
+      // 送り出しは各メッセージが持つ単一のポーリングに任せる。ここで
+      // processMessageQueue を直接呼ぶと二重送り（連打でメッセージや
+      // コールバック＝経験値取得などのスキップ）が起きるため false のみ。
+      if (this.waitingForInput) this.waitingForInput = false;
     });
   }
 
@@ -1193,8 +1193,9 @@ export class BattleScene extends Phaser.Scene {
     const cancel = kbB || kbEsc || gpB;
 
     if (this.waitingForInput && confirm) {
+      // false にするだけ（送り出しは単一ポーリングが担当）。二重送りで
+      // 経験値などのコールバックがスキップされるのを防ぐ。
       this.waitingForInput = false;
-      this.processMessageQueue();
       return;
     }
 
