@@ -58,6 +58,8 @@ export class MapScene extends Phaser.Scene {
   private encounterData?: EncounterData;
   private allTrainers: TrainerData[] = [];
   private trainerSprites: Map<string, Phaser.GameObjects.Image> = new Map();
+  // 配置時に解決した「実際に向く向き」（設定の向きが壁を向く場合は道側へ補正）。
+  private trainerFacing: Map<string, Direction> = new Map();
   // Gym-leader gates: leader id -> trainers that must be beaten first.
   private static GYM_LEADER_GATES: Record<string, string[]> = {
     ryuma: ["genki", "kagen"],
@@ -689,22 +691,53 @@ export class MapScene extends Phaser.Scene {
     this.allTrainers = (this.cache.json.get("trainers") || []) as TrainerData[];
   }
 
+  /** 設定された向きが壁（か地図外）を向く場合、道側（いちばん開けた方向）へ
+   *  向きを補正して返す。道に点在するトレーナーが壁を向くのを防ぐ。 */
+  private resolveTrainerFacing(t: TrainerData): Direction {
+    const delta: Record<Direction, [number, number]> = {
+      up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0],
+    };
+    // その向きに何タイル 連続して 歩けるか（＝道の長さ）。
+    const openRun = (d: Direction): number => {
+      const [sx, sy] = delta[d];
+      let n = 0;
+      for (let k = 1; k <= 6; k++) {
+        if (this.mapData.layers.collision[t.y + sy * k]?.[t.x + sx * k] === 0) n++;
+        else break;
+      }
+      return n;
+    };
+    const set: Direction = (t.direction as Direction) || "down";
+    let best: Direction = set, bestRun = -1;
+    for (const d of ["down", "up", "left", "right"] as Direction[]) {
+      const r = openRun(d);
+      if (r > bestRun) { bestRun = r; best = d; }
+    }
+    // 設定の向きが 1タイル以内で 壁に ぶつかり、かつ もっと長い道が
+    // 別方向に あるなら、その道の方を向く（道で 壁を 向くのを 防ぐ）。
+    if (openRun(set) <= 1 && bestRun >= 3) return best;
+    return set;
+  }
+
   private placeTrainers(): void {
     this.trainerSprites.clear();
+    this.trainerFacing.clear();
     const mapTrainers = this.allTrainers.filter(
       t => t.mapKey === this.currentMapKey
     );
 
     for (const trainer of mapTrainers) {
+      const facing = this.resolveTrainerFacing(trainer);
+      this.trainerFacing.set(trainer.id, facing);
       // Defeated trainers stay on the map. If a side tile is free they step
       // aside (staying solid) so the path opens; otherwise they remain on their
       // tile and become passable (see isCollision / trainerTile).
       const pos = this.trainerTile(trainer);
 
-      // Use the trainer's hand-drawn NPC sprite (facing their set direction);
+      // Use the trainer's hand-drawn NPC sprite (facing the resolved direction);
       // fall back to the old red-tinted marker only if that texture is missing.
       const owKey = (trainer as TrainerData & { overworldSprite?: string }).overworldSprite;
-      const dir = trainer.direction || "down";
+      const dir = facing;
       const castKey = owKey ? `cast-${owKey}-${dir}` : "";
       const useCast = !!castKey && this.textures.exists(castKey);
       const sprite = this.add.image(
@@ -732,7 +765,8 @@ export class MapScene extends Phaser.Scene {
   /** A free tile perpendicular to the trainer's facing (the axis the player
    *  walks past on), or null if both perpendicular neighbours are walls. */
   private defeatedAside(t: TrainerData): { x: number; y: number } | null {
-    const vertical = t.direction === "up" || t.direction === "down";
+    const facing = this.trainerFacing.get(t.id) || t.direction;
+    const vertical = facing === "up" || facing === "down";
     const cands = vertical
       ? [{ x: t.x - 1, y: t.y }, { x: t.x + 1, y: t.y }]
       : [{ x: t.x, y: t.y - 1 }, { x: t.x, y: t.y + 1 }];
@@ -758,7 +792,7 @@ export class MapScene extends Phaser.Scene {
       const dx = this.gridX - trainer.x;
       const dy = this.gridY - trainer.y;
 
-      switch (trainer.direction) {
+      switch (this.trainerFacing.get(trainer.id) || trainer.direction) {
         case "down":  inSight = dx === 0 && dy > 0 && dy <= RANGE; break;
         case "up":    inSight = dx === 0 && dy < 0 && Math.abs(dy) <= RANGE; break;
         case "left":  inSight = dy === 0 && dx < 0 && Math.abs(dx) <= RANGE; break;
@@ -778,8 +812,9 @@ export class MapScene extends Phaser.Scene {
   /** True when no wall tile lies between the trainer and the player (along the
    *  trainer's facing axis). Used so 6-tile sight can't pierce walls. */
   private sightLineClear(trainer: TrainerData): boolean {
-    const stepX = trainer.direction === "left" ? -1 : trainer.direction === "right" ? 1 : 0;
-    const stepY = trainer.direction === "up" ? -1 : trainer.direction === "down" ? 1 : 0;
+    const facing = this.trainerFacing.get(trainer.id) || trainer.direction;
+    const stepX = facing === "left" ? -1 : facing === "right" ? 1 : 0;
+    const stepY = facing === "up" ? -1 : facing === "down" ? 1 : 0;
     const dist = Math.abs(this.gridX - trainer.x) + Math.abs(this.gridY - trainer.y);
     for (let k = 1; k < dist; k++) {
       const x = trainer.x + stepX * k;
@@ -2569,6 +2604,19 @@ export class MapScene extends Phaser.Scene {
     return this.textures.exists(cast) ? cast : fallback;
   }
 
+  /** 話しかけられたNPC/トレーナーを、プレイヤーの方へ振り向かせる。
+   *  cast-<名前>-<向き> のスプライトのみ対象（看板などは無視）。 */
+  private faceSpriteToPlayer(sprite?: Phaser.GameObjects.Image): void {
+    if (!sprite) return;
+    const opposite: Record<Direction, Direction> =
+      { up: "down", down: "up", left: "right", right: "left" };
+    const want = opposite[this.facingDirection];
+    const m = /^cast-(.+)-(up|down|left|right)$/.exec(sprite.texture.key);
+    if (!m) return;
+    const key = `cast-${m[1]}-${want}`;
+    if (this.textures.exists(key)) sprite.setTexture(key);
+  }
+
   private placeKinoshitaNpc(): void {
     // Generate NPC sprite at same scale as player (fills 32x32 canvas)
     if (!this.textures.exists("npc-kinoshita")) {
@@ -2855,6 +2903,7 @@ export class MapScene extends Phaser.Scene {
       !this.playerState?.defeatedTrainers.includes(t.id)
     );
     if (leader) {
+      this.faceSpriteToPlayer(this.trainerSprites.get(leader.id));
       const gate = MapScene.GYM_LEADER_GATES[leader.id];
       if (gate && !gate.every(id => this.playerState?.defeatedTrainers.includes(id))) {
         this.showDialog([
@@ -2863,6 +2912,23 @@ export class MapScene extends Phaser.Scene {
         ]);
       } else {
         this.startBattle(undefined, undefined, leader);
+      }
+      return;
+    }
+    // 通常トレーナー: どの向きから 話しかけても 振り向いて相手をする
+    // （視線に入らなくても Aボタンで バトル開始）。
+    const talkTrainer = this.allTrainers
+      .filter(t =>
+        t.mapKey === this.currentMapKey &&
+        !MapScene.GYM_LEADER_GATES[t.id] &&
+        this.trainerSprites.has(t.id))
+      .find(t => { const p = this.trainerTile(t); return p.x === fx && p.y === fy; });
+    if (talkTrainer) {
+      this.faceSpriteToPlayer(this.trainerSprites.get(talkTrainer.id));
+      if (this.playerState?.defeatedTrainers.includes(talkTrainer.id)) {
+        this.showDialog([talkTrainer.dialogWin || "いい しょうぶ だったね！"]);
+      } else {
+        this.startBattle(undefined, undefined, talkTrainer);
       }
       return;
     }
@@ -2888,34 +2954,42 @@ export class MapScene extends Phaser.Scene {
       return;
     }
     if (this.kinoshitaSprite && fx === this.kinoshitaNpcX && fy === this.kinoshitaNpcY) {
+      this.faceSpriteToPlayer(this.kinoshitaSprite);
       this.triggerKinoshitaEvent();
       return;
     }
     if (this.nurseSprite && fx === this.nurseNpcX && fy === this.nurseNpcY) {
+      this.faceSpriteToPlayer(this.nurseSprite);
       this.triggerNurseEvent();
       return;
     }
     if (this.shopkeeperSprite && fx === this.shopkeeperNpcX && fy === this.shopkeeperNpcY) {
+      this.faceSpriteToPlayer(this.shopkeeperSprite);
       this.triggerShopkeeperEvent();
       return;
     }
     if (this.rivalSprite && fx === this.rivalNpcX && fy === this.rivalNpcY) {
+      this.faceSpriteToPlayer(this.rivalSprite);
       this.triggerRivalEvent();
       return;
     }
     if (this.momSprite && fx === this.momNpcX && fy === this.momNpcY) {
+      this.faceSpriteToPlayer(this.momSprite);
       this.triggerMomEvent();
       return;
     }
     if (this.researcher1Sprite && fx === this.researcher1NpcX && fy === this.researcher1NpcY) {
+      this.faceSpriteToPlayer(this.researcher1Sprite);
       this.triggerResearcher1Event();
       return;
     }
     if (this.researcher2Sprite && fx === this.researcher2NpcX && fy === this.researcher2NpcY) {
+      this.faceSpriteToPlayer(this.researcher2Sprite);
       this.triggerResearcher2Event();
       return;
     }
     if (this.residentSprite && fx === this.residentNpcX && fy === this.residentNpcY) {
+      this.faceSpriteToPlayer(this.residentSprite);
       this.triggerResidentEvent();
       return;
     }
@@ -4387,10 +4461,32 @@ export class MapScene extends Phaser.Scene {
   // ---- Dialog System ----
   private showDialog(messages: string[], onComplete?: () => void): void {
     this.dialogActive = true;
-    this.dialogMessages = messages;
+    this.dialogMessages = this.paginateDialog(messages);
     this.dialogIndex = 0;
     this.dialogCallback = onComplete;
     this.drawDialogMessage();
+  }
+
+  /** メッセージ箱に収まる行数を超える文章は、収まる行数ごとの複数ページに
+   *  分割する（Aボタン/タップで送る）。箱からはみ出すのを防ぐ。 */
+  private paginateDialog(messages: string[]): string[] {
+    const W = this.scale.width;
+    const margin = 20;
+    const maxLines = 3;   // 166pxの箱にフォント24px+行間8pxで収まる行数
+    const probe = this.add.text(0, 0, "", {
+      fontSize: `${this.uiS(24)}px`, fontFamily: "'DotGothic16', monospace",
+      wordWrap: { width: this.uiS(W - margin * 2 - 52) }, lineSpacing: this.uiS(8),
+    }).setVisible(false);
+    const out: string[] = [];
+    for (const msg of messages) {
+      const lines = probe.getWrappedText(msg);
+      if (lines.length <= maxLines) { out.push(msg); continue; }
+      for (let i = 0; i < lines.length; i += maxLines) {
+        out.push(lines.slice(i, i + maxLines).join("\n").trimEnd());
+      }
+    }
+    probe.destroy();
+    return out.length ? out : messages;
   }
 
   private drawDialogMessage(): void {

@@ -1531,12 +1531,32 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private showMessages(texts: string[], onAllDone: () => void): void {
-    this.messageQueue = texts.map((text, i) => ({
+    const pages = this.paginateBattleText(texts);
+    this.messageQueue = pages.map((text, i) => ({
       text,
-      callback: i === texts.length - 1 ? onAllDone : undefined,
+      callback: i === pages.length - 1 ? onAllDone : undefined,
     }));
     this.isShowingMessage = true;
     this.processMessageQueue();
+  }
+
+  /** メッセージ枠に収まらない長い文章を、収まる行数ごとのページに分割する。 */
+  private paginateBattleText(texts: string[]): string[] {
+    const maxLines = 3;
+    const probe = this.add.text(0, 0, "", {
+      fontSize: "22px", fontFamily: "'DotGothic16', monospace",
+      wordWrap: { width: 600 },
+    }).setVisible(false);
+    const out: string[] = [];
+    for (const t of texts) {
+      const lines = probe.getWrappedText(t);
+      if (lines.length <= maxLines) { out.push(t); continue; }
+      for (let i = 0; i < lines.length; i += maxLines) {
+        out.push(lines.slice(i, i + maxLines).join("\n").trimEnd());
+      }
+    }
+    probe.destroy();
+    return out.length ? out : texts;
   }
 
   private processMessageQueue(): void {
@@ -1622,6 +1642,7 @@ export class BattleScene extends Phaser.Scene {
 
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
     this.playerSprite.setTexture(this.playerTexKey(playerData.id));
+    this.playerSprite.setData("groundY", Math.round((this.PPLAT_Y + 8) * this.sy));
     this.sizeMonsterSprite(this.playerSprite, 128, 132);
     this.playerSprite.setAlpha(1).setVisible(false);
     this.playerSprite.setY(Math.round((this.PPLAT_Y + 8) * this.sy));
@@ -2198,7 +2219,12 @@ export class BattleScene extends Phaser.Scene {
         this.playerInstance = newMon;
         this.playerMon = this.instanceToBattleMonster(this.playerInstance);
         this.playerSprite.setTexture(this.playerTexKey(newMon.dataId));
+        // 交代アルモンは必ず接地の基準Yに戻す（前のアルモンのY残りで
+        // 沈み込むのを防ぐ。send-next と同じ扱い）。
+        const baseY = Math.round((this.PPLAT_Y + 8) * this.sy);
+        this.playerSprite.setData("groundY", baseY);
         this.sizeMonsterSprite(this.playerSprite, 128, 132);
+        this.playerSprite.setY(baseY);
         this.playerSprite.setAlpha(1).setVisible(false);
         this.playerNameText.setText(`${newData.name}`);
         this.playerLvText.setText(`Lv${newMon.level}`);
