@@ -10,6 +10,7 @@ import {
   TrainerData,
 } from "../data/types";
 import { calculateCaptureRate } from "../data/encounterSystem";
+import { ensureItemIconTexture } from "../data/itemIcons";
 import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
@@ -148,6 +149,7 @@ export class BattleScene extends Phaser.Scene {
   private playerBackPortrait?: Phaser.GameObjects.Image;
   private enemyInfoObjects: Phaser.GameObjects.GameObject[] = [];
   private playerInfoObjects: Phaser.GameObjects.GameObject[] = [];
+  private itemIconSprites: Phaser.GameObjects.Image[] = [];
   private fleeAttempts = 0;
 
   // ---- Double battle (2vs2) state — singles code never touches these ----
@@ -2142,6 +2144,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
     this.commandSlots = [];
+    this.clearItemIcons();
     const positions = [
       { x: 160, y: Math.round(360 * this.sy) }, { x: 480, y: Math.round(360 * this.sy) },
       { x: 160, y: Math.round(405 * this.sy) }, { x: 480, y: Math.round(405 * this.sy) },
@@ -2154,10 +2157,21 @@ export class BattleScene extends Phaser.Scene {
       const px = positions[i % positions.length].x;
       const py = positions[i % positions.length].y;
       const bg = this.add.graphics().setDepth(20);
-      const text = this.add.text(px, py, labels[i], {
+      // アイテム行は先頭にアイコンを表示（「もどる」以外）。名前は少し右へ寄せる。
+      const isItem = i < items.length;
+      const iconW = 26;
+      const tShift = isItem ? Math.round(iconW / 2) : 0;
+      const text = this.add.text(px + tShift, py, labels[i], {
         fontSize: "18px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
         stroke: "#000000", strokeThickness: 3,
       }).setOrigin(0.5).setDepth(21);
+      if (isItem) {
+        const it = items[i];
+        const key = ensureItemIconTexture(this, it.id, it.category);
+        const icon = this.add.image(text.x - text.width / 2 - 14, py, key)
+          .setDepth(21).setDisplaySize(iconW, iconW);
+        this.itemIconSprites.push(icon);
+      }
       const zone = this.add.zone(px, py, 290, 40).setInteractive().setDepth(22).setOrigin(0.5);
       const idx = i;
       zone.on("pointerdown", () => this.chooseBattleItem(idx));
@@ -2167,7 +2181,13 @@ export class BattleScene extends Phaser.Scene {
     this.setMessage("どの どうぐを つかう？");
   }
 
+  private clearItemIcons(): void {
+    this.itemIconSprites.forEach(s => s.destroy());
+    this.itemIconSprites = [];
+  }
+
   private chooseBattleItem(idx: number): void {
+    this.clearItemIcons();
     const items = this.battleItems();
     const backToCmd = () => {
       this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });

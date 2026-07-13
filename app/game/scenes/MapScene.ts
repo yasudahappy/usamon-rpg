@@ -6,6 +6,7 @@ import { calculateStats, getExpForLevel } from "../data/levelSystem";
 
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
+import { ensureItemIconTexture } from "../data/itemIcons";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -2089,7 +2090,7 @@ export class MapScene extends Phaser.Scene {
       this.menuElements.push(empty);
     } else {
       if (this.bagSelIndex >= items.length) this.bagSelIndex = items.length - 1;
-      const listX = 40, listTop = 64, rowH = 30;
+      const listX = 40, listTop = 64, rowH = 30, iconSize = 22;
       items.forEach((it, i) => {
         const y = listTop + i * rowH;
         const on = i === this.bagSelIndex;
@@ -2098,7 +2099,16 @@ export class MapScene extends Phaser.Scene {
           hl.fillStyle(0x1b3a63, 0.9); hl.fillRoundedRect(this.uiX(listX - 8), this.uiY(y - 4), this.uiS(W - (listX - 8) * 2), this.uiS(rowH - 4), 6);
           this.menuElements.push(hl);
         }
-        const name = this.add.text(this.uiX(listX), this.uiY(y), `${on ? "▶ " : "  "}${it.name}`, {
+        // 先頭に▶（選択中）＋アイテムアイコン、その右に名前。
+        const caret = this.add.text(this.uiX(listX), this.uiY(y), on ? "▶" : " ", {
+          fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : "#ccddee", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202);
+        const iconX = listX + 20;
+        const iconKey = ensureItemIconTexture(this, it.id, it.category);
+        const icon = this.add.image(this.uiX(iconX + iconSize / 2), this.uiY(y + 8), iconKey)
+          .setScrollFactor(0).setDepth(202).setDisplaySize(this.uiS(iconSize), this.uiS(iconSize));
+        this.menuElements.push(caret, icon);
+        const name = this.add.text(this.uiX(iconX + iconSize + 6), this.uiY(y), it.name, {
           fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : "#ccddee", fontFamily: F, stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202);
         const cnt = this.add.text(this.uiX(W - 52), this.uiY(y), `×${it.count}`, {
