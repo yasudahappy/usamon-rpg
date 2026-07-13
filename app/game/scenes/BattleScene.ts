@@ -1540,22 +1540,35 @@ export class BattleScene extends Phaser.Scene {
     this.processMessageQueue();
   }
 
+  private measureCtx?: CanvasRenderingContext2D;
+  /** 文字単位で折り返す（日本語はスペースが無く 標準ラップが効かない）。 */
+  private wrapCJK(text: string, maxWidthPx: number, fontPx: number): string[] {
+    if (!this.measureCtx) this.measureCtx = document.createElement("canvas").getContext("2d")!;
+    const ctx = this.measureCtx;
+    ctx.font = `${fontPx}px 'DotGothic16', monospace`;
+    const out: string[] = [];
+    for (const rawLine of text.split("\n")) {
+      let line = "";
+      for (const ch of Array.from(rawLine)) {
+        if (line && ctx.measureText(line + ch).width > maxWidthPx) { out.push(line); line = ch; }
+        else line += ch;
+      }
+      out.push(line);
+    }
+    return out;
+  }
+
   /** メッセージ枠に収まらない長い文章を、収まる行数ごとのページに分割する。 */
   private paginateBattleText(texts: string[]): string[] {
     const maxLines = 3;
-    const probe = this.add.text(0, 0, "", {
-      fontSize: "22px", fontFamily: "'DotGothic16', monospace",
-      wordWrap: { width: 600 },
-    }).setVisible(false);
+    const maxW = 600;   // msgText の wordWrap 幅
     const out: string[] = [];
     for (const t of texts) {
-      const lines = probe.getWrappedText(t);
-      if (lines.length <= maxLines) { out.push(t); continue; }
+      const lines = this.wrapCJK(t, maxW, 22);
       for (let i = 0; i < lines.length; i += maxLines) {
-        out.push(lines.slice(i, i + maxLines).join("\n").trimEnd());
+        out.push(lines.slice(i, i + maxLines).join("\n"));
       }
     }
-    probe.destroy();
     return out.length ? out : texts;
   }
 
