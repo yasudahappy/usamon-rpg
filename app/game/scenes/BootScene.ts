@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -117,6 +117,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-silo", `${base}/assets/buildings/sprites/silo.png`);
     this.load.image("bldg-solar-array", `${base}/assets/buildings/sprites/solar_array.png`);
     this.load.image("bldg-battery", `${base}/assets/buildings/sprites/battery_box.png`);
+    this.load.image("bldg-mirror-tower", `${base}/assets/buildings/sprites/mirror_tower.png`);
+    this.load.image("bldg-beacon-tower", `${base}/assets/buildings/sprites/beacon_tower.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
     ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4", "ishii", "shiori", "kishishita", "hijiri"].forEach(t => {
@@ -180,7 +182,7 @@ export class BootScene extends Phaser.Scene {
     });
     // Programmatic animation frames that appear in no map's tileTypes
     // (magma flow 107/108, glowing-crack pulse 105/106) still need textures.
-    for (const id of ["105", "106", "107", "108"]) {
+    for (const id of ["105", "106", "107", "108", "111", "112"]) {
       if (!allTileTypes[id]) allTileTypes[id] = { name: "anim", color: "#000000", walkable: false };
     }
 
@@ -682,6 +684,25 @@ export class BootScene extends Phaser.Scene {
         ctx.fillRect(8 + shift, 14, 3, 1);
         ctx.fillStyle = "#4a1c14";
         ctx.fillRect(14 - shift, 8, 5, 3); ctx.fillRect(24 - shift, 22, 4, 3); ctx.fillRect(2 + shift, 24, 5, 3);
+      } else if (id === "110" || id === "111" || id === "112") {
+        // 晴れの海 (110) + きらめきフレーム (111/112): dark basalt "sea" plain
+        // with wrinkle ridges and drifting glints of reflected sunlight.
+        const ph = id === "110" ? 0 : id === "111" ? 1 : 2;
+        const grd = ctx.createLinearGradient(0, 0, ts, ts);
+        grd.addColorStop(0, "#39415a"); grd.addColorStop(0.5, "#2f3750"); grd.addColorStop(1, "#39415a");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, ts, ts);
+        // wrinkle ridges (low mare ridges)
+        ctx.strokeStyle = "rgba(90,102,140,0.55)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, 9); ctx.quadraticCurveTo(10, 6, 18, 10); ctx.quadraticCurveTo(26, 14, ts, 11); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 22); ctx.quadraticCurveTo(12, 26, 20, 22); ctx.quadraticCurveTo(28, 18, ts, 23); ctx.stroke();
+        ctx.strokeStyle = "rgba(20,24,38,0.6)";
+        ctx.beginPath(); ctx.moveTo(0, 11); ctx.quadraticCurveTo(10, 8, 18, 12); ctx.quadraticCurveTo(26, 16, ts, 13); ctx.stroke();
+        // drifting glints — position shifts per frame so the sea sparkles
+        const glints: [number, number][] = [[6, 5], [23, 15], [13, 26], [28, 27]];
+        ctx.fillStyle = "rgba(220,236,255,0.9)";
+        for (const [gx, gy] of glints) ctx.fillRect((gx + ph * 3) % ts, gy, 2, 1);
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        for (const [gx, gy] of glints) ctx.fillRect((gx + 1 + ph * 3) % ts, gy - 1, 1, 1);
       } else if (id === "103") {
         // リルの溝: a dark collapsed groove sunk into the regolith plain
         ctx.fillStyle = "#c8bfae"; ctx.fillRect(0, 0, ts, ts);
