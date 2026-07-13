@@ -119,6 +119,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-battery", `${base}/assets/buildings/sprites/battery_box.png`);
     this.load.image("bldg-mirror-tower", `${base}/assets/buildings/sprites/mirror_tower.png`);
     this.load.image("bldg-beacon-tower", `${base}/assets/buildings/sprites/beacon_tower.png`);
+    this.load.image("bldg-solar-tower", `${base}/assets/buildings/sprites/solar_tower.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
     ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4", "ishii", "shiori", "kishishita", "hijiri"].forEach(t => {

@@ -408,7 +408,7 @@ export class MapScene extends Phaser.Scene {
       this.placeCaveCapsules();
     }
 
-    // 晴れの海タウン — 鏡が太陽の光をあつめる「光の町」。ジム4はまだ準備中。
+    // セレネタウン — 鏡が太陽の光をあつめる「光の町」。ジム4はまだ準備中。
     if (this.currentMapKey === "serene_town") {
       this.placeSereneDecor();
       this.placeSereneTownEvents();
@@ -3646,7 +3646,7 @@ export class MapScene extends Phaser.Scene {
       house_8: "cast-char7-down",
       // ミノリタウン
       house_9: "cast-char6-down",
-      // 晴れの海タウン
+      // セレネタウン
       house_10: "cast-char5-down", house_11: "cast-char4-down",
     };
     this.residentSprite = this.add.image(
@@ -3706,13 +3706,13 @@ export class MapScene extends Phaser.Scene {
         "むかし ルナ16号という 探査機が\nこの 豊かの海に おりて、月の 土を\nはじめて 無人で 地球へ とどけたの。",
         "うちの 農園の 野菜も いつか\n地球に とどけたい ものだわ。",
       ],
-      // 晴れの海タウン（光の暮らしの教育テーマ）
+      // セレネタウン（光の暮らしの教育テーマ）
       house_10: [
         "この 町の じまんは 鏡の タワーさ。",
         "月の 夜は 2週間も つづくだろう？\nだから 昼の うちに 光を あつめて\n熱と 電気に かえて たくわえるんだ。",
         "夜でも 街灯が ともる 町は\n月では めずらしいんだよ。",
       ],
-      // 晴れの海タウン（セレネ＝かぐや(SELENE)の教育テーマ）
+      // セレネタウン（セレネ＝かぐや(SELENE)の教育テーマ）
       house_11: [
         "『セレネ』って いい ひびきでしょ？\nギリシャ神話の 月の 女神の 名前よ。",
         "日本の 月探査機 かぐや の 英語名も\n『SELENE（セレーネ）』。2007年に 月を\nまわって 地形を くわしく 調べたの。",
@@ -5521,9 +5521,9 @@ export class MapScene extends Phaser.Scene {
       "人類が 最後に 月を 歩いてから、\nもう 50年い上。……つぎに 歩くのは、\nあなたかも しれない。",
     ]), -4);
 
-    // 北端の岩くずれ → 復旧かんりょう！ 作業員が晴れの海タウンへの道をあけた
+    // 北端の岩くずれ → 復旧かんりょう！ 作業員がセレネタウンへの道をあけた
     put(this.npcTex("cast-char3-down", "npc-kinoshita"), 13, 2, () => this.showDialog([
-      "作業員「岩くずれの 復旧、かんりょう！\nこの先が 晴れの海タウン——\n光の ジムの 町だ。」",
+      "作業員「岩くずれの 復旧、かんりょう！\nこの先が セレネタウン——\n光の ジムの 町だ。」",
       "作業員「町の 鏡の タワーが 太陽の 光を\nあつめて いるのさ。きらきら\nまぶしいから 気をつけてな！」",
     ]));
 
@@ -5557,16 +5557,16 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  // ---- 晴れの海タウン: 光の町のイベント・演出 ----
+  // ---- セレネタウン: 光の町のイベント・演出 ----
 
-  /** 晴れの海タウン初回到着のひとこと。 */
+  /** セレネタウン初回到着のひとこと。 */
   private playSereneArrival(): void {
     if (this.hasPitFlag("serene_arrival_seen")) return;
     this.setPitFlag("serene_arrival_seen");
     this.inCutscene = true;
     this.showDialog([
       "（岩くずれの むこうに ひらけた 町——\nかがみの タワーが きらきら 光ってる）",
-      "ここが 晴れの海タウン。\n太陽の 光を あつめる 『光の町』だ！",
+      "ここが セレネタウン。\n太陽の 光を あつめる 『光の町』だ！",
     ], () => { this.inCutscene = false; });
   }
 
@@ -5580,7 +5580,7 @@ export class MapScene extends Phaser.Scene {
 
     // 南門の町名看板
     put("nectar-sign", 20, 35, () => this.showDialog([
-      "『晴れの海タウン』",
+      "『セレネタウン』",
       "かがみで 太陽の光を あつめる 光の町。\n夜が 2週間 つづく 月でも、この町は\nいつも あかるい。",
     ]), -4);
 
@@ -5638,16 +5638,90 @@ export class MapScene extends Phaser.Scene {
     });
 
     // ミラーヤードの技師（教育＋ハイリペアジェル）
-    put(this.npcTex("cast-char8-down", "npc-kinoshita"), 11, 19, () => {
+    put(this.npcTex("cast-char8-down", "npc-kinoshita"), 7, 22, () => {
       const given = this.awardNectarItem("serene_mirror_gift", "hi_repair_gel", "ハイリペアジェル", [
-        "技師「この 鏡の タワーは ヘリオスタット。\n太陽を おいかけて 光を 1点に あつめ、\n熱と 電気を つくるんだ。」",
-        "技師「月の 夜は 2週間も つづくからね。\n昼の あいだに ためて おくのさ。」",
+        "技師「この 鏡の タワーは ヘリオスタット。\n太陽を おいかけて、光を まんなかの\n『集熱塔』の 1点に あつめるんだ。」",
+        "技師「あつまった 光は 熱と 電気になる。\n月の 夜は 2週間も つづくから、\n昼の あいだに ためて おくのさ。」",
         "技師「見学 ありがとう。これ、つかって！」",
       ]);
       if (!given) this.showDialog([
         "技師「鏡は いつも ピカピカに みがく。\nレゴリスの ほこりが てきなのさ。」",
       ]);
     });
+
+    // プリズムの泉（広場西・にじの教育）
+    if (!this.textures.exists("serene-prism")) {
+      const c = document.createElement("canvas"); c.width = 36; c.height = 36;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(18, 32, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#9aa4b8"; ctx.beginPath(); ctx.ellipse(18, 28, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#c2ccdf"; ctx.beginPath(); ctx.ellipse(18, 26, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#7f8aa0"; ctx.fillRect(15, 16, 6, 10);
+      // crystal prism
+      ctx.fillStyle = "#dff2ff";
+      ctx.beginPath(); ctx.moveTo(18, 2); ctx.lineTo(26, 16); ctx.lineTo(10, 16); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath(); ctx.moveTo(18, 2); ctx.lineTo(21, 16); ctx.lineTo(15, 16); ctx.closePath(); ctx.fill();
+      this.textures.addCanvas("serene-prism", c);
+    }
+    put("serene-prism", 17, 20, () => this.showDialog([
+      "『プリズムの泉』",
+      "プリズムに 光を とおすと、白い光が\n7色に わかれて にじが できる。",
+      "にじは 『光の 中に かくれていた 色』\nなんだよ。",
+    ]), -6);
+
+    // 月の日時計（広場北東・とてもゆっくり動くかげ）
+    if (!this.textures.exists("serene-sundial")) {
+      const c = document.createElement("canvas"); c.width = 40; c.height = 34;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(20, 30, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#cfd6e2"; ctx.beginPath(); ctx.ellipse(20, 24, 17, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e8edf3"; ctx.beginPath(); ctx.ellipse(20, 22, 17, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#8a94a8"; ctx.lineWidth = 1;
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        ctx.beginPath(); ctx.moveTo(20, 22);
+        ctx.lineTo(20 + Math.cos(a) * 15, 22 + Math.sin(a) * 6.5); ctx.stroke();
+      }
+      // gnomon + its long shadow
+      ctx.fillStyle = "rgba(40,44,60,0.4)"; ctx.fillRect(21, 22, 13, 2);
+      ctx.fillStyle = "#5a6478";
+      ctx.beginPath(); ctx.moveTo(20, 8); ctx.lineTo(23, 22); ctx.lineTo(17, 22); ctx.closePath(); ctx.fill();
+      this.textures.addCanvas("serene-sundial", c);
+    }
+    put("serene-sundial", 26, 16, () => this.showDialog([
+      "『月の日時計』",
+      "月の 1日は 地球の 約29.5日ぶん。\nかげは 目に 見えないほど ゆっくり\nうごいて、1しゅう するのに 1か月！",
+      "この 日時計は 『月づき』を はかる\nカレンダー なんだ。",
+    ]), -4);
+
+    // 地球見デッキ（桟橋の望遠鏡）
+    if (!this.textures.exists("serene-scope")) {
+      const c = document.createElement("canvas"); c.width = 30; c.height = 34;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(15, 31, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#5a6478"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(15, 18); ctx.lineTo(8, 30); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(15, 18); ctx.lineTo(22, 30); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(15, 18); ctx.lineTo(15, 29); ctx.stroke();
+      // tube pointing up-left at the Earth
+      ctx.save(); ctx.translate(15, 16); ctx.rotate(-0.7);
+      ctx.fillStyle = "#3a4a6e"; ctx.fillRect(-3, -12, 7, 16);
+      ctx.fillStyle = "#7890c0"; ctx.fillRect(-3, -12, 2, 16);
+      ctx.restore();
+      // little Earth
+      ctx.fillStyle = "#4d8fd6"; ctx.beginPath(); ctx.arc(5, 5, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#63c78a"; ctx.fillRect(3, 3, 3, 2); ctx.fillRect(6, 6, 2, 2);
+      this.textures.addCanvas("serene-scope", c);
+    }
+    put("serene-scope", 30, 5, () => this.showDialog([
+      "『地球見デッキ』の 望遠鏡を のぞいた…。",
+      "まんまるに ちかい 地球が\n青く うかんで いる！",
+      "月から 見る 地球は、地球から 見る 月と\n満ち欠けが 逆に なる。月が 新月のとき、\n地球は まんまるに かがやくんだ。",
+    ]), -4);
 
     // ビーコン塔の守り（桟橋）
     put(this.npcTex("cast-char7-down", "npc-kinoshita"), 39, 6, () => this.showDialog([
@@ -5717,6 +5791,67 @@ export class MapScene extends Phaser.Scene {
       this.tweens.add({ targets: g, alpha: { from: 0.35, to: 0.12 }, duration: 900, yoyo: true,
         repeat: -1, delay: d, ease: "Sine.easeInOut" });
     }
+
+    // ヘリオスタットの光ビーム: 四隅の鏡 → 中央の集熱塔へ 光が あつまる
+    // （ヤード: 鏡(4,18)(10,18)(4,21)(10,21) 2x3 / 集熱塔(7,18) 2x4）
+    const orbX = 8 * ts, orbY = 18 * ts + 14;
+    for (const [mx, my] of [[4, 18], [10, 18], [4, 21], [10, 21]] as [number, number][]) {
+      const sx = (mx + 1) * ts, sy2 = my * ts + 16;
+      const beam = this.add.line(0, 0, sx, sy2, orbX, orbY, 0xffe9a8, 0.5)
+        .setOrigin(0, 0).setLineWidth(1.6).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: beam, alpha: { from: 0.55, to: 0.15 },
+        duration: 1000 + (mx + my) % 3 * 250, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+    // 集熱塔のオーブのまぶしさ
+    const orbGlow = this.add.circle(orbX, orbY, 14, 0xfff2b0, 0.35).setDepth(9)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: orbGlow, alpha: { from: 0.45, to: 0.15 }, scale: { from: 1, to: 1.5 },
+      duration: 1300, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+
+    // 桟橋のガーランド電飾（街灯のあいだに 光の つらなり）
+    const garland = (x0: number, x1: number, y: number) => {
+      const px0 = x0 * ts + ts / 2, px1 = x1 * ts + ts / 2, py = y * ts - 6;
+      const n = Math.max(6, Math.floor((x1 - x0) * 2.2));
+      const cols = [0xfff2b0, 0xbfe8ff, 0xffd7a8];
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        const gx = px0 + (px1 - px0) * t;
+        const gy = py + Math.sin(t * Math.PI) * 10;   // sagging string
+        const dot = this.add.circle(gx, gy, 2, cols[i % 3], 0.9).setDepth(8);
+        this.tweens.add({ targets: dot, alpha: { from: 0.95, to: 0.3 },
+          duration: 600 + (i % 4) * 220, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      }
+    };
+    lampAt(9, 6); lampAt(15, 6); lampAt(26, 6); lampAt(31, 6);
+    garland(9, 15, 6);
+    garland(26, 31, 6);
+
+    // プリズムの泉: にじ色の光の つぶが わきあがる
+    const fx0 = 17 * ts + ts / 2, fy0 = 20 * ts + 2;
+    const rainbow = [0xff6b6b, 0xffb26b, 0xfff26b, 0x7be07b, 0x6bc7ff, 0x9b8bff];
+    this.time.addEvent({
+      delay: 180, loop: true, callback: () => {
+        const i = Math.floor(Math.random() * rainbow.length);
+        const p = this.add.circle(fx0 + (Math.random() * 20 - 10), fy0 - Math.random() * 6, 3, rainbow[i], 1)
+          .setDepth(9);
+        this.tweens.add({ targets: p, y: fy0 - 26 - Math.random() * 10, alpha: 0, scale: 0.5,
+          duration: 1300, ease: "Sine.easeOut", onComplete: () => p.destroy() });
+      },
+    });
+    // にじのアーチ（泉の上にうっすら）
+    for (let i = 0; i < rainbow.length; i++) {
+      const arc = this.add.graphics().setDepth(8);
+      arc.lineStyle(2, rainbow[i], 0.65);
+      arc.beginPath();
+      arc.arc(fx0, fy0 - 4, 22 - i * 2.4, Math.PI, Math.PI * 2);
+      arc.strokePath();
+      this.tweens.add({ targets: arc, alpha: { from: 0.55, to: 0.2 },
+        duration: 1500 + i * 120, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+
+    // 町ぜんたいに ほんのり 明るい光のトーン
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xfff3c8, 0.045)
+      .setOrigin(0, 0).setDepth(40);
   }
 
   // ---- タウルスのどうくつ: 暗闇＋ぬし ----
