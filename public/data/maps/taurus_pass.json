@@ -19,7 +19,7 @@
     22,
     22,
     22,
-    22,
+    65,
     22,
     22,
     22,
@@ -917,7 +917,7 @@
     1,
     1,
     1,
-    1,
+    0,
     1,
     1,
     1,
@@ -1847,6 +1847,13 @@
    "targetMap": "taurus_cave",
    "targetX": 10,
    "targetY": 15
+  },
+  {
+   "x": 12,
+   "y": 0,
+   "targetMap": "serene_town",
+   "targetX": 21,
+   "targetY": 36
   }
  ]
 }

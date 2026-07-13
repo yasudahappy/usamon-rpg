@@ -408,6 +408,16 @@ export class MapScene extends Phaser.Scene {
       this.placeCaveCapsules();
     }
 
+    // 晴れの海タウン — 鏡が太陽の光をあつめる「光の町」。ジム4はまだ準備中。
+    if (this.currentMapKey === "serene_town") {
+      this.placeSereneDecor();
+      this.placeSereneTownEvents();
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("serene_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playSereneArrival());
+      }
+    }
+
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
     if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
       this.placeCaveCapsules();
@@ -479,7 +489,7 @@ export class MapScene extends Phaser.Scene {
 
   // Animated tile base IDs (sand sparkle + farm crops + frost twinkle).
   // 70 = farm crop bed, 90 = frost regolith (ネクタルタウン).
-  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70, 90, 100, 104];
+  private static SAND_TILE_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 32, 33, 34, 35, 36, 70, 90, 100, 104, 110];
   // Base tile -> [frame A, frame B] cycled every 800ms (base -> A -> B).
   // Sand sparkle: A=41-48, B=49-56. Farm crop: 70 -> 71/72. Frost: 90 -> 94/95.
   private static SPARKLE_MAP: Record<number, [number, number]> = {
@@ -487,7 +497,7 @@ export class MapScene extends Phaser.Scene {
     9: [45, 53], 10: [46, 54], 11: [47, 55], 12: [48, 56],
     32: [41, 49], 33: [42, 50], 34: [43, 51], 35: [44, 52],
     36: [45, 53], 70: [71, 72], 90: [94, 95],
-    100: [107, 108], 104: [105, 106],
+    100: [107, 108], 104: [105, 106], 110: [111, 112],
   };
 
   private drawMap(): void {
@@ -3636,6 +3646,8 @@ export class MapScene extends Phaser.Scene {
       house_8: "cast-char7-down",
       // ミノリタウン
       house_9: "cast-char6-down",
+      // 晴れの海タウン
+      house_10: "cast-char5-down", house_11: "cast-char4-down",
     };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
@@ -3693,6 +3705,18 @@ export class MapScene extends Phaser.Scene {
         "ようこそ ミノリタウンへ。",
         "むかし ルナ16号という 探査機が\nこの 豊かの海に おりて、月の 土を\nはじめて 無人で 地球へ とどけたの。",
         "うちの 農園の 野菜も いつか\n地球に とどけたい ものだわ。",
+      ],
+      // 晴れの海タウン（光の暮らしの教育テーマ）
+      house_10: [
+        "この 町の じまんは 鏡の タワーさ。",
+        "月の 夜は 2週間も つづくだろう？\nだから 昼の うちに 光を あつめて\n熱と 電気に かえて たくわえるんだ。",
+        "夜でも 街灯が ともる 町は\n月では めずらしいんだよ。",
+      ],
+      // 晴れの海タウン（セレネ＝かぐや(SELENE)の教育テーマ）
+      house_11: [
+        "『セレネ』って いい ひびきでしょ？\nギリシャ神話の 月の 女神の 名前よ。",
+        "日本の 月探査機 かぐや の 英語名も\n『SELENE（セレーネ）』。2007年に 月を\nまわって 地形を くわしく 調べたの。",
+        "かぐやが うつした 『地球の出』の 映像、\nいつか ぜひ 見てみてね。",
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
@@ -5497,21 +5521,10 @@ export class MapScene extends Phaser.Scene {
       "人類が 最後に 月を 歩いてから、\nもう 50年い上。……つぎに 歩くのは、\nあなたかも しれない。",
     ]), -4);
 
-    // 北端の岩くずれ（晴れの海タウンへは次フェーズで開通）
-    if (!this.textures.exists("deep-gate-rock")) {
-      const c = document.createElement("canvas"); c.width = 36; c.height = 36;
-      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.beginPath(); ctx.ellipse(18, 31, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
-      for (const [bx, by, br, col] of [[13, 20, 11, "#8a8272"], [24, 22, 9, "#6e6658"], [19, 12, 8, "#a89f8c"]] as [number, number, number, string][]) {
-        ctx.fillStyle = col;
-        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
-      }
-      this.textures.addCanvas("deep-gate-rock", c);
-    }
-    put("deep-gate-rock", 12, 1, () => this.showDialog([
-      "大きな 岩くずれが 道を ふさいでいる。",
-      "『復旧作業中。開通したら この先は\n晴れの海タウン——光の ジムの 町だ。\nもう しばらく 待ってくれ！』",
+    // 北端の岩くずれ → 復旧かんりょう！ 作業員が晴れの海タウンへの道をあけた
+    put(this.npcTex("cast-char3-down", "npc-kinoshita"), 13, 2, () => this.showDialog([
+      "作業員「岩くずれの 復旧、かんりょう！\nこの先が 晴れの海タウン——\n光の ジムの 町だ。」",
+      "作業員「町の 鏡の タワーが 太陽の 光を\nあつめて いるのさ。きらきら\nまぶしいから 気をつけてな！」",
     ]));
 
     // 調査員（したっぱペアに絡まれている → 撃破後に救出・お礼）
@@ -5541,6 +5554,168 @@ export class MapScene extends Phaser.Scene {
           "「あ？ おれたちに 用なら\n相棒に 声を かけな。2たい2だ」",
         ]),
       });
+    }
+  }
+
+  // ---- 晴れの海タウン: 光の町のイベント・演出 ----
+
+  /** 晴れの海タウン初回到着のひとこと。 */
+  private playSereneArrival(): void {
+    if (this.hasPitFlag("serene_arrival_seen")) return;
+    this.setPitFlag("serene_arrival_seen");
+    this.inCutscene = true;
+    this.showDialog([
+      "（岩くずれの むこうに ひらけた 町——\nかがみの タワーが きらきら 光ってる）",
+      "ここが 晴れの海タウン。\n太陽の 光を あつめる 『光の町』だ！",
+    ], () => { this.inCutscene = false; });
+  }
+
+  private placeSereneTownEvents(): void {
+    this.genNectarEventTextures();
+    const ts = this.tileSize;
+    const put = (key: string, x: number, y: number, fn: () => void, dy = 0) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 + dy, key).setDepth(8);
+      this.nectarExam.push({ x, y, fn });
+    };
+
+    // 南門の町名看板
+    put("nectar-sign", 20, 35, () => this.showDialog([
+      "『晴れの海タウン』",
+      "かがみで 太陽の光を あつめる 光の町。\n夜が 2週間 つづく 月でも、この町は\nいつも あかるい。",
+    ]), -4);
+
+    // 海岸の看板（教育: 晴れの海）
+    put("nectar-sign", 18, 5, () => this.showDialog([
+      "『晴れの海』",
+      "月の 北東に ひろがる 大きな 海。\nもちろん 水は なくて、大むかしの\n溶岩が かたまった 平原だ。",
+      "南東の ふちには アポロ17号が おりた\nタウルス・リットロウ渓谷が ある。",
+    ]), -4);
+
+    // ルノホート2号きねんひ（広場の中央・教育）
+    if (!this.textures.exists("serene-lunokhod")) {
+      const c = document.createElement("canvas"); c.width = 44; c.height = 40;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.ellipse(22, 36, 18, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#8f9aab"; ctx.fillRect(6, 28, 32, 6);           // pedestal
+      ctx.fillStyle = "#b8c2d2"; ctx.fillRect(6, 28, 32, 2);
+      // tub-shaped rover body with lid
+      ctx.fillStyle = "#c9a94e"; ctx.fillRect(10, 14, 24, 9);
+      ctx.fillStyle = "#e8d290"; ctx.fillRect(10, 14, 24, 3);
+      ctx.fillStyle = "#7a6a34"; ctx.fillRect(10, 21, 24, 2);
+      // lid (solar panel) open
+      ctx.fillStyle = "#3a4a6e"; ctx.fillRect(12, 8, 20, 5);
+      ctx.strokeStyle = "#7890c0"; ctx.lineWidth = 1;
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(14 + i * 5, 8); ctx.lineTo(14 + i * 5, 13); ctx.stroke(); }
+      // 8 wheels
+      ctx.fillStyle = "#3c3630";
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(13 + i * 6, 26, 3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = "#5c564e";
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(13 + i * 6, 26, 1.2, 0, Math.PI * 2); ctx.fill(); }
+      // antenna
+      ctx.strokeStyle = "#d8e0ec"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(32, 14); ctx.lineTo(38, 4); ctx.stroke();
+      this.textures.addCanvas("serene-lunokhod", c);
+    }
+    this.add.image(21 * ts + ts / 2, 17 * ts + ts / 2 - 6, "serene-lunokhod").setDepth(8).setScale(1.5);
+    this.nectarExam.push({ x: 21, y: 17, fn: () => this.showDialog([
+      "『ルノホート2号 きねんひ』",
+      "1973年、ソれんの 無人ローバー\n『ルノホート2号』が この 晴れの海の\nふちに おりたった。",
+      "リモコンそうさで 月面を 39km も 走破！\nその 記録は 40年ちかく やぶられなかった。",
+      "せなかの レーザー反射器は、いまも\n地球からの 実験に つかわれているんだ。",
+    ]) });
+
+    // 天文台の博士（教育＋スターカプセル）
+    put(this.npcTex("cast-char6-down", "npc-kinoshita"), 35, 13, () => {
+      const given = this.awardNectarItem("serene_obs_gift", "star_capsule", "スターカプセル", [
+        "博士「ようこそ 天文台へ！ 月はね、\n空気が ないから 星が またたかないんだ。\n望遠鏡には 最高の 場所なのさ。」",
+        "博士「昼でも 空は まっくら。太陽と 星が\nいっしょに 見えるんだよ。」",
+        "博士「観測の きねんに これを あげよう！」",
+      ]);
+      if (!given) this.showDialog([
+        "博士「今夜も 地球の ひかりが きれいだ。\n月から 見る 地球は、満ち欠けが\n地球から 見る 月と 逆に なるんだよ。」",
+      ]);
+    });
+
+    // ミラーヤードの技師（教育＋ハイリペアジェル）
+    put(this.npcTex("cast-char8-down", "npc-kinoshita"), 11, 19, () => {
+      const given = this.awardNectarItem("serene_mirror_gift", "hi_repair_gel", "ハイリペアジェル", [
+        "技師「この 鏡の タワーは ヘリオスタット。\n太陽を おいかけて 光を 1点に あつめ、\n熱と 電気を つくるんだ。」",
+        "技師「月の 夜は 2週間も つづくからね。\n昼の あいだに ためて おくのさ。」",
+        "技師「見学 ありがとう。これ、つかって！」",
+      ]);
+      if (!given) this.showDialog([
+        "技師「鏡は いつも ピカピカに みがく。\nレゴリスの ほこりが てきなのさ。」",
+      ]);
+    });
+
+    // ビーコン塔の守り（桟橋）
+    put(this.npcTex("cast-char7-down", "npc-kinoshita"), 39, 6, () => this.showDialog([
+      "とうもり「この 灯台は 『セレネの灯』。\n晴れの海を わたる ローバーたちの\n道しるべさ。」",
+      "とうもり「セレネは ギリシャ神話の\n月の 女神の 名前なんだよ。」",
+    ]));
+
+    // ヴォイス団のしたっぱ（海岸西・伏線）
+    put(this.npcTex("cast-voice_grunt2-down", "npc-kinoshita"), 6, 6, () => this.showDialog([
+      "「……この町の 『あつめた光』、\n参謀キヨハラさまの 計画に\nつかえそうだと 思わないか？」",
+      "「おっと、ひとりごとだ。\n気に しないでくれ。」",
+    ]));
+
+    // 広場のこども
+    put(this.npcTex("cast-char2-down", "npc-kinoshita"), 24, 20, () => this.showDialog([
+      "こども「かがみで ひかりを あつめると\nあったかいんだよ！ でも ジムの リーダーは\nもっと まぶしい らしいよ！」",
+    ]));
+
+    // 光ジムの扉（準備中・ジム4は次のフェーズ）
+    this.nectarExam.push({ x: 7, y: 13, fn: () => this.showDialog([
+      "とびらに はりがみが ある。",
+      "『光のジム 【セレネジム】は\nただいま かいそうちゅう。\nかいかんを たのしみに まっててね！』",
+    ]) });
+  }
+
+  /** 光の町の演出: 街灯・ビーコンの明かり・海辺のホタルナ。 */
+  private placeSereneDecor(): void {
+    const ts = this.tileSize;
+
+    // 街灯（あたたかい光のランプポスト）
+    if (!this.textures.exists("serene-lamp")) {
+      const c = document.createElement("canvas"); c.width = 16; c.height = 40;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.ellipse(8, 37, 6, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5a6478"; ctx.fillRect(7, 12, 3, 24);
+      ctx.fillStyle = "#78829a"; ctx.fillRect(7, 12, 1, 24);
+      ctx.fillStyle = "#39415a"; ctx.fillRect(4, 4, 9, 9);
+      ctx.fillStyle = "#ffe9a8"; ctx.fillRect(5, 5, 7, 7);
+      ctx.fillStyle = "#fff7d8"; ctx.fillRect(6, 6, 3, 3);
+      this.textures.addCanvas("serene-lamp", c);
+    }
+    const lampAt = (x: number, y: number) => {
+      this.add.image(x * ts + ts / 2, y * ts + ts / 2 - 4, "serene-lamp").setDepth(8);
+      const glow = this.add.circle(x * ts + ts / 2, y * ts + ts / 2 - 12, 11, 0xffe9a8, 0.22).setDepth(7);
+      this.tweens.add({ targets: glow, alpha: { from: 0.32, to: 0.16 }, scale: { from: 1, to: 1.25 },
+        duration: 1400 + (x % 3) * 300, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    };
+    for (const [lx, ly] of [[20, 10], [23, 12], [20, 25], [23, 30], [15, 16], [28, 20], [12, 28], [32, 28]] as [number, number][]) {
+      lampAt(lx, ly);
+    }
+
+    // ビーコン塔のあかり（ゆっくり明滅）
+    const bx = 39 * ts, by = 1.4 * ts;
+    const beam = this.add.circle(bx, by, 18, 0xfff2b0, 0.3).setDepth(7);
+    this.tweens.add({ targets: beam, alpha: { from: 0.45, to: 0.1 }, scale: { from: 1, to: 1.7 },
+      duration: 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+
+    // 海辺の ホタルナ（ひかりの アルモンが 波うちぎわで あそぶ）
+    for (const [hx, hy, d] of [[12, 4, 0], [30, 3, 700]] as [number, number, number][]) {
+      if (!this.textures.exists("monster-hotaruna")) break;
+      const m = this.add.image(hx * ts + ts / 2, hy * ts + ts / 2, "monster-hotaruna").setDepth(8);
+      m.setScale(28 / Math.max(m.width, m.height));
+      const g = this.add.circle(hx * ts + ts / 2, hy * ts + ts / 2, 10, 0xbfe8ff, 0.25).setDepth(7);
+      this.tweens.add({ targets: [m, g], y: `-=5`, duration: 1200, yoyo: true, repeat: -1,
+        delay: d, ease: "Sine.easeInOut" });
+      this.tweens.add({ targets: g, alpha: { from: 0.35, to: 0.12 }, duration: 900, yoyo: true,
+        repeat: -1, delay: d, ease: "Sine.easeInOut" });
     }
   }
 
