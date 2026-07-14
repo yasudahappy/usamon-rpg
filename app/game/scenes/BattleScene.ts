@@ -12,6 +12,7 @@ import {
 import { calculateCaptureRate } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
 import { rollNatureGender, ensureNatureGender, applyNature } from "../data/natureGender";
+import { moveMaxPP, ensureInstancePP } from "../data/movePP";
 import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
@@ -290,6 +291,7 @@ export class BattleScene extends Phaser.Scene {
       maxHp: stats.hp,
       stats,
       moves,
+      pp: moves.map((id) => moveMaxPP(id, this.allMoves)),
       ...ng,
     };
   }
@@ -304,8 +306,9 @@ export class BattleScene extends Phaser.Scene {
     // そろえる（冪等：ベースから再計算するので何度呼んでも安全）。
     ensureNatureGender(inst);
     refreshInstanceStats(inst, this.allMonsters);
+    ensureInstancePP(inst, this.allMoves);
     const data = this.allMonsters.find((m) => m.id === inst.dataId)!;
-    const battleMoves: BattleMove[] = inst.moves.map((moveId) => {
+    const battleMoves: BattleMove[] = inst.moves.map((moveId, i) => {
       const md = this.allMoves.find((m) => m.id === moveId)!;
       return {
         name: md.name,
@@ -313,6 +316,8 @@ export class BattleScene extends Phaser.Scene {
         power: md.power,
         isSupport: md.isSupport,
         priority: md.priority,
+        pp: inst.pp ? inst.pp[i] : md.pp,
+        maxPp: md.pp,
         effect: md.effect
           ? {
               stat: (md.effect.stat as "attack" | "defense" | "speed") || "attack",
@@ -1074,6 +1079,16 @@ export class BattleScene extends Phaser.Scene {
     this.hideCommandWindow();
     this.selectedMove = 0;
 
+    // 全わざのPPが切れていたら「わるあがき」しか出せない。
+    const usable = this.playerMon.moves.filter(Boolean);
+    if (usable.length > 0 && usable.every((m) => (m.pp ?? 0) <= 0)) {
+      this.phase = "executing";
+      this.showMessages(["つかえる わざが ない！"], () =>
+        this.executeTurn({ name: "わるあがき", type: "ノーマル", power: 40, isSupport: false })
+      );
+      return;
+    }
+
     this.moveSlots.forEach((slot) => {
       slot.bg.destroy();
       slot.text.destroy();
@@ -1107,14 +1122,19 @@ export class BattleScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(21);
-      // わざのタイプを名前の下に色つきで表示
+      // わざのタイプ（左・タイプ色）と PP（右・白／少ないと赤）を名前の下に表示
       if (move) {
         const tcol = BattleScene.TYPE_COLOR[move.type] ?? "#d7d7d7";
-        const badge = this.add.text(px, py + 15, move.type, {
-          fontSize: "14px", color: tcol, fontFamily: "'DotGothic16', monospace",
+        const tBadge = this.add.text(px - 6, py + 15, move.type, {
+          fontSize: "13px", color: tcol, fontFamily: "'DotGothic16', monospace",
           fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-        }).setOrigin(0.5).setDepth(21);
-        this.moveBadges.push(badge);
+        }).setOrigin(1, 0.5).setDepth(21);
+        const pp = move.pp ?? 0, maxPp = move.maxPp ?? pp;
+        const ppBadge = this.add.text(px + 6, py + 15, `PP${pp}/${maxPp}`, {
+          fontSize: "13px", color: pp <= 0 ? "#ff8080" : "#e8eef6", fontFamily: "'DotGothic16', monospace",
+          stroke: "#000000", strokeThickness: 3,
+        }).setOrigin(0, 0.5).setDepth(21);
+        this.moveBadges.push(tBadge, ppBadge);
       }
 
       const zone = this.add
@@ -1129,7 +1149,7 @@ export class BattleScene extends Phaser.Scene {
           if (this.phase === "move_select") {
             this.selectedMove = idx;
             this.highlightMoves(idx);
-            this.executeTurn(this.playerMon.moves[idx]);
+            this.tryUseMove(idx);
           }
         });
       }
@@ -1138,6 +1158,18 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.highlightMoves(0);
+  }
+
+  /** シングル戦：PPをチェックして、足りなければメッセージ、足りれば消費して実行。 */
+  private tryUseMove(idx: number): void {
+    const mv = this.playerMon.moves[idx];
+    if (!mv) return;
+    if ((mv.pp ?? 1) <= 0) { this.setMessage("PPが たりない！ ほかの わざを えらんでね"); return; }
+    if (this.playerInstance.pp && idx < this.playerInstance.pp.length) {
+      this.playerInstance.pp[idx] = Math.max(0, this.playerInstance.pp[idx] - 1);
+    }
+    mv.pp = Math.max(0, (mv.pp ?? 1) - 1);
+    this.executeTurn(mv);
   }
 
   private hideMoveSelect(): void {
@@ -1289,7 +1321,7 @@ export class BattleScene extends Phaser.Scene {
         const move = this.playerMon.moves[this.selectedMove];
         if (move) {
           if (this.isDouble) this.chooseMoveD(move);
-          else this.executeTurn(move);
+          else this.tryUseMove(this.selectedMove);
         }
       }
       if (kbEsc || gpB) {
@@ -2942,6 +2974,16 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private executeActionD(att: DSlot, move: BattleMove, tgt: DSlot, onComplete: () => void): void {
+    // プレイヤー側のわざはPPを消費（敵は消費しない）。
+    if (this.dP.includes(att)) {
+      const idx = att.mon.moves.indexOf(move);
+      if (idx >= 0 && att.inst.pp && idx < att.inst.pp.length) {
+        att.inst.pp[idx] = Math.max(0, att.inst.pp[idx] - 1);
+        if (typeof att.mon.moves[idx].pp === "number") {
+          att.mon.moves[idx].pp = Math.max(0, (att.mon.moves[idx].pp as number) - 1);
+        }
+      }
+    }
     const messages: string[] = [];
     if (move.isSupport && move.effect) {
       messages.push(`${att.mon.name}の ${move.name}！`);
