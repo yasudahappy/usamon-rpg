@@ -2,12 +2,12 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData } from "../data/types";
 import { loadSettings, saveSettings, GameSettings } from "../data/settings";
-import { calculateStats, getExpForLevel } from "../data/levelSystem";
+import { calculateStats, getExpForLevel, refreshInstanceStats } from "../data/levelSystem";
 
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
-import { ensureNatureGender, genderLabel, rollNatureGender } from "../data/natureGender";
+import { ensureNatureGender, genderLabel, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -1518,6 +1518,7 @@ export class MapScene extends Phaser.Scene {
     const inst = party[this.partySelIndex];
     ensureNatureGender(inst);
     const all = this.cache.json.get("monsters") as MonsterData[];
+    refreshInstanceStats(inst, all);   // せいかく補正込みの能力値にそろえる（冪等）
     const allMoves = (this.cache.json.get("moves") || []) as MoveData[];
     const data = all.find(m => m.id === inst.dataId);
     const dexNo = Math.max(0, all.findIndex(m => m.id === inst.dataId)) + 1;
@@ -1601,24 +1602,29 @@ export class MapScene extends Phaser.Scene {
     } else if (this.monDetailPage === 1) {
       // のうりょく：HP / こうげき / ぼうぎょ / すばやさ ＋ けいけんち＋ゲージ
       const st = inst.stats;
-      const rows: [string, string][] = [
-        ["HP", `${inst.currentHp} / ${inst.maxHp}`],
-        ["こうげき", `${st.attack}`],
-        ["ぼうぎょ", `${st.defense}`],
-        ["すばやさ", `${st.speed}`],
+      const mod = inst.nature ? NATURE_MODS[inst.nature] : undefined;
+      const rows: [string, string, "attack" | "defense" | "speed" | null][] = [
+        ["HP", `${inst.currentHp} / ${inst.maxHp}`, null],
+        ["こうげき", `${st.attack}`, "attack"],
+        ["ぼうぎょ", `${st.defense}`, "defense"],
+        ["すばやさ", `${st.speed}`, "speed"],
       ];
       const boxY = 200, rowH = 30, lx = W * 0.10, rx = W * 0.90;
       const box = this.add.graphics().setScrollFactor(0).setDepth(201);
       box.fillStyle(0x061020, 0.9); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(boxY - 10), this.uiS((rx - lx) + 24), this.uiS(rows.length * rowH + 16), this.uiS(8));
       box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(boxY - 10), this.uiS((rx - lx) + 24), this.uiS(rows.length * rowH + 16), this.uiS(8));
       this.menuElements.push(box);
-      rows.forEach(([label, val], i) => {
+      rows.forEach(([label, val, key], i) => {
         const y = boxY + i * rowH + 4;
+        const isUp = key && mod?.up === key;
+        const isDown = key && mod?.down === key;
+        const arrow = isUp ? " ↑" : isDown ? " ↓" : "";
+        const valColor = isUp ? "#8fe08f" : isDown ? "#ff9aa0" : "#ffffff";
         this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y), label, {
           fontSize: `${this.uiS(15)}px`, color: label === "HP" ? "#f8a830" : "#bcd0e6", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202));
-        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val, {
-          fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val + arrow, {
+          fontSize: `${this.uiS(16)}px`, color: valColor, fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
       });
       // けいけんち＋つぎのレベルまでゲージ
@@ -6855,7 +6861,8 @@ export class MapScene extends Phaser.Scene {
   private createDefaultPlayerState(): PlayerState {
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
     const usamon = allMonsters.find(m => m.id === "usamon")!;
-    const stats = calculateStats(usamon, 5);
+    const ng = rollNatureGender();
+    const stats = applyNature(calculateStats(usamon, 5), ng.nature);
     const moves = usamon.learnset
       .filter(e => e.level <= 5)
       .map(e => e.moveId)
@@ -6868,7 +6875,7 @@ export class MapScene extends Phaser.Scene {
       maxHp: stats.hp,
       stats,
       moves,
-      ...rollNatureGender(),
+      ...ng,
     };
     return {
       party: [instance],

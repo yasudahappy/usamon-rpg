@@ -11,13 +11,14 @@ import {
 } from "../data/types";
 import { calculateCaptureRate } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
-import { rollNatureGender } from "../data/natureGender";
+import { rollNatureGender, ensureNatureGender, applyNature } from "../data/natureGender";
 import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
   getExpForLevel,
   getNewMoveAtLevel,
   applyLevelUp,
+  refreshInstanceStats,
   checkEvolution,
   applyEvolution,
   calculateStats,
@@ -268,7 +269,8 @@ export class BattleScene extends Phaser.Scene {
 
   private createInstance(dataId: string, level: number): MonsterInstance {
     const data = this.allMonsters.find((m) => m.id === dataId)!;
-    const stats = calculateStats(data, level);
+    const ng = rollNatureGender();
+    const stats = applyNature(calculateStats(data, level), ng.nature);
     const moves = data.learnset
       .filter((e) => e.level <= level)
       .map((e) => e.moveId)
@@ -281,7 +283,7 @@ export class BattleScene extends Phaser.Scene {
       maxHp: stats.hp,
       stats,
       moves,
-      ...rollNatureGender(),
+      ...ng,
     };
   }
 
@@ -291,6 +293,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private instanceToBattleMonster(inst: MonsterInstance): BattleMonster {
+    // 既存セーブのアルモンにも せいかくを付与し、能力値をせいかく補正込みに
+    // そろえる（冪等：ベースから再計算するので何度呼んでも安全）。
+    ensureNatureGender(inst);
+    refreshInstanceStats(inst, this.allMonsters);
     const data = this.allMonsters.find((m) => m.id === inst.dataId)!;
     const battleMoves: BattleMove[] = inst.moves.map((moveId) => {
       const md = this.allMoves.find((m) => m.id === moveId)!;
