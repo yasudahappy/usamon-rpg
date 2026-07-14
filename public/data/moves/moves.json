@@ -1,854 +1,929 @@
 [
-  {
-    "id": "tataku",
-    "name": "たたく",
-    "type": "ノーマル",
-    "power": 40,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "基本技"
-  },
-  {
-    "id": "kansya_no_mai",
-    "name": "かんしゃのまい",
-    "type": "光",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "attack",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "自分のこうげきアップ"
-  },
-  {
-    "id": "senjin_no_chie",
-    "name": "せんじんのちえ",
-    "type": "光",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "allStatsUp",
-      "multiplier": 1.2,
-      "target": "self"
-    },
-    "description": "全ステータス少しアップ"
-  },
-  {
-    "id": "ryuseigun",
-    "name": "りゅうせいぐん",
-    "type": "光",
-    "power": 90,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "主力技"
-  },
-  {
-    "id": "shooting_star",
-    "name": "シューティングスター",
-    "type": "光",
-    "power": 100,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "強力な看板技"
-  },
-  {
-    "id": "kansya_no_tasuki",
-    "name": "かんしゃのたすき",
-    "type": "光",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "healAndBuff",
-      "healPercent": 30,
-      "stat": "defense",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "HP回復+ぼうぎょアップ"
-  },
-  {
-    "id": "luna_break",
-    "name": "ルナブレイク",
-    "type": "光",
-    "power": 110,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "高威力"
-  },
-  {
-    "id": "kibou_no_hikari",
-    "name": "きぼうのひかり",
-    "type": "光",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "heal",
-      "healPercent": 50,
-      "target": "self"
-    },
-    "description": "手持ち全体を回復（今は自分のみ）"
-  },
-  {
-    "id": "kirameku_kansya",
-    "name": "きらめくかんしゃ",
-    "type": "光",
-    "power": 140,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "最終奥義級の大技"
-  },
-  {
-    "id": "taiatari",
-    "name": "たいあたり",
-    "type": "ノーマル",
-    "power": 40,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "基本技"
-  },
-  {
-    "id": "doku_gas",
-    "name": "どくガス",
-    "type": "ガス",
-    "power": 65,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "看板技"
-  },
-  {
-    "id": "mochiageru",
-    "name": "もちあげる",
-    "type": "ガス",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "defense",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "ぼうぎょアップ"
-  },
-  {
-    "id": "hataku",
-    "name": "はたく",
-    "type": "ノーマル",
-    "power": 50,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "mochinageru",
-    "name": "もちなげる",
-    "type": "ガス",
-    "power": 80,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "モチゴリ進化と同時の主力技"
-  },
-  {
-    "id": "steam_burst",
-    "name": "スチームバースト",
-    "type": "ガス",
-    "power": 95,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "heavy_mochi_press",
-    "name": "ヘビーもちプレス",
-    "type": "ガス",
-    "power": 105,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "ゴリモッチ進化に合わせた強技"
-  },
-  {
-    "id": "fukuramu",
-    "name": "ふくらむ",
-    "type": "ガス",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "heal",
-      "healPercent": 50,
-      "target": "self"
-    },
-    "description": "HP大回復"
-  },
-  {
-    "id": "gas_storm",
-    "name": "ガスストーム",
-    "type": "ガス",
-    "power": 115,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "mochi_daibakuhatsu",
-    "name": "もちだいばくはつ",
-    "type": "ガス",
-    "power": 150,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "大技"
-  },
-  {
-    "id": "hasamu",
-    "name": "はさむ",
-    "type": "ノーマル",
-    "power": 45,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "基本技"
-  },
-  {
-    "id": "sand_blast",
-    "name": "サンドブラスト",
-    "type": "砂",
-    "power": 60,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "看板技"
-  },
-  {
-    "id": "suna_no_shield",
-    "name": "すなのシールド",
-    "type": "砂",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "defense",
-      "multiplier": 2.0,
-      "target": "self"
-    },
-    "description": "ぼうぎょ大アップ"
-  },
-  {
-    "id": "ana_wo_horu",
-    "name": "あなをほる",
-    "type": "砂",
-    "power": 70,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "1ターン潜って攻撃（今は即攻撃）"
-  },
-  {
-    "id": "rock_hasami",
-    "name": "ロックハサミ",
-    "type": "砂",
-    "power": 85,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "ロブスナー進化技"
-  },
-  {
-    "id": "sandstorm",
-    "name": "サンドストーム",
-    "type": "砂",
-    "power": 100,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "teppeki_guard",
-    "name": "てっぺきガード",
-    "type": "砂",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "defense",
-      "multiplier": 2.5,
-      "target": "self"
-    },
-    "description": "ぼうぎょ最大級アップ"
-  },
-  {
-    "id": "grand_crash",
-    "name": "グランドクラッシュ",
-    "type": "砂",
-    "power": 120,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "daisabaku",
-    "name": "だいさばく",
-    "type": "砂",
-    "power": 150,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "大技"
-  },
-  {
-    "id": "hikkaki",
-    "name": "ひっかき",
-    "type": "ノーマル",
-    "power": 40,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "基本技"
-  },
-  {
-    "id": "spark",
-    "name": "スパーク",
-    "type": "電",
-    "power": 60,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "看板技"
-  },
-  {
-    "id": "denkou_dash",
-    "name": "でんこうダッシュ",
-    "type": "電",
-    "power": 55,
-    "accuracy": 100,
-    "isSupport": false,
-    "priority": true,
-    "effect": null,
-    "description": "必ず先制"
-  },
-  {
-    "id": "kaminari",
-    "name": "かみなり",
-    "type": "電",
-    "power": 90,
-    "accuracy": 70,
-    "isSupport": false,
-    "effect": null,
-    "description": "命中やや低め"
-  },
-  {
-    "id": "inazuma_kick",
-    "name": "いなずまキック",
-    "type": "電",
-    "power": 85,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "イカリオン進化技"
-  },
-  {
-    "id": "plasma_ball",
-    "name": "プラズマボール",
-    "type": "電",
-    "power": 100,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "raimei_no_tategami",
-    "name": "らいめいのタテガミ",
-    "type": "電",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "speed",
-      "multiplier": 2.0,
-      "target": "self"
-    },
-    "description": "すばやさ大アップ"
-  },
-  {
-    "id": "thunder_storm",
-    "name": "サンダーストーム",
-    "type": "電",
-    "power": 120,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "giga_volt",
-    "name": "ギガボルト",
-    "type": "電",
-    "power": 150,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "大技"
-  },
-  {
-    "id": "shadow_claw",
-    "name": "シャドークロー",
-    "type": "影",
-    "power": 65,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "看板技"
-  },
-  {
-    "id": "ikaku_suru",
-    "name": "いかくする",
-    "type": "影",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "attack",
-      "multiplier": 0.67,
-      "target": "enemy"
-    },
-    "description": "相手のこうげきダウン"
-  },
-  {
-    "id": "hara_wo_miseru",
-    "name": "はらをみせる",
-    "type": "影",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "attack",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "次の一撃を強化"
-  },
-  {
-    "id": "shadow_dive",
-    "name": "シャドウダイブ",
-    "type": "影",
-    "power": 85,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "シャリス進化技"
-  },
-  {
-    "id": "renzoku_neko_punch",
-    "name": "れんぞくねこパンチ",
-    "type": "影",
-    "power": 25,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": {
-      "type": "multiHit",
-      "min": 2,
-      "max": 5
-    },
-    "description": "2〜5回連続ヒット"
-  },
-  {
-    "id": "void_slash",
-    "name": "ヴォイドスラッシュ",
-    "type": "影",
-    "power": 105,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "シャリアン進化に合わせた強技"
-  },
-  {
-    "id": "yami_no_tobari",
-    "name": "やみのとばり",
-    "type": "影",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "speed",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "回避アップ（すばやさで代用）"
-  },
-  {
-    "id": "dark_nebula",
-    "name": "ダークネビュラ",
-    "type": "影",
-    "power": 120,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": ""
-  },
-  {
-    "id": "genei_ranbu",
-    "name": "げんえいらんぶ",
-    "type": "影",
-    "power": 150,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "大技"
-  },
-  {
-    "id": "hinoko",
-    "name": "ひのこ",
-    "type": "炎",
-    "power": 45,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "看板技"
-  },
-  {
-    "id": "kaen_tosshin",
-    "name": "かえんとっしん",
-    "type": "炎",
-    "power": 60,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "炎をまとい突進する"
-  },
-  {
-    "id": "kaenbullet",
-    "name": "かえんだん",
-    "type": "炎",
-    "power": 85,
-    "accuracy": 95,
-    "isSupport": false,
-    "effect": null,
-    "description": "隕石のかけらを撃ち出す"
-  },
-  {
-    "id": "moeru_toushi",
-    "name": "もえるとうし",
-    "type": "炎",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "attack",
-      "multiplier": 2.0,
-      "target": "self"
-    },
-    "description": "こうげき大アップ"
-  },
-  {
-    "id": "meteor_punch",
-    "name": "メテオパンチ",
-    "type": "炎",
-    "power": 100,
-    "accuracy": 95,
-    "isSupport": false,
-    "effect": null,
-    "description": "隕石のこぶしを叩き込む"
-  },
-  {
-    "id": "kaen_housha",
-    "name": "かえんほうしゃ",
-    "type": "炎",
-    "power": 120,
-    "accuracy": 90,
-    "isSupport": false,
-    "effect": null,
-    "description": "高温の炎を吐きだす"
-  },
-  {
-    "id": "meteor_storm",
-    "name": "メテオストーム",
-    "type": "炎",
-    "power": 150,
-    "accuracy": 85,
-    "isSupport": false,
-    "effect": null,
-    "description": "隕石群を呼び落とす大技"
-  },
-  {
-    "id": "magma_kick",
-    "name": "マグマキック",
-    "type": "炎",
-    "power": 80,
-    "accuracy": 95,
-    "isSupport": false,
-    "effect": null,
-    "description": "溶岩の 足で 蹴りつける"
-  },
-  {
-    "id": "funka",
-    "name": "ふんか",
-    "type": "炎",
-    "power": 95,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "地面から 炎を ふきあげる"
-  },
-  {
-    "id": "bakuen",
-    "name": "ばくえん",
-    "type": "炎",
-    "power": 110,
-    "accuracy": 90,
-    "isSupport": false,
-    "effect": null,
-    "description": "爆発する 炎で 攻撃する"
-  },
-  {
-    "id": "iwa_yoroi",
-    "name": "いわよろい",
-    "type": "炎",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "defense",
-      "multiplier": 2.0,
-      "target": "self"
-    },
-    "description": "岩の よろいで ぼうぎょ大アップ"
-  },
-  {
-    "id": "metal_bumper",
-    "name": "メタルバンパー",
-    "type": "金属",
-    "power": 55,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "金属の からだで 体当たり"
-  },
-  {
-    "id": "rover_tackle",
-    "name": "ローバータックル",
-    "type": "金属",
-    "power": 80,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "タイヤを 回して 突進する 主力技"
-  },
-  {
-    "id": "heavy_armor_press",
-    "name": "じゅうそうこうプレス",
-    "type": "金属",
-    "power": 115,
-    "accuracy": 95,
-    "isSupport": false,
-    "effect": null,
-    "description": "重装甲の おもみで 押しつぶす"
-  },
-  {
-    "id": "ganjou_mode",
-    "name": "がんじょうモード",
-    "type": "金属",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "defense",
-      "multiplier": 1.6,
-      "target": "self"
-    },
-    "description": "装甲を かためて ぼうぎょアップ"
-  },
-  {
-    "id": "solar_charge",
-    "name": "ソーラーチャージ",
-    "type": "金属",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "heal",
-      "healPercent": 50,
-      "target": "self"
-    },
-    "description": "ソーラーパネルで HPを 回復"
-  },
-  {
-    "id": "tetsu_no_kiba",
-    "name": "てつのキバ",
-    "type": "金属",
-    "power": 70,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "鋼の キバで かみつく"
-  },
-  {
-    "id": "accel_drive",
-    "name": "かそくドライブ",
-    "type": "金属",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "speed",
-      "multiplier": 1.6,
-      "target": "self"
-    },
-    "description": "タイヤを 加速して すばやさアップ"
-  },
-  {
-    "id": "sonar_scan",
-    "name": "ソナースキャン",
-    "type": "金属",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "allStatsUp",
-      "multiplier": 1.2,
-      "target": "self"
-    },
-    "description": "周囲を 走査して 全能力アップ"
-  },
-  {
-    "id": "koori_no_tsubute",
-    "name": "こおりのつぶて",
-    "type": "氷",
-    "power": 45,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "小さな 氷の かけらを ぶつける"
-  },
-  {
-    "id": "koori_no_veil",
-    "name": "こおりのベール",
-    "type": "氷",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "statChange",
-      "stat": "defense",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "氷の ベールで ぼうぎょアップ"
-  },
-  {
-    "id": "icicle_lance",
-    "name": "アイシクルランス",
-    "type": "氷",
-    "power": 75,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "氷の 槍で つらぬく 主力技"
-  },
-  {
-    "id": "fubuki",
-    "name": "ふぶき",
-    "type": "氷",
-    "power": 110,
-    "accuracy": 85,
-    "isSupport": false,
-    "effect": null,
-    "description": "はげしい 雪あらしで こうげきする"
-  },
-  {
-    "id": "eikyuukage_no_iki",
-    "name": "えいきゅうかげのいき",
-    "type": "氷",
-    "power": 95,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "永久影の 冷気を あびせる"
-  },
-  {
-    "id": "zettai_reido",
-    "name": "ぜったいれいど",
-    "type": "氷",
-    "power": 140,
-    "accuracy": 75,
-    "isSupport": false,
-    "effect": null,
-    "description": "きゅうきょくの 冷気で すべてを こおらせる"
-  },
-  {
-    "id": "hikari_no_tsubu",
-    "name": "ひかりのつぶ",
-    "type": "光",
-    "power": 45,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "小さな ひかりの たまを とばす 基本技"
-  },
-  {
-    "id": "lantern_flash",
-    "name": "ランタンフラッシュ",
-    "type": "光",
-    "power": 75,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "ランタンの ひかりを いっしゅんで はなつ"
-  },
-  {
-    "id": "tsukiakari",
-    "name": "つきあかり",
-    "type": "光",
-    "power": 0,
-    "accuracy": 100,
-    "isSupport": true,
-    "effect": {
-      "type": "healAndBuff",
-      "healPercent": 30,
-      "stat": "defense",
-      "multiplier": 1.5,
-      "target": "self"
-    },
-    "description": "やさしい つきあかりで きずを いやし まもりを かためる"
-  },
-  {
-    "id": "print_attack",
-    "name": "プリントアタック",
-    "type": "金属",
-    "power": 65,
-    "accuracy": 100,
-    "isSupport": false,
-    "effect": null,
-    "description": "レゴリスから ブロックを 印刷して なげつける"
-  }
+ {
+  "id": "tataku",
+  "name": "たたく",
+  "type": "ノーマル",
+  "power": 40,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "基本技",
+  "pp": 20
+ },
+ {
+  "id": "kansya_no_mai",
+  "name": "かんしゃのまい",
+  "type": "光",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "attack",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "自分のこうげきアップ",
+  "pp": 20
+ },
+ {
+  "id": "senjin_no_chie",
+  "name": "せんじんのちえ",
+  "type": "光",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "allStatsUp",
+   "multiplier": 1.2,
+   "target": "self"
+  },
+  "description": "全ステータス少しアップ",
+  "pp": 20
+ },
+ {
+  "id": "ryuseigun",
+  "name": "りゅうせいぐん",
+  "type": "光",
+  "power": 90,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "主力技",
+  "pp": 10
+ },
+ {
+  "id": "shooting_star",
+  "name": "シューティングスター",
+  "type": "光",
+  "power": 100,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "強力な看板技",
+  "pp": 10
+ },
+ {
+  "id": "kansya_no_tasuki",
+  "name": "かんしゃのたすき",
+  "type": "光",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "healAndBuff",
+   "healPercent": 30,
+   "stat": "defense",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "HP回復+ぼうぎょアップ",
+  "pp": 20
+ },
+ {
+  "id": "luna_break",
+  "name": "ルナブレイク",
+  "type": "光",
+  "power": 110,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "高威力",
+  "pp": 5
+ },
+ {
+  "id": "kibou_no_hikari",
+  "name": "きぼうのひかり",
+  "type": "光",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "heal",
+   "healPercent": 50,
+   "target": "self"
+  },
+  "description": "手持ち全体を回復（今は自分のみ）",
+  "pp": 20
+ },
+ {
+  "id": "kirameku_kansya",
+  "name": "きらめくかんしゃ",
+  "type": "光",
+  "power": 140,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "最終奥義級の大技",
+  "pp": 5
+ },
+ {
+  "id": "taiatari",
+  "name": "たいあたり",
+  "type": "ノーマル",
+  "power": 40,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "基本技",
+  "pp": 20
+ },
+ {
+  "id": "doku_gas",
+  "name": "どくガス",
+  "type": "ガス",
+  "power": 65,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "看板技",
+  "pp": 15
+ },
+ {
+  "id": "mochiageru",
+  "name": "もちあげる",
+  "type": "ガス",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "defense",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "ぼうぎょアップ",
+  "pp": 20
+ },
+ {
+  "id": "hataku",
+  "name": "はたく",
+  "type": "ノーマル",
+  "power": 50,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 20
+ },
+ {
+  "id": "mochinageru",
+  "name": "もちなげる",
+  "type": "ガス",
+  "power": 80,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "モチゴリ進化と同時の主力技",
+  "pp": 15
+ },
+ {
+  "id": "steam_burst",
+  "name": "スチームバースト",
+  "type": "ガス",
+  "power": 95,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 10
+ },
+ {
+  "id": "heavy_mochi_press",
+  "name": "ヘビーもちプレス",
+  "type": "ガス",
+  "power": 105,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "ゴリモッチ進化に合わせた強技",
+  "pp": 10
+ },
+ {
+  "id": "fukuramu",
+  "name": "ふくらむ",
+  "type": "ガス",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "heal",
+   "healPercent": 50,
+   "target": "self"
+  },
+  "description": "HP大回復",
+  "pp": 20
+ },
+ {
+  "id": "gas_storm",
+  "name": "ガスストーム",
+  "type": "ガス",
+  "power": 115,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 5
+ },
+ {
+  "id": "mochi_daibakuhatsu",
+  "name": "もちだいばくはつ",
+  "type": "ガス",
+  "power": 150,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "大技",
+  "pp": 5
+ },
+ {
+  "id": "hasamu",
+  "name": "はさむ",
+  "type": "ノーマル",
+  "power": 45,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "基本技",
+  "pp": 20
+ },
+ {
+  "id": "sand_blast",
+  "name": "サンドブラスト",
+  "type": "砂",
+  "power": 60,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "看板技",
+  "pp": 15
+ },
+ {
+  "id": "suna_no_shield",
+  "name": "すなのシールド",
+  "type": "砂",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "defense",
+   "multiplier": 2.0,
+   "target": "self"
+  },
+  "description": "ぼうぎょ大アップ",
+  "pp": 20
+ },
+ {
+  "id": "ana_wo_horu",
+  "name": "あなをほる",
+  "type": "砂",
+  "power": 70,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "1ターン潜って攻撃（今は即攻撃）",
+  "pp": 15
+ },
+ {
+  "id": "rock_hasami",
+  "name": "ロックハサミ",
+  "type": "砂",
+  "power": 85,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "ロブスナー進化技",
+  "pp": 10
+ },
+ {
+  "id": "sandstorm",
+  "name": "サンドストーム",
+  "type": "砂",
+  "power": 100,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 10
+ },
+ {
+  "id": "teppeki_guard",
+  "name": "てっぺきガード",
+  "type": "砂",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "defense",
+   "multiplier": 2.5,
+   "target": "self"
+  },
+  "description": "ぼうぎょ最大級アップ",
+  "pp": 20
+ },
+ {
+  "id": "grand_crash",
+  "name": "グランドクラッシュ",
+  "type": "砂",
+  "power": 120,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 5
+ },
+ {
+  "id": "daisabaku",
+  "name": "だいさばく",
+  "type": "砂",
+  "power": 150,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "大技",
+  "pp": 5
+ },
+ {
+  "id": "hikkaki",
+  "name": "ひっかき",
+  "type": "ノーマル",
+  "power": 40,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "基本技",
+  "pp": 20
+ },
+ {
+  "id": "spark",
+  "name": "スパーク",
+  "type": "電",
+  "power": 60,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "看板技",
+  "pp": 15
+ },
+ {
+  "id": "denkou_dash",
+  "name": "でんこうダッシュ",
+  "type": "電",
+  "power": 55,
+  "accuracy": 100,
+  "isSupport": false,
+  "priority": true,
+  "effect": null,
+  "description": "必ず先制",
+  "pp": 20
+ },
+ {
+  "id": "kaminari",
+  "name": "かみなり",
+  "type": "電",
+  "power": 90,
+  "accuracy": 70,
+  "isSupport": false,
+  "effect": null,
+  "description": "命中やや低め",
+  "pp": 10
+ },
+ {
+  "id": "inazuma_kick",
+  "name": "いなずまキック",
+  "type": "電",
+  "power": 85,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "イカリオン進化技",
+  "pp": 10
+ },
+ {
+  "id": "plasma_ball",
+  "name": "プラズマボール",
+  "type": "電",
+  "power": 100,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 10
+ },
+ {
+  "id": "raimei_no_tategami",
+  "name": "らいめいのタテガミ",
+  "type": "電",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "speed",
+   "multiplier": 2.0,
+   "target": "self"
+  },
+  "description": "すばやさ大アップ",
+  "pp": 20
+ },
+ {
+  "id": "thunder_storm",
+  "name": "サンダーストーム",
+  "type": "電",
+  "power": 120,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 5
+ },
+ {
+  "id": "giga_volt",
+  "name": "ギガボルト",
+  "type": "電",
+  "power": 150,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "大技",
+  "pp": 5
+ },
+ {
+  "id": "shadow_claw",
+  "name": "シャドークロー",
+  "type": "影",
+  "power": 65,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "看板技",
+  "pp": 15
+ },
+ {
+  "id": "ikaku_suru",
+  "name": "いかくする",
+  "type": "影",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "attack",
+   "multiplier": 0.67,
+   "target": "enemy"
+  },
+  "description": "相手のこうげきダウン",
+  "pp": 20
+ },
+ {
+  "id": "hara_wo_miseru",
+  "name": "はらをみせる",
+  "type": "影",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "attack",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "次の一撃を強化",
+  "pp": 20
+ },
+ {
+  "id": "shadow_dive",
+  "name": "シャドウダイブ",
+  "type": "影",
+  "power": 85,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "シャリス進化技",
+  "pp": 10
+ },
+ {
+  "id": "renzoku_neko_punch",
+  "name": "れんぞくねこパンチ",
+  "type": "影",
+  "power": 25,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": {
+   "type": "multiHit",
+   "min": 2,
+   "max": 5
+  },
+  "description": "2〜5回連続ヒット",
+  "pp": 25
+ },
+ {
+  "id": "void_slash",
+  "name": "ヴォイドスラッシュ",
+  "type": "影",
+  "power": 105,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "シャリアン進化に合わせた強技",
+  "pp": 10
+ },
+ {
+  "id": "yami_no_tobari",
+  "name": "やみのとばり",
+  "type": "影",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "speed",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "回避アップ（すばやさで代用）",
+  "pp": 20
+ },
+ {
+  "id": "dark_nebula",
+  "name": "ダークネビュラ",
+  "type": "影",
+  "power": 120,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "",
+  "pp": 5
+ },
+ {
+  "id": "genei_ranbu",
+  "name": "げんえいらんぶ",
+  "type": "影",
+  "power": 150,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "大技",
+  "pp": 5
+ },
+ {
+  "id": "hinoko",
+  "name": "ひのこ",
+  "type": "炎",
+  "power": 45,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "看板技",
+  "pp": 20
+ },
+ {
+  "id": "kaen_tosshin",
+  "name": "かえんとっしん",
+  "type": "炎",
+  "power": 60,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "炎をまとい突進する",
+  "pp": 15
+ },
+ {
+  "id": "kaenbullet",
+  "name": "かえんだん",
+  "type": "炎",
+  "power": 85,
+  "accuracy": 95,
+  "isSupport": false,
+  "effect": null,
+  "description": "隕石のかけらを撃ち出す",
+  "pp": 10
+ },
+ {
+  "id": "moeru_toushi",
+  "name": "もえるとうし",
+  "type": "炎",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "attack",
+   "multiplier": 2.0,
+   "target": "self"
+  },
+  "description": "こうげき大アップ",
+  "pp": 20
+ },
+ {
+  "id": "meteor_punch",
+  "name": "メテオパンチ",
+  "type": "炎",
+  "power": 100,
+  "accuracy": 95,
+  "isSupport": false,
+  "effect": null,
+  "description": "隕石のこぶしを叩き込む",
+  "pp": 10
+ },
+ {
+  "id": "kaen_housha",
+  "name": "かえんほうしゃ",
+  "type": "炎",
+  "power": 120,
+  "accuracy": 90,
+  "isSupport": false,
+  "effect": null,
+  "description": "高温の炎を吐きだす",
+  "pp": 5
+ },
+ {
+  "id": "meteor_storm",
+  "name": "メテオストーム",
+  "type": "炎",
+  "power": 150,
+  "accuracy": 85,
+  "isSupport": false,
+  "effect": null,
+  "description": "隕石群を呼び落とす大技",
+  "pp": 5
+ },
+ {
+  "id": "magma_kick",
+  "name": "マグマキック",
+  "type": "炎",
+  "power": 80,
+  "accuracy": 95,
+  "isSupport": false,
+  "effect": null,
+  "description": "溶岩の 足で 蹴りつける",
+  "pp": 15
+ },
+ {
+  "id": "funka",
+  "name": "ふんか",
+  "type": "炎",
+  "power": 95,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "地面から 炎を ふきあげる",
+  "pp": 10
+ },
+ {
+  "id": "bakuen",
+  "name": "ばくえん",
+  "type": "炎",
+  "power": 110,
+  "accuracy": 90,
+  "isSupport": false,
+  "effect": null,
+  "description": "爆発する 炎で 攻撃する",
+  "pp": 5
+ },
+ {
+  "id": "iwa_yoroi",
+  "name": "いわよろい",
+  "type": "炎",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "defense",
+   "multiplier": 2.0,
+   "target": "self"
+  },
+  "description": "岩の よろいで ぼうぎょ大アップ",
+  "pp": 20
+ },
+ {
+  "id": "metal_bumper",
+  "name": "メタルバンパー",
+  "type": "金属",
+  "power": 55,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "金属の からだで 体当たり",
+  "pp": 20
+ },
+ {
+  "id": "rover_tackle",
+  "name": "ローバータックル",
+  "type": "金属",
+  "power": 80,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "タイヤを 回して 突進する 主力技",
+  "pp": 15
+ },
+ {
+  "id": "heavy_armor_press",
+  "name": "じゅうそうこうプレス",
+  "type": "金属",
+  "power": 115,
+  "accuracy": 95,
+  "isSupport": false,
+  "effect": null,
+  "description": "重装甲の おもみで 押しつぶす",
+  "pp": 5
+ },
+ {
+  "id": "ganjou_mode",
+  "name": "がんじょうモード",
+  "type": "金属",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "defense",
+   "multiplier": 1.6,
+   "target": "self"
+  },
+  "description": "装甲を かためて ぼうぎょアップ",
+  "pp": 20
+ },
+ {
+  "id": "solar_charge",
+  "name": "ソーラーチャージ",
+  "type": "金属",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "heal",
+   "healPercent": 50,
+   "target": "self"
+  },
+  "description": "ソーラーパネルで HPを 回復",
+  "pp": 20
+ },
+ {
+  "id": "tetsu_no_kiba",
+  "name": "てつのキバ",
+  "type": "金属",
+  "power": 70,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "鋼の キバで かみつく",
+  "pp": 15
+ },
+ {
+  "id": "accel_drive",
+  "name": "かそくドライブ",
+  "type": "金属",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "speed",
+   "multiplier": 1.6,
+   "target": "self"
+  },
+  "description": "タイヤを 加速して すばやさアップ",
+  "pp": 20
+ },
+ {
+  "id": "sonar_scan",
+  "name": "ソナースキャン",
+  "type": "金属",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "allStatsUp",
+   "multiplier": 1.2,
+   "target": "self"
+  },
+  "description": "周囲を 走査して 全能力アップ",
+  "pp": 20
+ },
+ {
+  "id": "koori_no_tsubute",
+  "name": "こおりのつぶて",
+  "type": "氷",
+  "power": 45,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "小さな 氷の かけらを ぶつける",
+  "pp": 20
+ },
+ {
+  "id": "koori_no_veil",
+  "name": "こおりのベール",
+  "type": "氷",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "statChange",
+   "stat": "defense",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "氷の ベールで ぼうぎょアップ",
+  "pp": 20
+ },
+ {
+  "id": "icicle_lance",
+  "name": "アイシクルランス",
+  "type": "氷",
+  "power": 75,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "氷の 槍で つらぬく 主力技",
+  "pp": 15
+ },
+ {
+  "id": "fubuki",
+  "name": "ふぶき",
+  "type": "氷",
+  "power": 110,
+  "accuracy": 85,
+  "isSupport": false,
+  "effect": null,
+  "description": "はげしい 雪あらしで こうげきする",
+  "pp": 5
+ },
+ {
+  "id": "eikyuukage_no_iki",
+  "name": "えいきゅうかげのいき",
+  "type": "氷",
+  "power": 95,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "永久影の 冷気を あびせる",
+  "pp": 10
+ },
+ {
+  "id": "zettai_reido",
+  "name": "ぜったいれいど",
+  "type": "氷",
+  "power": 140,
+  "accuracy": 75,
+  "isSupport": false,
+  "effect": null,
+  "description": "きゅうきょくの 冷気で すべてを こおらせる",
+  "pp": 5
+ },
+ {
+  "id": "hikari_no_tsubu",
+  "name": "ひかりのつぶ",
+  "type": "光",
+  "power": 45,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "小さな ひかりの たまを とばす 基本技",
+  "pp": 20
+ },
+ {
+  "id": "lantern_flash",
+  "name": "ランタンフラッシュ",
+  "type": "光",
+  "power": 75,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "ランタンの ひかりを いっしゅんで はなつ",
+  "pp": 15
+ },
+ {
+  "id": "tsukiakari",
+  "name": "つきあかり",
+  "type": "光",
+  "power": 0,
+  "accuracy": 100,
+  "isSupport": true,
+  "effect": {
+   "type": "healAndBuff",
+   "healPercent": 30,
+   "stat": "defense",
+   "multiplier": 1.5,
+   "target": "self"
+  },
+  "description": "やさしい つきあかりで きずを いやし まもりを かためる",
+  "pp": 20
+ },
+ {
+  "id": "print_attack",
+  "name": "プリントアタック",
+  "type": "金属",
+  "power": 65,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "レゴリスから ブロックを 印刷して なげつける",
+  "pp": 15
+ }
 ]

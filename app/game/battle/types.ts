@@ -5,6 +5,8 @@ export interface BattleMove {
   isSupport: boolean;
   priority?: boolean; // 先制技
   accuracy?: number; // 命中率 (default 100)
+  pp?: number;    // 現在PP
+  maxPp?: number; // 最大PP
   effect?: {
     type?: string; // "statChange" | "allStatsUp" | "heal" | "healAndBuff" | "multiHit"
     stat?: "attack" | "defense" | "speed";

@@ -41,6 +41,7 @@ export interface MoveData {
   priority?: boolean;
   effect: MoveEffect | null;
   description: string;
+  pp: number; // 最大PP（使用可能回数）
 }
 
 // ---- Runtime instance (a monster in the player's party) ----
@@ -53,6 +54,7 @@ export interface MonsterInstance {
   maxHp: number;
   stats: Stats;
   moves: string[]; // moveId array, max 4
+  pp?: number[];   // 各わざの現在PP（moves と同じ並び。無ければ最大PPで補完）
   nature?: string;            // せいかく（フレーバー）
   gender?: "male" | "female"; // せいべつ
 }

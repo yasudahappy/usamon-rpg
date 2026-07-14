@@ -8,6 +8,7 @@ const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
 import { ensureNatureGender, genderLabel, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
+import { moveMaxPP, ensureInstancePP, restorePP } from "../data/movePP";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -1520,6 +1521,7 @@ export class MapScene extends Phaser.Scene {
     const all = this.cache.json.get("monsters") as MonsterData[];
     refreshInstanceStats(inst, all);   // せいかく補正込みの能力値にそろえる（冪等）
     const allMoves = (this.cache.json.get("moves") || []) as MoveData[];
+    ensureInstancePP(inst, allMoves);
     const data = all.find(m => m.id === inst.dataId);
     const dexNo = Math.max(0, all.findIndex(m => m.id === inst.dataId)) + 1;
 
@@ -1679,8 +1681,12 @@ export class MapScene extends Phaser.Scene {
           fontSize: `${this.uiS(15)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202));
         const pw = mv ? (mv.isSupport ? "ほじょ" : `いりょく ${mv.power}`) : "";
-        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 6), pw, {
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 4), pw, {
           fontSize: `${this.uiS(12)}px`, color: "#ffd98a", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+        const curPP = inst.pp ? inst.pp[i] : moveMaxPP(mvId, allMoves);
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 22), `PP ${curPP}/${moveMaxPP(mvId, allMoves)}`, {
+          fontSize: `${this.uiS(11)}px`, color: "#bcd0e6", fontFamily: F, stroke: "#000000", strokeThickness: 2,
         }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
         this.menuElements.push(this.add.text(this.uiX(lx + 58), this.uiY(y + 22), mv?.description ?? "", {
           fontSize: `${this.uiS(11)}px`, color: "#c6d6ea", fontFamily: F, stroke: "#000000", strokeThickness: 2,
@@ -4461,13 +4467,15 @@ export class MapScene extends Phaser.Scene {
   private healParty(): void {
     if (!this.playerState) return;
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
+    const allMoves = (this.cache.json.get("moves") || []) as MoveData[];
     for (const mon of this.playerState.party) {
       const data = allMonsters.find(m => m.id === mon.dataId);
       if (data) {
-        const stats = calculateStats(data, mon.level);
+        const stats = applyNature(calculateStats(data, mon.level), mon.nature);
         mon.currentHp = stats.hp;
         mon.maxHp = stats.hp;
       }
+      restorePP(mon, allMoves);   // PPも全回復
     }
   }
 
@@ -6861,6 +6869,7 @@ export class MapScene extends Phaser.Scene {
   private createDefaultPlayerState(): PlayerState {
     const allMonsters = this.cache.json.get("monsters") as MonsterData[];
     const usamon = allMonsters.find(m => m.id === "usamon")!;
+    const allMoves = (this.cache.json.get("moves") || []) as MoveData[];
     const ng = rollNatureGender();
     const stats = applyNature(calculateStats(usamon, 5), ng.nature);
     const moves = usamon.learnset
@@ -6875,6 +6884,7 @@ export class MapScene extends Phaser.Scene {
       maxHp: stats.hp,
       stats,
       moves,
+      pp: moves.map(id => moveMaxPP(id, allMoves)),
       ...ng,
     };
     return {
