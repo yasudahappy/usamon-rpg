@@ -1,4 +1,5 @@
 import { MonsterData, MoveData, MonsterInstance, Stats } from "./types";
+import { rollNatureGender } from "./natureGender";
 
 /**
  * Calculate stats for a given monster at a given level.
@@ -88,6 +89,7 @@ export function createMonsterInstance(
     maxHp: stats.hp,
     stats,
     moves,
+    ...rollNatureGender(),
   };
 }
 

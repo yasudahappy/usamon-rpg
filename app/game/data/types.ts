@@ -53,6 +53,8 @@ export interface MonsterInstance {
   maxHp: number;
   stats: Stats;
   moves: string[]; // moveId array, max 4
+  nature?: string;            // せいかく（フレーバー）
+  gender?: "male" | "female"; // せいべつ
 }
 
 // ---- Player state ----

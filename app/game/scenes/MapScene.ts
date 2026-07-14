@@ -7,6 +7,7 @@ import { calculateStats, getExpForLevel } from "../data/levelSystem";
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
+import { ensureNatureGender, genderLabel, rollNatureGender } from "../data/natureGender";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -1515,6 +1516,7 @@ export class MapScene extends Phaser.Scene {
     if (party.length === 0) { this.menuSubScreen = "party"; this.drawPartyScreen(); return; }
     if (this.partySelIndex >= party.length) this.partySelIndex = party.length - 1;
     const inst = party[this.partySelIndex];
+    ensureNatureGender(inst);
     const all = this.cache.json.get("monsters") as MonsterData[];
     const allMoves = (this.cache.json.get("moves") || []) as MoveData[];
     const data = all.find(m => m.id === inst.dataId);
@@ -1561,7 +1563,7 @@ export class MapScene extends Phaser.Scene {
       // じょうほう：タイプ・やくわり・ずかんせつめい・しんか・つかまえた
       const { seen, caught } = this.dexSets();
       const lx = W * 0.10, rx = W * 0.90;
-      let y = 196;
+      let y = 190;
       const kv = (label: string, val: string, valColor = "#ffffff") => {
         this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y), label, {
           fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
@@ -1569,9 +1571,11 @@ export class MapScene extends Phaser.Scene {
         this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val, {
           fontSize: `${this.uiS(14)}px`, color: valColor, fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
-        y += 28;
+        y += 25;
       };
       kv("タイプ", data?.type ?? "？");
+      kv("せいべつ", genderLabel(inst.gender), inst.gender === "female" ? "#ff9fc4" : "#8fc0ff");
+      kv("せいかく", inst.nature ?? "―", "#ffe08a");
       kv("やくわり", data?.role ?? "？");
       kv("ずかんばんごう", `No.${String(dexNo).padStart(3, "0")}`);
       kv("つかまえた", caught.has(inst.dataId) ? "○" : "―", caught.has(inst.dataId) ? "#8fe08f" : "#c0c8d0");
@@ -1585,7 +1589,7 @@ export class MapScene extends Phaser.Scene {
       kv("しんか", evoText, "#9fe6c0");
       // ずかんせつめい（説明ボックス）
       y += 6;
-      const boxH = 96;
+      const boxH = 84;
       const box = this.add.graphics().setScrollFactor(0).setDepth(201);
       box.fillStyle(0x061020, 0.95); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(boxH), this.uiS(8));
       box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(boxH), this.uiS(8));
@@ -6864,6 +6868,7 @@ export class MapScene extends Phaser.Scene {
       maxHp: stats.hp,
       stats,
       moves,
+      ...rollNatureGender(),
     };
     return {
       party: [instance],
