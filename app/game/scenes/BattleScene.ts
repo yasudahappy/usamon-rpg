@@ -665,8 +665,18 @@ export class BattleScene extends Phaser.Scene {
       plat.lineStyle(2, 0xe6d9a2, 0.55);
       plat.strokeEllipse(cx, cy, rx, ry);
     };
-    drawPlat(this.EPLAT_X, this.EPLAT_Y, 182, 46);
-    drawPlat(this.PPLAT_X, this.PPLAT_Y, 211, 55);
+    if (this.isDouble) {
+      // ダブルバトルは1体につき1つの足場を描く（makeSlotD の配置に合わせる）。
+      for (let i = 0; i < 2; i++) {
+        drawPlat(this.EPLAT_X - 74 + i * 112, this.EPLAT_Y + i * 6, 104, 34);
+      }
+      for (let i = 0; i < 2; i++) {
+        drawPlat(this.PPLAT_X - 72 + i * 150, this.PPLAT_Y + i * 7, 120, 42);
+      }
+    } else {
+      drawPlat(this.EPLAT_X, this.EPLAT_Y, 182, 46);
+      drawPlat(this.PPLAT_X, this.PPLAT_Y, 211, 55);
+    }
   }
 
   // ---- RSE battle layout anchors (640-wide design, Y ×sy) ----
