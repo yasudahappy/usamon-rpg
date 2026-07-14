@@ -101,6 +101,12 @@ export class BattleScene extends Phaser.Scene {
   private msgBg!: Phaser.GameObjects.Graphics;
   private commandSlots: CommandSlot[] = [];
   private moveSlots: CommandSlot[] = [];
+  private moveBadges: Phaser.GameObjects.GameObject[] = [];
+  private static TYPE_COLOR: Record<string, string> = {
+    "光": "#ffe066", "影": "#9b7bd0", "炎": "#ff7a4d", "氷": "#7fdfff",
+    "ガス": "#a6d96a", "砂": "#e0c088", "電": "#ffd23f", "金属": "#b8c0cc",
+    "ノーマル": "#d7d7d7",
+  };
   private selectedCommand = 0;
   private selectedMove = 0;
 
@@ -194,6 +200,7 @@ export class BattleScene extends Phaser.Scene {
     this.selectedMove = 0;
     this.commandSlots = [];
     this.moveSlots = [];
+    this.moveBadges = [];
     this.evolutionCancelled = false;
     this.pendingEvolution = null;
     this.pendingEvolutions = [];
@@ -1073,6 +1080,8 @@ export class BattleScene extends Phaser.Scene {
       slot.zone.destroy();
     });
     this.moveSlots = [];
+    this.moveBadges.forEach((o) => o.destroy());
+    this.moveBadges = [];
 
     const moves = this.playerMon.moves;
     const positions = [
@@ -1090,7 +1099,7 @@ export class BattleScene extends Phaser.Scene {
 
       const bg = this.add.graphics().setDepth(20);
       const text = this.add
-        .text(px, py, label, {
+        .text(px, py - (move ? 8 : 0), label, {
           fontSize: "24px",
           color: move ? "#ffffff" : "#555555",
           fontFamily: "'DotGothic16', monospace",
@@ -1098,6 +1107,15 @@ export class BattleScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(21);
+      // わざのタイプを名前の下に色つきで表示
+      if (move) {
+        const tcol = BattleScene.TYPE_COLOR[move.type] ?? "#d7d7d7";
+        const badge = this.add.text(px, py + 15, move.type, {
+          fontSize: "14px", color: tcol, fontFamily: "'DotGothic16', monospace",
+          fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(21);
+        this.moveBadges.push(badge);
+      }
 
       const zone = this.add
         .zone(px, py, 280, 50)
@@ -1129,6 +1147,8 @@ export class BattleScene extends Phaser.Scene {
       slot.zone.destroy();
     });
     this.moveSlots = [];
+    this.moveBadges.forEach((o) => o.destroy());
+    this.moveBadges = [];
   }
 
   private highlightMoves(index: number): void {
