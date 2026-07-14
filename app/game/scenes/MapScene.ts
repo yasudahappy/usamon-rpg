@@ -197,7 +197,7 @@ export class MapScene extends Phaser.Scene {
   private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" = "none";
   // てもちのアクションメニュー／アルモン詳細ビュー
   private partyActionSel = 0;
-  private monDetailPage = 0;   // 0=のうりょく, 1=わざ
+  private monDetailPage = 0;   // 0=じょうほう, 1=のうりょく, 2=わざ
   private menuSelectedIndex = 0;
   private menuElements: Phaser.GameObjects.GameObject[] = [];
   private menuGpPrevDpad: string | null = null;
@@ -1528,13 +1528,14 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(this.add.text(this.uiX(20), this.uiY(20), `No.${String(dexNo).padStart(3, "0")}`, {
       fontSize: `${this.uiS(13)}px`, color: "#8fb4dc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201));
-    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(20), this.monDetailPage === 0 ? "のうりょく" : "わざ", {
+    const pageTitles = ["じょうほう", "のうりょく", "わざ"];
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(20), pageTitles[this.monDetailPage], {
       fontSize: `${this.uiS(18)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
-    for (let p = 0; p < 2; p++) {
+    for (let p = 0; p < 3; p++) {
       const dot = this.add.graphics().setScrollFactor(0).setDepth(201);
       dot.fillStyle(p === this.monDetailPage ? 0x8fd0ff : 0x33465e, 1);
-      dot.fillCircle(this.uiX(W / 2 - 14 + p * 28), this.uiY(46), this.uiS(5));
+      dot.fillCircle(this.uiX(W / 2 - 28 + p * 28), this.uiY(46), this.uiS(5));
       this.menuElements.push(dot);
     }
 
@@ -1557,7 +1558,44 @@ export class MapScene extends Phaser.Scene {
     if (data) this.drawTypeBadge(nameX + 30, 150, data.type);
 
     if (this.monDetailPage === 0) {
-      // のうりょく：HP / こうげき / ぼうぎょ / すばやさ ＋ けいけんち
+      // じょうほう：タイプ・やくわり・ずかんせつめい・しんか・つかまえた
+      const { seen, caught } = this.dexSets();
+      const lx = W * 0.10, rx = W * 0.90;
+      let y = 196;
+      const kv = (label: string, val: string, valColor = "#ffffff") => {
+        this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y), label, {
+          fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202));
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val, {
+          fontSize: `${this.uiS(14)}px`, color: valColor, fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+        y += 28;
+      };
+      kv("タイプ", data?.type ?? "？");
+      kv("やくわり", data?.role ?? "？");
+      kv("ずかんばんごう", `No.${String(dexNo).padStart(3, "0")}`);
+      kv("つかまえた", caught.has(inst.dataId) ? "○" : "―", caught.has(inst.dataId) ? "#8fe08f" : "#c0c8d0");
+      // しんか
+      let evoText = "これいじょう しんかしない";
+      if (data?.evolution) {
+        const to = all.find(x => x.id === data.evolution!.to);
+        const toName = to && seen.has(to.id) ? to.name : "？？？";
+        evoText = `Lv${data.evolution.level}で ${toName}に しんか`;
+      }
+      kv("しんか", evoText, "#9fe6c0");
+      // ずかんせつめい（説明ボックス）
+      y += 6;
+      const boxH = 96;
+      const box = this.add.graphics().setScrollFactor(0).setDepth(201);
+      box.fillStyle(0x061020, 0.95); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(boxH), this.uiS(8));
+      box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(boxH), this.uiS(8));
+      this.menuElements.push(box);
+      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y + 12), data?.description ?? "", {
+        fontSize: `${this.uiS(13)}px`, color: "#e0ecff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        wordWrap: { width: this.uiS((rx - lx)) }, lineSpacing: 5,
+      }).setScrollFactor(0).setDepth(202));
+    } else if (this.monDetailPage === 1) {
+      // のうりょく：HP / こうげき / ぼうぎょ / すばやさ ＋ けいけんち＋ゲージ
       const st = inst.stats;
       const rows: [string, string][] = [
         ["HP", `${inst.currentHp} / ${inst.maxHp}`],
@@ -1579,10 +1617,11 @@ export class MapScene extends Phaser.Scene {
           fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
       });
-      // けいけんち
+      // けいけんち＋つぎのレベルまでゲージ
       const expCur = getExpForLevel(inst.level);
       const expNext = getExpForLevel(inst.level + 1);
       const toNext = Math.max(0, expNext - inst.exp);
+      const ratio = Phaser.Math.Clamp((inst.exp - expCur) / Math.max(1, expNext - expCur), 0, 1);
       const eY = boxY + rows.length * rowH + 22;
       this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(eY), "けいけんち", {
         fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
@@ -1596,6 +1635,13 @@ export class MapScene extends Phaser.Scene {
       this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(eY + 24), `${toNext}`, {
         fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
       }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+      // EXPゲージ
+      const gY = eY + 46, gH = 10, gw = (rx - lx);
+      const g = this.add.graphics().setScrollFactor(0).setDepth(202);
+      g.fillStyle(0x14263c, 1); g.fillRoundedRect(this.uiX(lx), this.uiY(gY), this.uiS(gw), this.uiS(gH), this.uiS(gH / 2));
+      const fillW = Math.max(0, Math.floor(gw * ratio));
+      if (fillW > 3) { g.fillStyle(0x58a8e8, 1); g.fillRoundedRect(this.uiX(lx), this.uiY(gY), this.uiS(fillW), this.uiS(gH), this.uiS(gH / 2)); }
+      this.menuElements.push(g);
     } else {
       // わざ：おぼえているわざ（タイプ＋名前＋いりょく＋せつめい）
       this.menuElements.push(this.add.text(this.uiX(W * 0.10), this.uiY(196), "おぼえている わざ", {
@@ -1653,7 +1699,7 @@ export class MapScene extends Phaser.Scene {
     if (b || menu) { this.menuSubScreen = "party"; this.drawPartyScreen(); return; }
     if ((justUp || kbUp) && n > 0) { this.partySelIndex = (this.partySelIndex - 1 + n) % n; this.drawMonDetail(); return; }
     if ((justDown || kbDown) && n > 0) { this.partySelIndex = (this.partySelIndex + 1) % n; this.drawMonDetail(); return; }
-    if (a || kbEnter) { this.monDetailPage = (this.monDetailPage + 1) % 2; this.drawMonDetail(); return; }
+    if (a || kbEnter) { this.monDetailPage = (this.monDetailPage + 1) % 3; this.drawMonDetail(); return; }
   }
 
   private selectMenuItem(): void {
