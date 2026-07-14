@@ -1,5 +1,5 @@
 import { MonsterData, MoveData, MonsterInstance, Stats } from "./types";
-import { rollNatureGender } from "./natureGender";
+import { rollNatureGender, applyNature } from "./natureGender";
 
 /**
  * Calculate stats for a given monster at a given level.
@@ -78,7 +78,8 @@ export function createMonsterInstance(
   if (!data) {
     throw new Error(`Monster data not found: ${dataId}`);
   }
-  const stats = calculateStats(data, level);
+  const ng = rollNatureGender();
+  const stats = applyNature(calculateStats(data, level), ng.nature);
   const moves = getMovesForLevel(data, level, allMoves);
 
   return {
@@ -89,8 +90,21 @@ export function createMonsterInstance(
     maxHp: stats.hp,
     stats,
     moves,
-    ...rollNatureGender(),
+    ...ng,
   };
+}
+
+/** せいかく補正込みで stats を再計算する（ベースから計算するので冪等）。
+ *  既存セーブのアルモンにも安全に適用できる（HPはせいかく非対象）。 */
+export function refreshInstanceStats(
+  instance: MonsterInstance,
+  allMonsters: MonsterData[]
+): void {
+  const data = allMonsters.find((m) => m.id === instance.dataId);
+  if (!data) return;
+  instance.stats = applyNature(calculateStats(data, instance.level), instance.nature);
+  instance.maxHp = instance.stats.hp;
+  if (instance.currentHp > instance.maxHp) instance.currentHp = instance.maxHp;
 }
 
 /**
@@ -144,7 +158,7 @@ export function applyLevelUp(
   if (!data) return;
 
   const oldMaxHp = instance.maxHp;
-  const newStats = calculateStats(data, instance.level);
+  const newStats = applyNature(calculateStats(data, instance.level), instance.nature);
   instance.stats = newStats;
   instance.maxHp = newStats.hp;
   // Heal the HP gained
