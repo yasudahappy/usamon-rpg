@@ -11,6 +11,7 @@ import {
 } from "../data/types";
 import { calculateCaptureRate } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
+import { rollNatureGender } from "../data/natureGender";
 import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
@@ -280,6 +281,7 @@ export class BattleScene extends Phaser.Scene {
       maxHp: stats.hp,
       stats,
       moves,
+      ...rollNatureGender(),
     };
   }
 
