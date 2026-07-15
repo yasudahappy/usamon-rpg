@@ -43,11 +43,22 @@ export const NATURES = [
   "せっかち",
 ];
 
+export type Gender = "male" | "female" | "nonbinary";
+
+/** せいべつをランダムに決める。オス・メスに加えて、多様性を表す
+ *  「ノンバイナリー」も出る（だれもが そのままで すてき、という表現）。 */
+function rollGender(): Gender {
+  const r = Math.random();
+  if (r < 0.45) return "male";
+  if (r < 0.9) return "female";
+  return "nonbinary";
+}
+
 /** せいかく・せいべつをランダムに決める（新規アルモン生成時）。 */
-export function rollNatureGender(): { nature: string; gender: "male" | "female" } {
+export function rollNatureGender(): { nature: string; gender: Gender } {
   return {
     nature: NATURES[Math.floor(Math.random() * NATURES.length)],
-    gender: Math.random() < 0.5 ? "male" : "female",
+    gender: rollGender(),
   };
 }
 
@@ -62,8 +73,17 @@ export function ensureNatureGender(inst: MonsterInstance): void {
 }
 
 /** せいべつの表示用ラベル（記号＋よみ）。 */
-export function genderLabel(gender?: "male" | "female"): string {
+export function genderLabel(gender?: Gender): string {
   if (gender === "male") return "♂ オス";
   if (gender === "female") return "♀ メス";
+  if (gender === "nonbinary") return "🌈 ノンバイナリー";
   return "―";
+}
+
+/** せいべつの表示色。 */
+export function genderColor(gender?: Gender): string {
+  if (gender === "male") return "#8fc0ff";
+  if (gender === "female") return "#ff9fc4";
+  if (gender === "nonbinary") return "#c58bff";
+  return "#c0c8d0";
 }

@@ -7,7 +7,7 @@ import { calculateStats, getExpForLevel, refreshInstanceStats } from "../data/le
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
-import { ensureNatureGender, genderLabel, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
+import { ensureNatureGender, genderLabel, genderColor, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
 import { moveMaxPP, ensureInstancePP, restorePP } from "../data/movePP";
 
 type Direction = "up" | "down" | "left" | "right";
@@ -1577,7 +1577,7 @@ export class MapScene extends Phaser.Scene {
         y += 25;
       };
       kv("タイプ", data?.type ?? "？");
-      kv("せいべつ", genderLabel(inst.gender), inst.gender === "female" ? "#ff9fc4" : "#8fc0ff");
+      kv("せいべつ", genderLabel(inst.gender), genderColor(inst.gender));
       kv("せいかく", inst.nature ?? "―", "#ffe08a");
       kv("やくわり", data?.role ?? "？");
       kv("ずかんばんごう", `No.${String(dexNo).padStart(3, "0")}`);
