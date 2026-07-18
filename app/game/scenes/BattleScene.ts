@@ -1114,7 +1114,7 @@ export class BattleScene extends Phaser.Scene {
 
       const bg = this.add.graphics().setDepth(20);
       const text = this.add
-        .text(px, py - (move ? 8 : 0), label, {
+        .text(px, py - (move ? 13 : 0), label, {
           fontSize: "24px",
           color: move ? "#ffffff" : "#555555",
           fontFamily: "'DotGothic16', monospace",
@@ -1122,19 +1122,33 @@ export class BattleScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(21);
-      // わざのタイプ（左・タイプ色）と PP（右・白／少ないと赤）を名前の下に表示
+      // わざのタイプ（色つきバッジ）と PP を名前の下に、大きめに表示。
       if (move) {
         const tcol = BattleScene.TYPE_COLOR[move.type] ?? "#d7d7d7";
-        const tBadge = this.add.text(px - 6, py + 15, move.type, {
-          fontSize: "13px", color: tcol, fontFamily: "'DotGothic16', monospace",
-          fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-        }).setOrigin(1, 0.5).setDepth(21);
+        const tcolNum = parseInt(tcol.slice(1), 16);
+        const yb = py + 12;
+        const badgeW = move.type.length * 18 + 16, badgeH = 26;
         const pp = move.pp ?? 0, maxPp = move.maxPp ?? pp;
-        const ppBadge = this.add.text(px + 6, py + 15, `PP${pp}/${maxPp}`, {
-          fontSize: "13px", color: pp <= 0 ? "#ff8080" : "#e8eef6", fontFamily: "'DotGothic16', monospace",
-          stroke: "#000000", strokeThickness: 3,
-        }).setOrigin(0, 0.5).setDepth(21);
-        this.moveBadges.push(tBadge, ppBadge);
+        const ppStr = `PP ${pp}/${maxPp}`;
+        const ppW = ppStr.length * 11;
+        const gap = 10;
+        const total = badgeW + gap + ppW;
+        const startX = px - total / 2;
+        const badgeCx = startX + badgeW / 2;
+        // タイプバッジ（角丸・タイプ色）＋タイプ名（濃色）
+        const g = this.add.graphics().setDepth(21);
+        g.fillStyle(tcolNum, 1);
+        g.fillRoundedRect(badgeCx - badgeW / 2, yb - badgeH / 2, badgeW, badgeH, 6);
+        g.lineStyle(2, 0x1a1f28, 0.6);
+        g.strokeRoundedRect(badgeCx - badgeW / 2, yb - badgeH / 2, badgeW, badgeH, 6);
+        const tText = this.add.text(badgeCx, yb, move.type, {
+          fontSize: "18px", color: "#1a1f28", fontFamily: "'DotGothic16', monospace", fontStyle: "bold",
+        }).setOrigin(0.5).setDepth(22);
+        const ppText = this.add.text(startX + badgeW + gap, yb, ppStr, {
+          fontSize: "18px", color: pp <= 0 ? "#ff8080" : "#f2f6fb", fontFamily: "'DotGothic16', monospace",
+          fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+        }).setOrigin(0, 0.5).setDepth(22);
+        this.moveBadges.push(g, tText, ppText);
       }
 
       const zone = this.add
@@ -1184,8 +1198,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private highlightMoves(index: number): void {
-    const w = 280;
-    const h = 50;
+    const w = 290;
+    const h = 58;
     this.moveSlots.forEach((slot, i) => {
       slot.bg.clear();
       const move = this.playerMon.moves[i];
