@@ -43,15 +43,22 @@ export const NATURES = [
   "せっかち",
 ];
 
-export type Gender = "male" | "female" | "nonbinary";
+// "nonbinary" は旧セーブ互換のため残す（新規では出さない）。
+export type Gender =
+  | "male" | "female"
+  | "lesbian" | "gay" | "bi" | "trans"
+  | "nonbinary";
 
-/** せいべつをランダムに決める。オス・メスに加えて、多様性を表す
- *  「ノンバイナリー」も出る（だれもが そのままで すてき、という表現）。 */
+/** せいべつをランダムに決める。多様性を ひとくくりにせず、
+ *  それぞれ少しずつ配合する（雄45/雌45/L3/G3/B3/T1）。 */
 function rollGender(): Gender {
-  const r = Math.random();
-  if (r < 0.45) return "male";
-  if (r < 0.9) return "female";
-  return "nonbinary";
+  const r = Math.random() * 100;
+  if (r < 45) return "male";
+  if (r < 90) return "female";
+  if (r < 93) return "lesbian";
+  if (r < 96) return "gay";
+  if (r < 99) return "bi";
+  return "trans";
 }
 
 /** せいかく・せいべつをランダムに決める（新規アルモン生成時）。 */
@@ -74,24 +81,42 @@ export function ensureNatureGender(inst: MonsterInstance): void {
 
 /** せいべつの表示用ラベル（記号＋よみ）。 */
 export function genderLabel(gender?: Gender): string {
-  if (gender === "male") return "♂ オス";
-  if (gender === "female") return "♀ メス";
-  if (gender === "nonbinary") return "🌈 ノンバイナリー";
-  return "―";
+  switch (gender) {
+    case "male": return "♂ オス";
+    case "female": return "♀ メス";
+    case "lesbian": return "🌈 レズビアン";
+    case "gay": return "🌈 ゲイ";
+    case "bi": return "🌈 バイセクシュアル";
+    case "trans": return "⚧ トランスジェンダー";
+    case "nonbinary": return "🌈 ノンバイナリー";
+    default: return "―";
+  }
 }
 
 /** せいべつの記号だけ（HUD など狭い場所用）。 */
 export function genderSymbol(gender?: Gender): string {
-  if (gender === "male") return "♂";
-  if (gender === "female") return "♀";
-  if (gender === "nonbinary") return "🌈";
-  return "";
+  switch (gender) {
+    case "male": return "♂";
+    case "female": return "♀";
+    case "lesbian": return "L";
+    case "gay": return "G";
+    case "bi": return "B";
+    case "trans": return "T";
+    case "nonbinary": return "🌈";
+    default: return "";
+  }
 }
 
 /** せいべつの表示色。 */
 export function genderColor(gender?: Gender): string {
-  if (gender === "male") return "#8fc0ff";
-  if (gender === "female") return "#ff9fc4";
-  if (gender === "nonbinary") return "#c58bff";
-  return "#c0c8d0";
+  switch (gender) {
+    case "male": return "#8fc0ff";
+    case "female": return "#ff9fc4";
+    case "lesbian": return "#ff924c";   // レズビアンフラッグ寄りのオレンジ
+    case "gay": return "#3fbf7f";       // レインボー グリーン
+    case "bi": return "#b060d0";        // バイの紫
+    case "trans": return "#59c9f2";     // トランスの水色
+    case "nonbinary": return "#c58bff";
+    default: return "#c0c8d0";
+  }
 }

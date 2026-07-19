@@ -56,7 +56,7 @@ export interface MonsterInstance {
   moves: string[]; // moveId array, max 4
   pp?: number[];   // 各わざの現在PP（moves と同じ並び。無ければ最大PPで補完）
   nature?: string;            // せいかく（フレーバー）
-  gender?: "male" | "female" | "nonbinary"; // せいべつ（多様性を含む）
+  gender?: "male" | "female" | "lesbian" | "gay" | "bi" | "trans" | "nonbinary"; // せいべつ（多様性を含む）
 }
 
 // ---- Player state ----
