@@ -80,6 +80,14 @@ export function genderLabel(gender?: Gender): string {
   return "―";
 }
 
+/** せいべつの記号だけ（HUD など狭い場所用）。 */
+export function genderSymbol(gender?: Gender): string {
+  if (gender === "male") return "♂";
+  if (gender === "female") return "♀";
+  if (gender === "nonbinary") return "🌈";
+  return "";
+}
+
 /** せいべつの表示色。 */
 export function genderColor(gender?: Gender): string {
   if (gender === "male") return "#8fc0ff";

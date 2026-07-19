@@ -11,7 +11,7 @@ import {
 } from "../data/types";
 import { calculateCaptureRate } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
-import { rollNatureGender, ensureNatureGender, applyNature } from "../data/natureGender";
+import { rollNatureGender, ensureNatureGender, applyNature, genderSymbol, genderColor } from "../data/natureGender";
 import { moveMaxPP, ensureInstancePP } from "../data/movePP";
 import { markSeen, markCaught } from "../data/dex";
 import {
@@ -94,6 +94,8 @@ export class BattleScene extends Phaser.Scene {
   private enemyHpText!: Phaser.GameObjects.Text;
   private playerNameText!: Phaser.GameObjects.Text;
   private enemyNameText!: Phaser.GameObjects.Text;
+  private playerGenderText!: Phaser.GameObjects.Text;
+  private enemyGenderText!: Phaser.GameObjects.Text;
   private playerLvText!: Phaser.GameObjects.Text;
   private enemyLvText!: Phaser.GameObjects.Text;
 
@@ -882,6 +884,11 @@ export class BattleScene extends Phaser.Scene {
     this.enemyLvText = this.add.text(eb.x + eb.w - 14, eb.y + Math.round(8 * this.sy), `Lv${this.enemyMon.level}`, {
       fontSize: "18px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
+    const eGender = this.add.text(this.enemyNameText.x + this.enemyNameText.width + 8, eb.y + Math.round(9 * this.sy),
+      genderSymbol(this.enemyInstance.gender), {
+      fontSize: "18px", color: genderColor(this.enemyInstance.gender), fontFamily: F, fontStyle: "bold",
+    }).setDepth(11);
+    this.enemyGenderText = eGender;
     const eg = this.hpGeom(false);
     const eTag = this.drawTag(eb.x + 16, eg.y, "HP", HPTAG);
     this.enemyHpBar = this.add.graphics().setDepth(11);
@@ -889,7 +896,7 @@ export class BattleScene extends Phaser.Scene {
     // enemy HP numbers are hidden (RSE-style); keep the object to avoid null refs
     this.enemyHpText = this.add.text(0, 0, "", { fontSize: "1px" }).setVisible(false).setDepth(11);
     // Group the enemy status UI so it can be hidden while the trainer portrait shows.
-    this.enemyInfoObjects = [ePanel, this.enemyNameText, this.enemyLvText, eTag, this.enemyHpBar];
+    this.enemyInfoObjects = [ePanel, this.enemyNameText, this.enemyLvText, eGender, eTag, this.enemyHpBar];
 
     // ===== Player status panel (lower-right) =====
     const pb = this.playerBoxRect();
@@ -901,6 +908,11 @@ export class BattleScene extends Phaser.Scene {
     this.playerLvText = this.add.text(pb.x + pb.w - 14, pb.y + Math.round(10 * this.sy), `Lv${this.playerMon.level}`, {
       fontSize: "18px", color: LV, fontFamily: F, fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(11);
+    const pGender = this.add.text(this.playerNameText.x + this.playerNameText.width + 8, pb.y + Math.round(11 * this.sy),
+      genderSymbol(this.playerInstance.gender), {
+      fontSize: "18px", color: genderColor(this.playerInstance.gender), fontFamily: F, fontStyle: "bold",
+    }).setDepth(11);
+    this.playerGenderText = pGender;
     const pg = this.hpGeom(true);
     const pTag = this.drawTag(pb.x + 16, pg.y, "HP", HPTAG);
     this.playerHpBar = this.add.graphics().setDepth(11);
@@ -915,8 +927,16 @@ export class BattleScene extends Phaser.Scene {
     this.playerExpBar = this.add.graphics().setDepth(11);
     this.refreshPlayerExp();
     // Group so the panel can be hidden until the hero sends out the almon.
-    this.playerInfoObjects = [pPanel, this.playerNameText, this.playerLvText, pTag,
+    this.playerInfoObjects = [pPanel, this.playerNameText, this.playerLvText, pGender, pTag,
       this.playerHpBar, this.playerHpText, xTag, this.playerExpBar];
+  }
+
+  /** 名前テキストの右横に せいべつ記号を合わせて更新する（交代時など）。 */
+  private syncGenderText(txt: Phaser.GameObjects.Text | undefined, nameText: Phaser.GameObjects.Text, inst: MonsterInstance): void {
+    if (!txt) return;
+    txt.setText(genderSymbol(inst.gender));
+    txt.setColor(genderColor(inst.gender));
+    txt.setX(nameText.x + nameText.width + 8);
   }
 
   // Draw a capsule HP bar: outer dark border, light track, colored fill.
@@ -1807,6 +1827,7 @@ export class BattleScene extends Phaser.Scene {
     this.playerSprite.setAlpha(1).setVisible(false);
     this.playerSprite.setY(Math.round((this.PPLAT_Y + 8) * this.sy));
     this.playerNameText.setText(`${playerData.name}`);
+    this.syncGenderText(this.playerGenderText, this.playerNameText, this.playerInstance);
     this.playerLvText.setText(`Lv${this.playerMon.level}`);
     this.refreshPlayerHp();
 
@@ -1855,6 +1876,7 @@ export class BattleScene extends Phaser.Scene {
       // Update display
       const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
       this.playerNameText.setText(`${playerData.name}`);
+      this.syncGenderText(this.playerGenderText, this.playerNameText, this.playerInstance);
       this.playerLvText.setText(`Lv${this.playerInstance.level}`);
       this.refreshPlayerHp();
 
@@ -2134,6 +2156,7 @@ export class BattleScene extends Phaser.Scene {
     // Update battle monster
     this.playerMon = this.instanceToBattleMonster(this.playerInstance);
     this.playerNameText.setText(`${newData.name}`);
+    this.syncGenderText(this.playerGenderText, this.playerNameText, this.playerInstance);
     this.playerLvText.setText(`Lv${this.playerInstance.level}`);
     this.refreshPlayerHp();
 
@@ -2564,6 +2587,7 @@ export class BattleScene extends Phaser.Scene {
         this.playerSprite.setY(baseY);
         this.playerSprite.setAlpha(1).setVisible(false);
         this.playerNameText.setText(`${newData.name}`);
+        this.syncGenderText(this.playerGenderText, this.playerNameText, this.playerInstance);
         this.playerLvText.setText(`Lv${newMon.level}`);
         this.refreshPlayerHp();
         this.showMessages([`ゆけっ！ ${newData.name}！`], () => {
@@ -2647,6 +2671,7 @@ export class BattleScene extends Phaser.Scene {
     // The player's almon stays on the field between the trainer's switches.
     this.playerSprite.setVisible(true).setAlpha(1);
     this.enemyNameText.setText(`${enemyData.name}`);
+    this.syncGenderText(this.enemyGenderText, this.enemyNameText, this.enemyInstance);
     this.enemyLvText.setText(`Lv${next.level}`);
     this.refreshEnemyHp();
 
