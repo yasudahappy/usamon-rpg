@@ -1525,81 +1525,102 @@ export class MapScene extends Phaser.Scene {
     const data = all.find(m => m.id === inst.dataId);
     const dexNo = Math.max(0, all.findIndex(m => m.id === inst.dataId)) + 1;
 
+    // 背景：明るい空色グラデーション（子ども向けに親しみやすく）
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.98); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    bg.fillGradientStyle(0x5a90d6, 0x5a90d6, 0x2f5c9e, 0x2f5c9e, 1);
+    bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
+    const contentTop = 212, contentBottom = H - 44;
+
     // ヘッダー：No.／タイトル／ページドット
-    this.menuElements.push(this.add.text(this.uiX(20), this.uiY(20), `No.${String(dexNo).padStart(3, "0")}`, {
-      fontSize: `${this.uiS(13)}px`, color: "#8fb4dc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    this.menuElements.push(this.add.text(this.uiX(20), this.uiY(22), `No.${String(dexNo).padStart(3, "0")}`, {
+      fontSize: `${this.uiS(15)}px`, color: "#eaf3ff", fontFamily: F, stroke: "#12305a", strokeThickness: 4,
     }).setScrollFactor(0).setDepth(201));
     const pageTitles = ["じょうほう", "のうりょく", "わざ"];
     this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(20), pageTitles[this.monDetailPage], {
-      fontSize: `${this.uiS(18)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      fontSize: `${this.uiS(24)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 5,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
     for (let p = 0; p < 3; p++) {
       const dot = this.add.graphics().setScrollFactor(0).setDepth(201);
-      dot.fillStyle(p === this.monDetailPage ? 0x8fd0ff : 0x33465e, 1);
-      dot.fillCircle(this.uiX(W / 2 - 28 + p * 28), this.uiY(46), this.uiS(5));
+      dot.fillStyle(p === this.monDetailPage ? 0xffffff : 0x9fc0e6, 1);
+      dot.fillCircle(this.uiX(W / 2 - 32 + p * 32), this.uiY(50), this.uiS(p === this.monDetailPage ? 7 : 5));
       this.menuElements.push(dot);
     }
 
-    // 左：スプライト＋名前＋Lv＋タイプ（両ページ共通）
-    const spCx = W * 0.26, spCy = 132;
+    // 左：スプライト＋名前＋Lv＋タイプ（全ページ共通）
+    const spCx = W * 0.25, spCy = 138;
     const key = `monster-${inst.dataId}`;
+    // スプライトの土台（白い円）で明るく見せる
+    const base = this.add.graphics().setScrollFactor(0).setDepth(200);
+    base.fillStyle(0xffffff, 0.16); base.fillCircle(this.uiX(spCx), this.uiY(spCy), this.uiS(74));
+    this.menuElements.push(base);
     if (this.textures.exists(key)) {
       const src = this.textures.get(key).getSourceImage() as { width: number; height: number };
       const img = this.add.image(this.uiX(spCx), this.uiY(spCy), key).setScrollFactor(0).setDepth(201).setOrigin(0.5);
-      img.setScale(this.uiS(Math.min(W * 0.34, 120)) / Math.max(src.width, src.height));
+      img.setScale(this.uiS(Math.min(W * 0.40, 140)) / Math.max(src.width, src.height));
       this.menuElements.push(img);
     }
-    const nameX = W * 0.48;
-    this.menuElements.push(this.add.text(this.uiX(nameX), this.uiY(86), data?.name ?? inst.dataId, {
-      fontSize: `${this.uiS(20)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    const nameX = W * 0.46;
+    this.menuElements.push(this.add.text(this.uiX(nameX), this.uiY(88), data?.name ?? inst.dataId, {
+      fontSize: `${this.uiS(27)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 5,
     }).setScrollFactor(0).setDepth(201));
-    this.menuElements.push(this.add.text(this.uiX(nameX), this.uiY(116), `Lv${inst.level}`, {
-      fontSize: `${this.uiS(15)}px`, color: "#d8e6f6", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    this.menuElements.push(this.add.text(this.uiX(nameX), this.uiY(126), `Lv${inst.level}`, {
+      fontSize: `${this.uiS(20)}px`, color: "#fff0c0", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 4,
     }).setScrollFactor(0).setDepth(201));
-    if (data) this.drawTypeBadge(nameX + 30, 150, data.type);
+    if (data) this.drawTypeBadge(nameX + 44, 166, data.type, 1.5);
 
     if (this.monDetailPage === 0) {
-      // じょうほう：タイプ・やくわり・ずかんせつめい・しんか・つかまえた
+      // じょうほう：チャンキーな行で画面いっぱいに情報を並べる
       const { seen, caught } = this.dexSets();
       const lx = W * 0.10, rx = W * 0.90;
-      let y = 190;
-      const kv = (label: string, val: string, valColor = "#ffffff") => {
-        this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y), label, {
-          fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-        }).setScrollFactor(0).setDepth(202));
-        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val, {
-          fontSize: `${this.uiS(14)}px`, color: valColor, fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
-        y += 25;
-      };
-      kv("タイプ", data?.type ?? "？");
-      kv("せいべつ", genderLabel(inst.gender), genderColor(inst.gender));
-      kv("せいかく", inst.nature ?? "―", "#ffe08a");
-      kv("やくわり", data?.role ?? "？");
-      kv("ずかんばんごう", `No.${String(dexNo).padStart(3, "0")}`);
-      kv("つかまえた", caught.has(inst.dataId) ? "○" : "―", caught.has(inst.dataId) ? "#8fe08f" : "#c0c8d0");
-      // しんか
       let evoText = "これいじょう しんかしない";
       if (data?.evolution) {
         const to = all.find(x => x.id === data.evolution!.to);
         const toName = to && seen.has(to.id) ? to.name : "？？？";
         evoText = `Lv${data.evolution.level}で ${toName}に しんか`;
       }
-      kv("しんか", evoText, "#9fe6c0");
-      // ずかんせつめい（説明ボックス）
-      y += 6;
-      const boxH = 84;
+      const isCaught = caught.has(inst.dataId);
+      const rows: [string, string, string][] = [
+        ["タイプ", data?.type ?? "？", "#ffffff"],
+        ["せいべつ", genderLabel(inst.gender), genderColor(inst.gender)],
+        ["せいかく", inst.nature ?? "―", "#ffe08a"],
+        ["やくわり", data?.role ?? "？", "#ffffff"],
+        ["ずかんばんごう", `No.${String(dexNo).padStart(3, "0")}`, "#ffffff"],
+        ["つかまえた", isCaught ? "○" : "―", isCaught ? "#9fffa8" : "#dbe6f2"],
+        ["しんか", evoText, "#c0ffe0"],
+      ];
+      // 下部の せつめいボックスを確保し、残りに行を均等配置
+      const descH = Phaser.Math.Clamp((contentBottom - contentTop) * 0.24, 110, 190);
+      const rowsBottom = contentBottom - descH - 18;
+      const rowGap = (rowsBottom - contentTop) / rows.length;
+      const bandH = Math.min(rowGap - 8, 52);
+      rows.forEach(([label, val, color], i) => {
+        const yTop = contentTop + i * rowGap;
+        const yMid = yTop + bandH / 2;
+        const band = this.add.graphics().setScrollFactor(0).setDepth(201);
+        band.fillStyle(i % 2 === 0 ? 0x21467e : 0x2b5691, 0.72);
+        band.fillRoundedRect(this.uiX(lx - 12), this.uiY(yTop), this.uiS((rx - lx) + 24), this.uiS(bandH), this.uiS(10));
+        this.menuElements.push(band);
+        this.menuElements.push(this.add.text(this.uiX(lx + 4), this.uiY(yMid), label, {
+          fontSize: `${this.uiS(18)}px`, color: "#bfe0ff", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+        }).setScrollFactor(0).setDepth(202).setOrigin(0, 0.5));
+        this.menuElements.push(this.add.text(this.uiX(rx - 4), this.uiY(yMid), val, {
+          fontSize: `${this.uiS(21)}px`, color, fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0.5));
+      });
+      // ずかんせつめい（説明ボックス）：下部いっぱい
+      const boxY = rowsBottom + 16;
       const box = this.add.graphics().setScrollFactor(0).setDepth(201);
-      box.fillStyle(0x061020, 0.95); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(boxH), this.uiS(8));
-      box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(boxH), this.uiS(8));
+      box.fillStyle(0x18345e, 0.85); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(boxY), this.uiS((rx - lx) + 24), this.uiS(descH), this.uiS(10));
+      box.lineStyle(2, 0x9fc4f0); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(boxY), this.uiS((rx - lx) + 24), this.uiS(descH), this.uiS(10));
       this.menuElements.push(box);
-      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y + 12), data?.description ?? "", {
-        fontSize: `${this.uiS(13)}px`, color: "#e0ecff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-        wordWrap: { width: this.uiS((rx - lx)) }, lineSpacing: 5,
+      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(boxY + 12), "ずかんせつめい", {
+        fontSize: `${this.uiS(14)}px`, color: "#ffd98a", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202));
+      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(boxY + 40), data?.description ?? "", {
+        fontSize: `${this.uiS(17)}px`, color: "#eef6ff", fontFamily: F, stroke: "#0a1f3c", strokeThickness: 3,
+        wordWrap: { width: this.uiS((rx - lx)) }, lineSpacing: 9,
       }).setScrollFactor(0).setDepth(202));
     } else if (this.monDetailPage === 1) {
       // のうりょく：HP / こうげき / ぼうぎょ / すばやさ ＋ けいけんち＋ゲージ
@@ -1611,92 +1632,98 @@ export class MapScene extends Phaser.Scene {
         ["ぼうぎょ", `${st.defense}`, "defense"],
         ["すばやさ", `${st.speed}`, "speed"],
       ];
-      const boxY = 200, rowH = 30, lx = W * 0.10, rx = W * 0.90;
-      const box = this.add.graphics().setScrollFactor(0).setDepth(201);
-      box.fillStyle(0x061020, 0.9); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(boxY - 10), this.uiS((rx - lx) + 24), this.uiS(rows.length * rowH + 16), this.uiS(8));
-      box.lineStyle(2, 0x3a5680); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(boxY - 10), this.uiS((rx - lx) + 24), this.uiS(rows.length * rowH + 16), this.uiS(8));
-      this.menuElements.push(box);
-      rows.forEach(([label, val, key], i) => {
-        const y = boxY + i * rowH + 4;
-        const isUp = key && mod?.up === key;
-        const isDown = key && mod?.down === key;
+      const lx = W * 0.10, rx = W * 0.90;
+      // ステータス欄は上半分いっぱいに大きく
+      const statTop = contentTop;
+      const statH = (contentBottom - contentTop) * 0.52;
+      const rowGap = statH / rows.length;
+      const bandH = Math.min(rowGap - 8, 58);
+      rows.forEach(([label, val, skey], i) => {
+        const yTop = statTop + i * rowGap;
+        const yMid = yTop + bandH / 2;
+        const isUp = skey && mod?.up === skey;
+        const isDown = skey && mod?.down === skey;
         const arrow = isUp ? " ↑" : isDown ? " ↓" : "";
-        const valColor = isUp ? "#8fe08f" : isDown ? "#ff9aa0" : "#ffffff";
-        this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y), label, {
-          fontSize: `${this.uiS(15)}px`, color: label === "HP" ? "#f8a830" : "#bcd0e6", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-        }).setScrollFactor(0).setDepth(202));
-        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val + arrow, {
-          fontSize: `${this.uiS(16)}px`, color: valColor, fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+        const valColor = isUp ? "#9fffa8" : isDown ? "#ffb0b6" : "#ffffff";
+        const band = this.add.graphics().setScrollFactor(0).setDepth(201);
+        band.fillStyle(i % 2 === 0 ? 0x21467e : 0x2b5691, 0.72);
+        band.fillRoundedRect(this.uiX(lx - 12), this.uiY(yTop), this.uiS((rx - lx) + 24), this.uiS(bandH), this.uiS(10));
+        this.menuElements.push(band);
+        this.menuElements.push(this.add.text(this.uiX(lx + 4), this.uiY(yMid), label, {
+          fontSize: `${this.uiS(21)}px`, color: label === "HP" ? "#ffcf5a" : "#dbe8f7", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+        }).setScrollFactor(0).setDepth(202).setOrigin(0, 0.5));
+        this.menuElements.push(this.add.text(this.uiX(rx - 4), this.uiY(yMid), val + arrow, {
+          fontSize: `${this.uiS(23)}px`, color: valColor, fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0.5));
       });
-      // けいけんち＋つぎのレベルまでゲージ
+      // けいけんち＋つぎのレベルまで＋ゲージ（下半分に配置）
       const expCur = getExpForLevel(inst.level);
       const expNext = getExpForLevel(inst.level + 1);
       const toNext = Math.max(0, expNext - inst.exp);
       const ratio = Phaser.Math.Clamp((inst.exp - expCur) / Math.max(1, expNext - expCur), 0, 1);
-      const eY = boxY + rows.length * rowH + 22;
-      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(eY), "けいけんち", {
-        fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(202));
-      this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(eY), `${inst.exp}`, {
-        fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
-      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(eY + 24), "つぎのレベルまで", {
-        fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(202));
-      this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(eY + 24), `${toNext}`, {
-        fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
-      // EXPゲージ
-      const gY = eY + 46, gH = 10, gw = (rx - lx);
+      const expTop = statTop + statH + 30;
+      const expGap = 44;
+      const expRow = (i: number, label: string, val: string) => {
+        const y = expTop + i * expGap;
+        this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y), label, {
+          fontSize: `${this.uiS(18)}px`, color: "#bfe0ff", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+        }).setScrollFactor(0).setDepth(202));
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y), val, {
+          fontSize: `${this.uiS(20)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+        }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+      };
+      expRow(0, "けいけんち", `${inst.exp}`);
+      expRow(1, "つぎのレベルまで", `${toNext}`);
+      // EXPゲージ（太く）
+      const gY = expTop + 2 * expGap + 6, gH = 18, gw = (rx - lx);
       const g = this.add.graphics().setScrollFactor(0).setDepth(202);
-      g.fillStyle(0x14263c, 1); g.fillRoundedRect(this.uiX(lx), this.uiY(gY), this.uiS(gw), this.uiS(gH), this.uiS(gH / 2));
+      g.fillStyle(0x0e2748, 1); g.fillRoundedRect(this.uiX(lx), this.uiY(gY), this.uiS(gw), this.uiS(gH), this.uiS(gH / 2));
       const fillW = Math.max(0, Math.floor(gw * ratio));
-      if (fillW > 3) { g.fillStyle(0x58a8e8, 1); g.fillRoundedRect(this.uiX(lx), this.uiY(gY), this.uiS(fillW), this.uiS(gH), this.uiS(gH / 2)); }
+      if (fillW > 3) { g.fillStyle(0x7fd0ff, 1); g.fillRoundedRect(this.uiX(lx), this.uiY(gY), this.uiS(fillW), this.uiS(gH), this.uiS(gH / 2)); }
       this.menuElements.push(g);
     } else {
       // わざ：おぼえているわざ（タイプ＋名前＋いりょく＋せつめい）
-      this.menuElements.push(this.add.text(this.uiX(W * 0.10), this.uiY(196), "おぼえている わざ", {
-        fontSize: `${this.uiS(13)}px`, color: "#88bcff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      this.menuElements.push(this.add.text(this.uiX(W * 0.10), this.uiY(contentTop - 24), "おぼえている わざ", {
+        fontSize: `${this.uiS(17)}px`, color: "#ffd98a", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
       }).setScrollFactor(0).setDepth(202));
-      const startY = 224, rowH = Math.max(40, Math.floor((H - 60 - startY) / 4));
+      const startY = contentTop, rowH = Math.max(52, Math.floor((contentBottom - startY) / 4));
       const lx = W * 0.10, rx = W * 0.90;
       for (let i = 0; i < 4; i++) {
         const mvId = inst.moves[i];
         const y = startY + i * rowH;
         const box = this.add.graphics().setScrollFactor(0).setDepth(201);
-        box.fillStyle(0x061020, 0.85); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(y - 6), this.uiS((rx - lx) + 24), this.uiS(rowH - 8), this.uiS(6));
-        box.lineStyle(1, 0x2c4560); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(y - 6), this.uiS((rx - lx) + 24), this.uiS(rowH - 8), this.uiS(6));
+        box.fillStyle(i % 2 === 0 ? 0x21467e : 0x2b5691, 0.72); box.fillRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(rowH - 10), this.uiS(10));
+        box.lineStyle(2, 0x9fc4f0); box.strokeRoundedRect(this.uiX(lx - 12), this.uiY(y), this.uiS((rx - lx) + 24), this.uiS(rowH - 10), this.uiS(10));
         this.menuElements.push(box);
         if (!mvId) {
-          this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(y + 8), "―", {
-            fontSize: `${this.uiS(15)}px`, color: "#66788c", fontFamily: F,
-          }).setScrollFactor(0).setDepth(202));
+          this.menuElements.push(this.add.text(this.uiX(lx + 8), this.uiY(y + (rowH - 10) / 2), "―", {
+            fontSize: `${this.uiS(20)}px`, color: "#a8bcd0", fontFamily: F,
+          }).setScrollFactor(0).setDepth(202).setOrigin(0, 0.5));
           continue;
         }
         const mv = allMoves.find(x => x.id === mvId);
         const nm = mv?.name ?? mvId;
-        if (mv) this.drawTypeBadge(lx + 26, y + 12, mv.type);
-        this.menuElements.push(this.add.text(this.uiX(lx + 58), this.uiY(y + 4), nm, {
-          fontSize: `${this.uiS(15)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+        if (mv) this.drawTypeBadge(lx + 30, y + 22, mv.type, 1.3);
+        this.menuElements.push(this.add.text(this.uiX(lx + 66), this.uiY(y + 12), nm, {
+          fontSize: `${this.uiS(20)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
         }).setScrollFactor(0).setDepth(202));
         const pw = mv ? (mv.isSupport ? "ほじょ" : `いりょく ${mv.power}`) : "";
-        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 4), pw, {
-          fontSize: `${this.uiS(12)}px`, color: "#ffd98a", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 10), pw, {
+          fontSize: `${this.uiS(16)}px`, color: "#ffd98a", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
         }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
         const curPP = inst.pp ? inst.pp[i] : moveMaxPP(mvId, allMoves);
-        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 22), `PP ${curPP}/${moveMaxPP(mvId, allMoves)}`, {
-          fontSize: `${this.uiS(11)}px`, color: "#bcd0e6", fontFamily: F, stroke: "#000000", strokeThickness: 2,
+        this.menuElements.push(this.add.text(this.uiX(rx), this.uiY(y + 34), `PP ${curPP}/${moveMaxPP(mvId, allMoves)}`, {
+          fontSize: `${this.uiS(15)}px`, color: "#cfe2f4", fontFamily: F, stroke: "#0a1f3c", strokeThickness: 3,
         }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
-        this.menuElements.push(this.add.text(this.uiX(lx + 58), this.uiY(y + 22), mv?.description ?? "", {
-          fontSize: `${this.uiS(11)}px`, color: "#c6d6ea", fontFamily: F, stroke: "#000000", strokeThickness: 2,
-          wordWrap: { width: this.uiS((rx - lx) - 58) },
+        this.menuElements.push(this.add.text(this.uiX(lx + 66), this.uiY(y + 40), mv?.description ?? "", {
+          fontSize: `${this.uiS(14)}px`, color: "#dceafa", fontFamily: F, stroke: "#0a1f3c", strokeThickness: 3,
+          wordWrap: { width: this.uiS((rx - lx) - 130) },
         }).setScrollFactor(0).setDepth(202));
       }
     }
 
-    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(H - 22), "Aボタン:きりかえ   ↑↓:べつのアルモン   Bボタンでもどる", {
-      fontSize: `${this.uiS(11)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(H - 20), "Aボタン:きりかえ   ↑↓:べつのアルモン   Bボタンでもどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#12305a", strokeThickness: 4,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5));
     this.applyTextResolution(this.menuElements);
   }
@@ -2130,15 +2157,15 @@ export class MapScene extends Phaser.Scene {
     this.drawZukanScreen();
   }
 
-  private drawTypeBadge(cx: number, cy: number, type: string): void {
+  private drawTypeBadge(cx: number, cy: number, type: string, scale = 1): void {
     const F = "'DotGothic16', monospace";
     const col = MapScene.ZUKAN_TYPE_COLOR[type] ?? 0x778899;
-    const w = 52, h = 22;
+    const w = 52 * scale, h = 22 * scale;
     const g = this.add.graphics().setScrollFactor(0).setDepth(202);
-    g.fillStyle(col, 0.9); g.fillRoundedRect(this.uiX(cx - w / 2), this.uiY(cy - h / 2), this.uiS(w), this.uiS(h), 6);
+    g.fillStyle(col, 0.95); g.fillRoundedRect(this.uiX(cx - w / 2), this.uiY(cy - h / 2), this.uiS(w), this.uiS(h), this.uiS(6 * scale));
     this.menuElements.push(g);
     const t = this.add.text(this.uiX(cx), this.uiY(cy), type, {
-      fontSize: `${this.uiS(12)}px`, color: "#101820", fontFamily: F, fontStyle: "bold",
+      fontSize: `${this.uiS(12 * scale)}px`, color: "#101820", fontFamily: F, fontStyle: "bold",
     }).setScrollFactor(0).setDepth(203).setOrigin(0.5);
     this.menuElements.push(t);
   }
