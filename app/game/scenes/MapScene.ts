@@ -2178,58 +2178,69 @@ export class MapScene extends Phaser.Scene {
     const all = this.cache.json.get("monsters") as MonsterData[];
     const { seen, caught } = this.dexSets();
 
+    // 背景：しょうさい画面と同じ明るい空色グラデーション
     const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    bg.fillGradientStyle(0x5a90d6, 0x5a90d6, 0x2f5c9e, 0x2f5c9e, 1);
+    bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
     this.menuElements.push(bg);
 
     const title = this.add.text(this.uiX(W / 2), this.uiY(24), "ずかん", {
-      fontSize: `${this.uiS(20)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      fontSize: `${this.uiS(26)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 5,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
-    const counts = this.add.text(this.uiX(W / 2), this.uiY(48), `みつけた ${seen.size}   つかまえた ${caught.size} / ${all.length}`, {
-      fontSize: `${this.uiS(12)}px`, color: "#c9d8ec", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    const counts = this.add.text(this.uiX(W / 2), this.uiY(56), `みつけた ${seen.size}   つかまえた ${caught.size} / ${all.length}`, {
+      fontSize: `${this.uiS(15)}px`, color: "#eaf3ff", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 4,
     }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
     this.menuElements.push(title, counts);
 
-    const rowH = 34, listTop = 70;
-    const visible = Math.max(4, Math.floor((H - listTop - 44) / rowH));
+    // 1画面 約8匹：大きなチャンキー行で読みやすく
+    const listTop = 84, bottomMargin = 50;
+    const avail = H - listTop - bottomMargin;
+    const rowH = Phaser.Math.Clamp(Math.floor(avail / 8), 74, 104);
+    const visible = Math.max(4, Math.floor(avail / rowH));
     if (this.zukanSelIndex < this.zukanScrollTop) this.zukanScrollTop = this.zukanSelIndex;
     if (this.zukanSelIndex >= this.zukanScrollTop + visible) this.zukanScrollTop = this.zukanSelIndex - visible + 1;
+    const lx = 28;
 
     for (let r = 0; r < visible; r++) {
       const idx = this.zukanScrollTop + r;
       if (idx >= all.length) break;
       const m = all[idx];
-      const y = listTop + r * rowH;
+      const yTop = listTop + r * rowH;
+      const bandH = rowH - 10;
+      const yMid = yTop + bandH / 2;
       const on = idx === this.zukanSelIndex;
       const isSeen = seen.has(m.id);
       const isCaught = caught.has(m.id);
+      const band = this.add.graphics().setScrollFactor(0).setDepth(201);
       if (on) {
-        const hl = this.add.graphics().setScrollFactor(0).setDepth(201);
-        hl.fillStyle(0x1b3a63, 0.9); hl.fillRoundedRect(this.uiX(24), this.uiY(y - 4), this.uiS(W - 48), this.uiS(rowH - 4), 6);
-        this.menuElements.push(hl);
+        band.fillStyle(0x3f78bf, 0.95); band.fillRoundedRect(this.uiX(lx - 4), this.uiY(yTop), this.uiS(W - 2 * lx + 8), this.uiS(bandH), this.uiS(12));
+        band.lineStyle(3, 0xffffff, 0.9); band.strokeRoundedRect(this.uiX(lx - 4), this.uiY(yTop), this.uiS(W - 2 * lx + 8), this.uiS(bandH), this.uiS(12));
+      } else {
+        band.fillStyle(r % 2 === 0 ? 0x21467e : 0x2b5691, 0.72); band.fillRoundedRect(this.uiX(lx), this.uiY(yTop), this.uiS(W - 2 * lx), this.uiS(bandH), this.uiS(10));
       }
+      this.menuElements.push(band);
       const mark = isCaught ? "●" : (isSeen ? "◦" : "　");
       const num = String(idx + 1).padStart(3, "0");
       const label = `${mark} No.${num}  ${isSeen ? m.name : "？？？？"}`;
-      const row = this.add.text(this.uiX(40), this.uiY(y), label, {
-        fontSize: `${this.uiS(15)}px`, color: on ? "#ffffff" : (isSeen ? "#ccddee" : "#66788c"), fontFamily: F, stroke: "#000000", strokeThickness: 3,
-      }).setScrollFactor(0).setDepth(202);
+      const row = this.add.text(this.uiX(lx + 16), this.uiY(yMid), label, {
+        fontSize: `${this.uiS(23)}px`, color: on ? "#ffffff" : (isSeen ? "#e2edfa" : "#9fb2c8"), fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 4,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0, 0.5);
       this.menuElements.push(row);
-      if (isSeen) this.drawTypeBadge(W - 60, y + 8, m.type);
+      if (isSeen) this.drawTypeBadge(W - 68, yMid, m.type, 1.35);
     }
 
     // Scroll hints
     if (this.zukanScrollTop > 0) {
-      const up = this.add.text(this.uiX(W / 2), this.uiY(listTop - 14), "▲", { fontSize: `${this.uiS(12)}px`, color: "#8fd0ff", fontFamily: F }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+      const up = this.add.text(this.uiX(W / 2), this.uiY(listTop - 12), "▲", { fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
       this.menuElements.push(up);
     }
     if (this.zukanScrollTop + visible < all.length) {
-      const dn = this.add.text(this.uiX(W / 2), this.uiY(listTop + visible * rowH - 6), "▼", { fontSize: `${this.uiS(12)}px`, color: "#8fd0ff", fontFamily: F }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+      const dn = this.add.text(this.uiX(W / 2), this.uiY(listTop + visible * rowH - 2), "▼", { fontSize: `${this.uiS(16)}px`, color: "#ffffff", fontFamily: F }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
       this.menuElements.push(dn);
     }
 
-    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 26), "A:くわしく   Bボタンでもどる", {
-      fontSize: `${this.uiS(12)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(H - 22), "A:くわしく   Bボタンでもどる", {
+      fontSize: `${this.uiS(13)}px`, color: "#ffffff", fontFamily: F, stroke: "#12305a", strokeThickness: 4,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
     this.menuElements.push(hint);
     this.applyTextResolution(this.menuElements);
