@@ -856,7 +856,10 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey !== "gym_3") return false;
     if (!this.playerState) return false;
     if (this.playerState.companion === "hijiri") {
-      this.showDialog(["ヒジリ「いっしょに いこう！\nミノリタウンを あるくの、たのしみだね。」"]);
+      this.showDialog([
+        "ヒジリ「いっしょに いこう！\nミノリタウンを あるくの、たのしみだね。」",
+        "ヒジリ「ぼく、CFOめざして がんばるよ！」",
+      ]);
       return true;
     }
     if (!this.playerState.defeatedTrainers.includes("ishii_shiori")) return false;
@@ -864,6 +867,7 @@ export class MapScene extends Phaser.Scene {
     this.showDialog([
       "ヒジリ「イシイさんと シオリさんに\nかったなんて……すごいや！」",
       "ヒジリ「ぼくも きみと いっしょに\nたびを してみたく なったよ。」",
+      "ヒジリ「ぼく、CFOめざして がんばるよ！」",
       "ヒジリが なかまに なった！",
       "（ミノリタウンを あるくと\n うしろを ついてくるよ。）",
     ]);
