@@ -429,10 +429,17 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "serene_town") {
       this.placeSereneDecor();
       this.placeSereneTownEvents();
+      this.placeCopernicusCaveMouth();
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("serene_arrival_seen")) {
         this.time.delayedCall(700, () => this.playSereneArrival());
       }
+    }
+
+    // コペルニクスどうくつ — 光条クレーターの地下（寄り道の光ダンジョン）。
+    if (this.currentMapKey === "copernicus_cave") {
+      this.placeCaveDarkness();
+      this.placeCopernicusCaveDecor();
     }
 
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
@@ -6545,6 +6552,34 @@ export class MapScene extends Phaser.Scene {
     }
     this.caveDarkness = this.add.image(this.player.x, this.player.y, "cave-darkness")
       .setDepth(60);
+  }
+
+  /** セレネタウン北西の いわ肌に コペルニクス洞窟の入口（ほらあな）を描く。 */
+  private placeCopernicusCaveMouth(): void {
+    const ts = this.tileSize;
+    const cx = 7 * ts + ts / 2, cy = 5 * ts + ts / 2;
+    const g = this.add.graphics().setDepth(6);
+    g.fillStyle(0x0c0a16, 1); g.fillEllipse(cx, cy + 2, ts * 0.92, ts * 0.82);
+    g.fillStyle(0x1b1630, 1); g.fillEllipse(cx, cy + 5, ts * 0.6, ts * 0.5);
+    // 光条クレーターらしく、奥から ほんのり 光がもれる
+    g.fillStyle(0xbfe6ff, 0.18); g.fillEllipse(cx, cy + 6, ts * 0.32, ts * 0.26);
+    this.add.text(cx, cy - ts * 0.72, "ほらあな", {
+      fontSize: "12px", color: "#cfe6ff", fontFamily: "'DotGothic16', monospace",
+      stroke: "#000000", strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(7);
+  }
+
+  /** コペルニクス洞窟: ひかりいし（星石）が くらやみに ぼうっと 光る演出。 */
+  private placeCopernicusCaveDecor(): void {
+    const ts = this.tileSize;
+    const lights: [number, number][] = [[10, 3], [16, 3], [13, 2]];
+    for (const [x, y] of lights) {
+      const gx = x * ts + ts / 2, gy = y * ts + ts / 2;
+      const glow = this.add.graphics().setDepth(62); // 暗闇(60)より上＝道しるべの灯り
+      glow.fillStyle(0xbfe6ff, 0.22); glow.fillCircle(gx, gy, ts * 0.9);
+      glow.fillStyle(0xeaf6ff, 0.32); glow.fillCircle(gx, gy, ts * 0.42);
+      this.tweens.add({ targets: glow, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
   }
 
   /** 地下フロアの最奥、ぬしのガンブロス（レベル33・1回きりの野生ボス）。 */
