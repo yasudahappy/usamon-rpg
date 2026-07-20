@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4", "copernicus_cave"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4", "copernicus_cave", "moon_altar"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -11,6 +11,7 @@ const MONSTER_SPRITE_IDS = [
   "roubau", "roubaag", "shakurin", "shakuros", "shakuruton",
   "hotaruna", "lunalux", "genbu", "pribo", "ganburos",
   "hidaneko", "kagario", "solpoka", "fureado", "prominence",
+  "serenios",
 ];
 // Back-facing sprites (the player's own monster in battle). Only the ids that
 // actually have a "<id>_back.png" asset — others fall back to the front sprite.
@@ -20,6 +21,7 @@ const MONSTER_BACK_SPRITE_IDS = [
   "roubau", "roubaag", "shakurin", "shakuros", "shakuruton",
   "hotaruna", "lunalux", "genbu", "pribo", "ganburos",
   "hidaneko", "kagario", "solpoka", "fureado", "prominence",
+  "serenios",
 ];
 
 export class BootScene extends Phaser.Scene {

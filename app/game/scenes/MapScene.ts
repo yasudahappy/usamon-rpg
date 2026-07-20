@@ -442,6 +442,11 @@ export class MapScene extends Phaser.Scene {
       this.placeCopernicusCaveDecor();
     }
 
+    // 月の祭壇 — コペルニクス最奥の隠しエリア。伝説のセレニオスが眠る。
+    if (this.currentMapKey === "moon_altar") {
+      this.placeMoonAltar();
+    }
+
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
     if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
       this.placeCaveCapsules();
@@ -6580,6 +6585,42 @@ export class MapScene extends Phaser.Scene {
       glow.fillStyle(0xeaf6ff, 0.32); glow.fillCircle(gx, gy, ts * 0.42);
       this.tweens.add({ targets: glow, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     }
+  }
+
+  /** 月の祭壇: 伝説のセレニオス（1回きりの野生ボス・捕獲可）。 */
+  private placeMoonAltar(): void {
+    const ts = this.tileSize;
+    // 月あかりの ほのかな 金色トーン
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xffe9a8, 0.06)
+      .setOrigin(0, 0).setDepth(40);
+    if (this.hasPitFlag("serenios_done")) return; // 一度 起こしたら もう いない
+    const ax = 7, ay = 5;
+    const cx = ax * ts + ts / 2, cy = ay * ts + ts / 2;
+    // 後光
+    const halo = this.add.graphics().setDepth(7);
+    halo.fillStyle(0xffe08a, 0.20); halo.fillCircle(cx, cy - 6, ts * 1.5);
+    halo.fillStyle(0xfff3c8, 0.16); halo.fillCircle(cx, cy - 6, ts * 0.95);
+    this.tweens.add({ targets: halo, alpha: 0.6, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    // セレニオス（俯瞰専用スプライトは無いので 正面の立ち姿を置く）
+    if (this.textures.exists("monster-serenios")) {
+      const spr = this.add.image(cx, cy + 6, "monster-serenios").setDepth(8).setOrigin(0.5, 1);
+      const src = this.textures.get("monster-serenios").getSourceImage() as { width: number; height: number };
+      spr.setScale((ts * 2.4) / Math.max(src.width, src.height));
+      this.tweens.add({ targets: spr, y: cy, duration: 2200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    this.nectarExam.push({
+      x: ax, y: ay, fn: () => {
+        this.showDialog([
+          "祭壇の おくで 月が しずかに かがやいている……。",
+          "ゴォォ……ン——。",
+          "月の守り神 セレニオスが\n目を さました！",
+        ], () => {
+          // 1回きり: 勝っても 捕まえても 逃げても もう あらわれない。
+          this.setPitFlag("serenios_done");
+          this.startBattle("serenios", 45);
+        });
+      },
+    });
   }
 
   /** 地下フロアの最奥、ぬしのガンブロス（レベル33・1回きりの野生ボス）。 */
