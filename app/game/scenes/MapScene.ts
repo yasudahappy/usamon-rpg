@@ -67,6 +67,7 @@ export class MapScene extends Phaser.Scene {
   private static GYM_LEADER_GATES: Record<string, string[]> = {
     ryuma: ["genki", "kagen"],
     simone: ["rei", "tsurara"],
+    luna: ["luna_gym1", "luna_gym2"],
   };
   // Sealed exits/doors: openings that are not yet passable. Stepping toward one
   // of its tiles shows the messages and blocks passage.
@@ -6421,10 +6422,10 @@ export class MapScene extends Phaser.Scene {
       "こども「かがみで ひかりを あつめると\nあったかいんだよ！ でも ジムの リーダーは\nもっと まぶしい らしいよ！」",
     ]));
 
-    // 光ジムの扉（準備中・ジム4は次のフェーズ）
-    this.nectarExam.push({ x: 7, y: 13, fn: () => this.showDialog([
-      "とびらに はりがみが ある。",
-      "『光のジム 【セレネジム】は\nただいま かいそうちゅう。\nかいかんを たのしみに まっててね！』",
+    // 光ジムの扉（開通！ 踏むと セレネジムへ ワープ）。看板は 案内に。
+    this.nectarExam.push({ x: 8, y: 14, fn: () => this.showDialog([
+      "『光のジム 【セレネジム】\nリーダー ルナ。』",
+      "『プリズムで 光の橋を つくって\nおくの リーダーを めざそう。』",
     ]) });
   }
 
