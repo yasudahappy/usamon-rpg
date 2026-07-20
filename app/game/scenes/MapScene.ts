@@ -111,6 +111,13 @@ export class MapScene extends Phaser.Scene {
   private momNpcX = 2;
   private momNpcY = 3;
 
+  // 仲間（ヒジリ）の追従スプライト。ミノリタウンでだけ プレイヤーの
+  // 1歩うしろを ついてくる。各ステップで 直前のタイルへ移動する。
+  private companionSprite?: Phaser.GameObjects.Image;
+  private companionTileX = 0;
+  private companionTileY = 0;
+  private companionDir: Direction = "down";
+
   // Shopkeeper NPC (Planet Shop) — npc tile is the counter front; the sprite
   // is drawn one tile behind it (RSE-style talking across the counter).
   private shopkeeperSprite?: Phaser.GameObjects.Image;
@@ -251,6 +258,7 @@ export class MapScene extends Phaser.Scene {
     this.granny2Sprite = undefined;
     this.rivalSprite = undefined;
     this.momSprite = undefined;
+    this.companionSprite = undefined;
     // Medical Center / Moonbase lab researchers: reset so a stale reference
     // (Phaser reuses the scene instance across restart) can't fire the wrong
     // map's dialog or block tiles in another map.
@@ -404,6 +412,7 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "minori_town") {
       this.placeMinoriDecor();
       this.placeMinoriTownEvents();
+      this.placeCompanionFollower();
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("minori_arrival_seen")) {
         this.time.delayedCall(700, () => this.playMinoriArrival());
@@ -767,6 +776,84 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
+  /** 仲間（ヒジリ）の向きから 俯瞰スプライトのテクスチャキーを返す。 */
+  private companionTexKey(dir: Direction): string {
+    const k = `cast-hijiri-${dir}`;
+    return this.textures.exists(k) ? k : "cast-hijiri-down";
+  }
+
+  /** (x,y) から dir を向いたときの「うしろ」のタイル。 */
+  private tileBehind(x: number, y: number, dir: Direction): { x: number; y: number } {
+    if (dir === "up") return { x, y: y + 1 };
+    if (dir === "down") return { x, y: y - 1 };
+    if (dir === "left") return { x: x + 1, y };
+    return { x: x - 1, y }; // right
+  }
+
+  /** ミノリタウンで、仲間になったヒジリを プレイヤーのうしろに配置する。 */
+  private placeCompanionFollower(): void {
+    if (this.currentMapKey !== "minori_town") return;
+    if (this.playerState?.companion !== "hijiri") return;
+    this.companionDir = this.facingDirection;
+    // プレイヤーの1歩うしろに置く。そこが壁など通れないタイルなら、
+    // プレイヤーと同じタイルから出発させる（一歩あるくと自然に離れる）。
+    const back = this.tileBehind(this.gridX, this.gridY, this.facingDirection);
+    if (!this.isCollision(back.x, back.y)) {
+      this.companionTileX = back.x;
+      this.companionTileY = back.y;
+    } else {
+      this.companionTileX = this.gridX;
+      this.companionTileY = this.gridY;
+    }
+    this.companionSprite = this.add.image(
+      this.companionTileX * this.tileSize + this.tileSize / 2,
+      this.companionTileY * this.tileSize + this.tileSize / 2,
+      this.companionTexKey(this.companionDir)
+    ).setDepth(9);
+  }
+
+  /** プレイヤーが1歩あるくたびに、仲間を 直前のタイルへ 追従させる。
+   *  fromX/fromY は プレイヤーが たった今 出発したタイル、dir は進んだ向き。 */
+  private stepCompanion(fromX: number, fromY: number, dir: Direction): void {
+    const spr = this.companionSprite;
+    if (!spr) return;
+    // すでに その位置にいれば動かない（初回の一歩など）。
+    if (this.companionTileX === fromX && this.companionTileY === fromY) return;
+    this.companionDir = dir;
+    spr.setTexture(this.companionTexKey(dir));
+    this.companionTileX = fromX;
+    this.companionTileY = fromY;
+    this.tweens.killTweensOf(spr);
+    this.tweens.add({
+      targets: spr,
+      x: fromX * this.tileSize + this.tileSize / 2,
+      y: fromY * this.tileSize + this.tileSize / 2,
+      duration: 150,
+      ease: "Linear",
+    });
+  }
+
+  /** ジムリーダー イシイ＆シオリを倒したあと、ヒジリに話しかけると
+   *  仲間になる。仲間化（または仲間化ずみの会話）を表示したら true。 */
+  private tryRecruitHijiri(trainerId: string): boolean {
+    if (trainerId !== "gym3_hijiri") return false;
+    if (this.currentMapKey !== "gym_3") return false;
+    if (!this.playerState) return false;
+    if (this.playerState.companion === "hijiri") {
+      this.showDialog(["ヒジリ「いっしょに いこう！\nミノリタウンを あるくの、たのしみだね。」"]);
+      return true;
+    }
+    if (!this.playerState.defeatedTrainers.includes("ishii_shiori")) return false;
+    this.playerState.companion = "hijiri";
+    this.showDialog([
+      "ヒジリ「イシイさんと シオリさんに\nかったなんて……すごいや！」",
+      "ヒジリ「ぼくも きみと いっしょに\nたびを してみたく なったよ。」",
+      "ヒジリが なかまに なった！",
+      "（ミノリタウンを あるくと\n うしろを ついてくるよ。）",
+    ]);
+    return true;
+  }
+
   /** Where a trainer currently stands and whether it's solid.
    *  Live: on its post (solid). Defeated: steps to a free perpendicular side
    *  tile (solid) so the path clears; if both sides are walls it stays put and
@@ -1072,9 +1159,15 @@ export class MapScene extends Phaser.Scene {
 
     if (this.isCollision(targetX, targetY)) return;
 
+    // 仲間（ヒジリ）は プレイヤーが たった今 出発するタイルへ、同時に
+    // 1歩ぶん 追従する（プレイヤーと同じ150msで並走）。
+    const leftX = this.gridX, leftY = this.gridY;
+
     this.isMoving = true;
     this.gridX = targetX;
     this.gridY = targetY;
+
+    this.stepCompanion(leftX, leftY, dir);
 
     this.tweens.add({
       targets: this.player,
@@ -3300,7 +3393,9 @@ export class MapScene extends Phaser.Scene {
     if (talkTrainer) {
       this.faceSpriteToPlayer(this.trainerSprites.get(talkTrainer.id));
       if (this.playerState?.defeatedTrainers.includes(talkTrainer.id)) {
-        this.showDialog([talkTrainer.dialogWin || "いい しょうぶ だったね！"]);
+        if (!this.tryRecruitHijiri(talkTrainer.id)) {
+          this.showDialog([talkTrainer.dialogWin || "いい しょうぶ だったね！"]);
+        }
       } else {
         this.startBattle(undefined, undefined, talkTrainer);
       }
@@ -3405,7 +3500,9 @@ export class MapScene extends Phaser.Scene {
       });
     if (beaten) {
       this.faceSpriteToPlayer(this.trainerSprites.get(beaten.id), this.trainerTile(beaten));
-      this.showDialog([beaten.dialogWin || "いい しょうぶ だったね！"]);
+      if (!this.tryRecruitHijiri(beaten.id)) {
+        this.showDialog([beaten.dialogWin || "いい しょうぶ だったね！"]);
+      }
       return;
     }
   }
