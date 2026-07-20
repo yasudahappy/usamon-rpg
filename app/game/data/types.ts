@@ -72,6 +72,7 @@ export interface PlayerState {
   lastRecoveryMap?: string; // recovery pod the player last healed at (blackout respawn)
   seen?: string[]; // ずかん: dataIds the player has encountered (みつけた)
   caught?: string[]; // ずかん: dataIds the player has owned/caught (つかまえた)
+  companion?: string; // 仲間になって ついてくる キャラ（例: "hijiri"）
 }
 
 // ---- Trainer data ----
