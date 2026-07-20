@@ -1565,10 +1565,12 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(this.add.text(this.uiX(nameX), this.uiY(88), data?.name ?? inst.dataId, {
       fontSize: `${this.uiS(27)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 5,
     }).setScrollFactor(0).setDepth(201));
-    this.menuElements.push(this.add.text(this.uiX(nameX), this.uiY(126), `Lv${inst.level}`, {
+    const lvText = this.add.text(this.uiX(nameX), this.uiY(126), `Lv${inst.level}`, {
       fontSize: `${this.uiS(20)}px`, color: "#fff0c0", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 4,
-    }).setScrollFactor(0).setDepth(201));
-    if (data) this.drawTypeBadge(nameX + 44, 166, data.type, 1.5);
+    }).setScrollFactor(0).setDepth(201);
+    this.menuElements.push(lvText);
+    // タイプバッジは Lv の右横に置く（Lv とかぶらないよう十分に右へ）
+    if (data) this.drawTypeBadge(nameX + 120, 136, data.type, 1.5);
 
     if (this.monDetailPage === 0) {
       // じょうほう：チャンキーな行で画面いっぱいに情報を並べる
