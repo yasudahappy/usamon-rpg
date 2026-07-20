@@ -858,7 +858,7 @@ export class MapScene extends Phaser.Scene {
     if (this.playerState.companion === "hijiri") {
       this.showDialog([
         "ヒジリ「いっしょに いこう！\nミノリタウンを あるくの、たのしみだね。」",
-        "ヒジリ「ぼく、CFOめざして がんばるよ！」",
+        "ヒジリ「ぼく、CHROめざして がんばるよ！」",
       ]);
       return true;
     }
@@ -867,7 +867,7 @@ export class MapScene extends Phaser.Scene {
     this.showDialog([
       "ヒジリ「イシイさんと シオリさんに\nかったなんて……すごいや！」",
       "ヒジリ「ぼくも きみと いっしょに\nたびを してみたく なったよ。」",
-      "ヒジリ「ぼく、CFOめざして がんばるよ！」",
+      "ヒジリ「ぼく、CHROめざして がんばるよ！」",
       "ヒジリが なかまに なった！",
       "（ミノリタウンを あるくと\n うしろを ついてくるよ。）",
     ]);
