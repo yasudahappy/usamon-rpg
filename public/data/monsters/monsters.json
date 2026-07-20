@@ -1,1655 +1,1699 @@
 [
- {
-  "id": "usamon",
-  "name": "うさもん",
-  "type": "光",
-  "role": "バランス型",
-  "description": "宇宙服うさぎ。明るく元気な相棒。",
-  "baseStats": {
-   "hp": 22,
-   "attack": 12,
-   "defense": 11,
-   "speed": 12
-  },
-  "statsAt50": {
-   "hp": 135,
-   "attack": 78,
-   "defense": 72,
-   "speed": 76
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 8,
-    "moveId": "kansya_no_mai"
-   },
-   {
-    "level": 24,
-    "moveId": "senjin_no_chie"
-   },
-   {
-    "level": 36,
-    "moveId": "ryuseigun"
-   },
-   {
-    "level": 42,
-    "moveId": "shooting_star"
-   },
-   {
-    "level": 45,
-    "moveId": "kansya_no_tasuki"
-   },
-   {
-    "level": 58,
-    "moveId": "luna_break"
-   },
-   {
-    "level": 72,
-    "moveId": "kibou_no_hikari"
-   },
-   {
-    "level": 85,
-    "moveId": "kirameku_kansya"
-   }
-  ],
-  "color": "#40d0ff",
-  "baseExp": 64
- },
- {
-  "id": "mochichi",
-  "name": "モチチ",
-  "type": "ガス",
-  "role": "耐久型",
-  "description": "月の餅から生まれた精。ふわふわ癒やし系。",
-  "baseStats": {
-   "hp": 25,
-   "attack": 10,
-   "defense": 14,
-   "speed": 7
-  },
-  "statsAt50": {
-   "hp": 140,
-   "attack": 65,
-   "defense": 72,
-   "speed": 30
-  },
-  "evolution": {
-   "level": 20,
-   "to": "mochigori"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "taiatari"
-   },
-   {
-    "level": 1,
-    "moveId": "doku_gas"
-   },
-   {
-    "level": 7,
-    "moveId": "mochiageru"
-   },
-   {
-    "level": 13,
-    "moveId": "hataku"
-   },
-   {
-    "level": 20,
-    "moveId": "mochinageru"
-   },
-   {
-    "level": 34,
-    "moveId": "steam_burst"
-   },
-   {
-    "level": 40,
-    "moveId": "heavy_mochi_press"
-   },
-   {
-    "level": 50,
-    "moveId": "fukuramu"
-   },
-   {
-    "level": 66,
-    "moveId": "gas_storm"
-   },
-   {
-    "level": 82,
-    "moveId": "mochi_daibakuhatsu"
-   }
-  ],
-  "color": "#e0e0f0",
-  "baseExp": 60
- },
- {
-  "id": "mochigori",
-  "name": "モチゴリ",
-  "type": "ガス",
-  "role": "耐久型",
-  "description": "モチチの進化形。もちもちのパワーが増した。",
-  "baseStats": {
-   "hp": 35,
-   "attack": 14,
-   "defense": 18,
-   "speed": 9
-  },
-  "statsAt50": {
-   "hp": 158,
-   "attack": 76,
-   "defense": 84,
-   "speed": 38
-  },
-  "evolution": {
-   "level": 40,
-   "to": "gorimocchi"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "taiatari"
-   },
-   {
-    "level": 1,
-    "moveId": "doku_gas"
-   },
-   {
-    "level": 7,
-    "moveId": "mochiageru"
-   },
-   {
-    "level": 13,
-    "moveId": "hataku"
-   },
-   {
-    "level": 20,
-    "moveId": "mochinageru"
-   },
-   {
-    "level": 34,
-    "moveId": "steam_burst"
-   },
-   {
-    "level": 40,
-    "moveId": "heavy_mochi_press"
-   },
-   {
-    "level": 50,
-    "moveId": "fukuramu"
-   },
-   {
-    "level": 66,
-    "moveId": "gas_storm"
-   },
-   {
-    "level": 82,
-    "moveId": "mochi_daibakuhatsu"
-   }
-  ],
-  "color": "#d0d0e8",
-  "baseExp": 120
- },
- {
-  "id": "gorimocchi",
-  "name": "ゴリモッチ",
-  "type": "ガス",
-  "role": "耐久型",
-  "description": "モチチの最終進化。圧倒的な耐久力。",
-  "baseStats": {
-   "hp": 45,
-   "attack": 18,
-   "defense": 24,
-   "speed": 10
-  },
-  "statsAt50": {
-   "hp": 175,
-   "attack": 88,
-   "defense": 95,
-   "speed": 45
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "taiatari"
-   },
-   {
-    "level": 1,
-    "moveId": "doku_gas"
-   },
-   {
-    "level": 7,
-    "moveId": "mochiageru"
-   },
-   {
-    "level": 13,
-    "moveId": "hataku"
-   },
-   {
-    "level": 20,
-    "moveId": "mochinageru"
-   },
-   {
-    "level": 34,
-    "moveId": "steam_burst"
-   },
-   {
-    "level": 40,
-    "moveId": "heavy_mochi_press"
-   },
-   {
-    "level": 50,
-    "moveId": "fukuramu"
-   },
-   {
-    "level": 66,
-    "moveId": "gas_storm"
-   },
-   {
-    "level": 82,
-    "moveId": "mochi_daibakuhatsu"
-   }
-  ],
-  "color": "#c0c0d8",
-  "baseExp": 200
- },
- {
-  "id": "sunagani",
-  "name": "スナガニ",
-  "type": "砂",
-  "role": "防御特化型",
-  "description": "月の砂に住むカニ。がんこで守りが固い。",
-  "baseStats": {
-   "hp": 24,
-   "attack": 11,
-   "defense": 16,
-   "speed": 6
-  },
-  "statsAt50": {
-   "hp": 120,
-   "attack": 60,
-   "defense": 85,
-   "speed": 28
-  },
-  "evolution": {
-   "level": 22,
-   "to": "lobsner"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hasamu"
-   },
-   {
-    "level": 1,
-    "moveId": "sand_blast"
-   },
-   {
-    "level": 8,
-    "moveId": "suna_no_shield"
-   },
-   {
-    "level": 15,
-    "moveId": "ana_wo_horu"
-   },
-   {
-    "level": 22,
-    "moveId": "rock_hasami"
-   },
-   {
-    "level": 38,
-    "moveId": "sandstorm"
-   },
-   {
-    "level": 55,
-    "moveId": "teppeki_guard"
-   },
-   {
-    "level": 70,
-    "moveId": "grand_crash"
-   },
-   {
-    "level": 84,
-    "moveId": "daisabaku"
-   }
-  ],
-  "color": "#c0a060",
-  "baseExp": 65
- },
- {
-  "id": "lobsner",
-  "name": "ロブスナー",
-  "type": "砂",
-  "role": "防御特化型",
-  "description": "スナガニの進化形。鉄壁の守り。",
-  "baseStats": {
-   "hp": 32,
-   "attack": 16,
-   "defense": 24,
-   "speed": 8
-  },
-  "statsAt50": {
-   "hp": 150,
-   "attack": 82,
-   "defense": 110,
-   "speed": 42
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hasamu"
-   },
-   {
-    "level": 1,
-    "moveId": "sand_blast"
-   },
-   {
-    "level": 8,
-    "moveId": "suna_no_shield"
-   },
-   {
-    "level": 15,
-    "moveId": "ana_wo_horu"
-   },
-   {
-    "level": 22,
-    "moveId": "rock_hasami"
-   },
-   {
-    "level": 38,
-    "moveId": "sandstorm"
-   },
-   {
-    "level": 55,
-    "moveId": "teppeki_guard"
-   },
-   {
-    "level": 70,
-    "moveId": "grand_crash"
-   },
-   {
-    "level": 84,
-    "moveId": "daisabaku"
-   }
-  ],
-  "color": "#b09050",
-  "baseExp": 150
- },
- {
-  "id": "rairai",
-  "name": "ライライ",
-  "type": "電",
-  "role": "速攻アタッカー",
-  "description": "電気をまとうライオンの子。せっかちですばやい。",
-  "baseStats": {
-   "hp": 20,
-   "attack": 14,
-   "defense": 8,
-   "speed": 16
-  },
-  "statsAt50": {
-   "hp": 95,
-   "attack": 78,
-   "defense": 45,
-   "speed": 90
-  },
-  "evolution": {
-   "level": 20,
-   "to": "ikarion"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hikkaki"
-   },
-   {
-    "level": 1,
-    "moveId": "spark"
-   },
-   {
-    "level": 9,
-    "moveId": "denkou_dash"
-   },
-   {
-    "level": 17,
-    "moveId": "kaminari"
-   },
-   {
-    "level": 20,
-    "moveId": "inazuma_kick"
-   },
-   {
-    "level": 35,
-    "moveId": "plasma_ball"
-   },
-   {
-    "level": 52,
-    "moveId": "raimei_no_tategami"
-   },
-   {
-    "level": 68,
-    "moveId": "thunder_storm"
-   },
-   {
-    "level": 83,
-    "moveId": "giga_volt"
-   }
-  ],
-  "color": "#ffdd44",
-  "baseExp": 62
- },
- {
-  "id": "ikarion",
-  "name": "イカリオン",
-  "type": "電",
-  "role": "速攻アタッカー",
-  "description": "ライライの進化形。雷をまとう獅子。",
-  "baseStats": {
-   "hp": 26,
-   "attack": 20,
-   "defense": 12,
-   "speed": 22
-  },
-  "statsAt50": {
-   "hp": 120,
-   "attack": 100,
-   "defense": 60,
-   "speed": 115
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hikkaki"
-   },
-   {
-    "level": 1,
-    "moveId": "spark"
-   },
-   {
-    "level": 9,
-    "moveId": "denkou_dash"
-   },
-   {
-    "level": 17,
-    "moveId": "kaminari"
-   },
-   {
-    "level": 20,
-    "moveId": "inazuma_kick"
-   },
-   {
-    "level": 35,
-    "moveId": "plasma_ball"
-   },
-   {
-    "level": 52,
-    "moveId": "raimei_no_tategami"
-   },
-   {
-    "level": 68,
-    "moveId": "thunder_storm"
-   },
-   {
-    "level": 83,
-    "moveId": "giga_volt"
-   }
-  ],
-  "color": "#eebb22",
-  "baseExp": 160
- },
- {
-  "id": "regonyas",
-  "name": "レゴニャス",
-  "type": "影",
-  "role": "一撃屋",
-  "description": "クレーターの影に住む猫。クールで気まぐれ。",
-  "baseStats": {
-   "hp": 18,
-   "attack": 15,
-   "defense": 9,
-   "speed": 15
-  },
-  "statsAt50": {
-   "hp": 90,
-   "attack": 90,
-   "defense": 48,
-   "speed": 82
-  },
-  "evolution": {
-   "level": 23,
-   "to": "sharisu"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hikkaki"
-   },
-   {
-    "level": 1,
-    "moveId": "shadow_claw"
-   },
-   {
-    "level": 5,
-    "moveId": "ikaku_suru"
-   },
-   {
-    "level": 8,
-    "moveId": "hara_wo_miseru"
-   },
-   {
-    "level": 23,
-    "moveId": "shadow_dive"
-   },
-   {
-    "level": 25,
-    "moveId": "renzoku_neko_punch"
-   },
-   {
-    "level": 45,
-    "moveId": "void_slash"
-   },
-   {
-    "level": 60,
-    "moveId": "yami_no_tobari"
-   },
-   {
-    "level": 74,
-    "moveId": "dark_nebula"
-   },
-   {
-    "level": 86,
-    "moveId": "genei_ranbu"
-   }
-  ],
-  "color": "#8844aa",
-  "baseExp": 66
- },
- {
-  "id": "sharisu",
-  "name": "シャリス",
-  "type": "影",
-  "role": "一撃屋",
-  "description": "レゴニャスの進化形。影に溶ける猫。",
-  "baseStats": {
-   "hp": 22,
-   "attack": 20,
-   "defense": 12,
-   "speed": 20
-  },
-  "statsAt50": {
-   "hp": 102,
-   "attack": 104,
-   "defense": 56,
-   "speed": 95
-  },
-  "evolution": {
-   "level": 45,
-   "to": "sharian"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hikkaki"
-   },
-   {
-    "level": 1,
-    "moveId": "shadow_claw"
-   },
-   {
-    "level": 5,
-    "moveId": "ikaku_suru"
-   },
-   {
-    "level": 8,
-    "moveId": "hara_wo_miseru"
-   },
-   {
-    "level": 23,
-    "moveId": "shadow_dive"
-   },
-   {
-    "level": 25,
-    "moveId": "renzoku_neko_punch"
-   },
-   {
-    "level": 45,
-    "moveId": "void_slash"
-   },
-   {
-    "level": 60,
-    "moveId": "yami_no_tobari"
-   },
-   {
-    "level": 74,
-    "moveId": "dark_nebula"
-   },
-   {
-    "level": 86,
-    "moveId": "genei_ranbu"
-   }
-  ],
-  "color": "#7733aa",
-  "baseExp": 140
- },
- {
-  "id": "sharian",
-  "name": "シャリアン",
-  "type": "影",
-  "role": "一撃屋",
-  "description": "レゴニャスの最終進化。闇を統べる猫。",
-  "baseStats": {
-   "hp": 26,
-   "attack": 26,
-   "defense": 14,
-   "speed": 24
-  },
-  "statsAt50": {
-   "hp": 115,
-   "attack": 118,
-   "defense": 65,
-   "speed": 108
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hikkaki"
-   },
-   {
-    "level": 1,
-    "moveId": "shadow_claw"
-   },
-   {
-    "level": 5,
-    "moveId": "ikaku_suru"
-   },
-   {
-    "level": 8,
-    "moveId": "hara_wo_miseru"
-   },
-   {
-    "level": 23,
-    "moveId": "shadow_dive"
-   },
-   {
-    "level": 25,
-    "moveId": "renzoku_neko_punch"
-   },
-   {
-    "level": 45,
-    "moveId": "void_slash"
-   },
-   {
-    "level": 60,
-    "moveId": "yami_no_tobari"
-   },
-   {
-    "level": 74,
-    "moveId": "dark_nebula"
-   },
-   {
-    "level": 86,
-    "moveId": "genei_ranbu"
-   }
-  ],
-  "color": "#6622aa",
-  "baseExp": 210
- },
- {
-  "id": "meteko",
-  "name": "メテコ",
-  "type": "炎",
-  "role": "速攻アタッカー",
-  "description": "月に降ってきた小さな隕石から生まれた火の玉アルモン。せっかちで熱血、いつも全力で戦う。",
-  "baseStats": {
-   "hp": 19,
-   "attack": 15,
-   "defense": 9,
-   "speed": 15
-  },
-  "statsAt50": {
-   "hp": 92,
-   "attack": 84,
-   "defense": 48,
-   "speed": 86
-  },
-  "evolution": {
-   "level": 30,
-   "to": "meteodon"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "taiatari"
-   },
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 6,
-    "moveId": "magma_kick"
-   },
-   {
-    "level": 8,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 16,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 20,
-    "moveId": "iwa_yoroi"
-   },
-   {
-    "level": 24,
-    "moveId": "moeru_toushi"
-   },
-   {
-    "level": 30,
-    "moveId": "meteor_punch"
-   },
-   {
-    "level": 38,
-    "moveId": "funka"
-   },
-   {
-    "level": 44,
-    "moveId": "kaen_housha"
-   },
-   {
-    "level": 60,
-    "moveId": "meteor_storm"
-   }
-  ],
-  "color": "#ff6a1e",
-  "baseExp": 64
- },
- {
-  "id": "meteodon",
-  "name": "メテオドン",
-  "type": "炎",
-  "role": "パワーアタッカー",
-  "description": "隕石のエネルギーが限界を超えて進化した姿。全身が溶岩のように燃え上がる大きな隕石獣アルモン。敵も味方も巻きこむ熱さで大暴れ！",
-  "baseStats": {
-   "hp": 34,
-   "attack": 26,
-   "defense": 20,
-   "speed": 18
-  },
-  "statsAt50": {
-   "hp": 150,
-   "attack": 132,
-   "defense": 98,
-   "speed": 92
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 1,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 1,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 1,
-    "moveId": "magma_kick"
-   },
-   {
-    "level": 30,
-    "moveId": "meteor_punch"
-   },
-   {
-    "level": 36,
-    "moveId": "funka"
-   },
-   {
-    "level": 38,
-    "moveId": "moeru_toushi"
-   },
-   {
-    "level": 48,
-    "moveId": "kaen_housha"
-   },
-   {
-    "level": 54,
-    "moveId": "bakuen"
-   },
-   {
-    "level": 66,
-    "moveId": "meteor_storm"
-   }
-  ],
-  "color": "#e0531a",
-  "baseExp": 150
- },
- {
-  "id": "roubau",
-  "name": "ローバウ",
-  "type": "金属",
-  "role": "ぼうぎょ型",
-  "description": "月面ローバーがアルモンになった犬型。忠実で健気に探査チームを待っている。",
-  "baseStats": {
-   "hp": 26,
-   "attack": 11,
-   "defense": 18,
-   "speed": 8
-  },
-  "statsAt50": {
-   "hp": 135,
-   "attack": 62,
-   "defense": 100,
-   "speed": 40
-  },
-  "evolution": {
-   "level": 32,
-   "to": "roubaag"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 4,
-    "moveId": "metal_bumper"
-   },
-   {
-    "level": 8,
-    "moveId": "ganjou_mode"
-   },
-   {
-    "level": 12,
-    "moveId": "tetsu_no_kiba"
-   },
-   {
-    "level": 16,
-    "moveId": "accel_drive"
-   },
-   {
-    "level": 20,
-    "moveId": "rover_tackle"
-   },
-   {
-    "level": 24,
-    "moveId": "solar_charge"
-   },
-   {
-    "level": 28,
-    "moveId": "sonar_scan"
-   },
-   {
-    "level": 31,
-    "moveId": "heavy_armor_press"
-   }
-  ],
-  "color": "#d8c8a0",
-  "baseExp": 62
- },
- {
-  "id": "roubaag",
-  "name": "ローバーグ",
-  "type": "金属",
-  "role": "重装ぼうぎょ型",
-  "description": "長い年月でボディが強化された重装甲の探査獣。背中のハンバーググリルは動力源であり非常食でもある。",
-  "baseStats": {
-   "hp": 40,
-   "attack": 19,
-   "defense": 30,
-   "speed": 9
-  },
-  "statsAt50": {
-   "hp": 182,
-   "attack": 96,
-   "defense": 148,
-   "speed": 52
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "metal_bumper"
-   },
-   {
-    "level": 1,
-    "moveId": "ganjou_mode"
-   },
-   {
-    "level": 18,
-    "moveId": "tetsu_no_kiba"
-   },
-   {
-    "level": 22,
-    "moveId": "accel_drive"
-   },
-   {
-    "level": 26,
-    "moveId": "rover_tackle"
-   },
-   {
-    "level": 30,
-    "moveId": "solar_charge"
-   },
-   {
-    "level": 34,
-    "moveId": "sonar_scan"
-   },
-   {
-    "level": 38,
-    "moveId": "heavy_armor_press"
-   }
-  ],
-  "color": "#b89a6a",
-  "baseExp": 158
- },
- {
-  "id": "shakurin",
-  "name": "シャクリン",
-  "type": "氷",
-  "role": "すばやさ型",
-  "description": "南極シャクルトンクレーターの永久影に住むペンギン風アルモン。はずかしがり屋だけど心優しい。",
-  "baseStats": {
-   "hp": 20,
-   "attack": 11,
-   "defense": 13,
-   "speed": 14
-  },
-  "statsAt50": {
-   "hp": 100,
-   "attack": 62,
-   "defense": 78,
-   "speed": 85
-  },
-  "evolution": {
-   "level": 25,
-   "to": "shakuros"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 5,
-    "moveId": "koori_no_tsubute"
-   },
-   {
-    "level": 10,
-    "moveId": "koori_no_veil"
-   },
-   {
-    "level": 16,
-    "moveId": "icicle_lance"
-   },
-   {
-    "level": 28,
-    "moveId": "fubuki"
-   }
-  ],
-  "color": "#bfe2f5",
-  "baseExp": 66
- },
- {
-  "id": "shakuros",
-  "name": "シャクロス",
-  "type": "氷",
-  "role": "バランス型",
-  "description": "氷の貴鳥。永久影の冷気をまとい、静かに氷原を見守る。シャクリンの進化形。",
-  "baseStats": {
-   "hp": 30,
-   "attack": 21,
-   "defense": 22,
-   "speed": 17
-  },
-  "statsAt50": {
-   "hp": 152,
-   "attack": 108,
-   "defense": 112,
-   "speed": 90
-  },
-  "evolution": {
-   "level": 45,
-   "to": "shakuruton"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "koori_no_tsubute"
-   },
-   {
-    "level": 10,
-    "moveId": "koori_no_veil"
-   },
-   {
-    "level": 16,
-    "moveId": "icicle_lance"
-   },
-   {
-    "level": 28,
-    "moveId": "fubuki"
-   },
-   {
-    "level": 36,
-    "moveId": "eikyuukage_no_iki"
-   }
-  ],
-  "color": "#8fc4e8",
-  "baseExp": 160
- },
- {
-  "id": "shakuruton",
-  "name": "シャクルトン",
-  "type": "氷",
-  "role": "重装攻撃型",
-  "description": "永久影を統べる氷の帝王。絶対零度の冷気で大地を凍らせ、その存在は伝説として語り継がれる。",
-  "baseStats": {
-   "hp": 38,
-   "attack": 26,
-   "defense": 28,
-   "speed": 18
-  },
-  "statsAt50": {
-   "hp": 175,
-   "attack": 128,
-   "defense": 135,
-   "speed": 95
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "koori_no_veil"
-   },
-   {
-    "level": 1,
-    "moveId": "icicle_lance"
-   },
-   {
-    "level": 28,
-    "moveId": "fubuki"
-   },
-   {
-    "level": 36,
-    "moveId": "eikyuukage_no_iki"
-   },
-   {
-    "level": 50,
-    "moveId": "zettai_reido"
-   }
-  ],
-  "color": "#5f7fb8",
-  "baseExp": 220
- },
- {
-  "id": "hotaruna",
-  "name": "ホタルナ",
-  "type": "光",
-  "role": "すばやさ型",
-  "description": "くらい ほらあなを てらす 月ボタル。むれで とぶと 星空の ようだ。",
-  "baseStats": {
-   "hp": 18,
-   "attack": 12,
-   "defense": 10,
-   "speed": 16
-  },
-  "statsAt50": {
-   "hp": 95,
-   "attack": 70,
-   "defense": 55,
-   "speed": 95
-  },
-  "evolution": {
-   "level": 28,
-   "to": "lunalux"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 5,
-    "moveId": "hikari_no_tsubu"
-   },
-   {
-    "level": 12,
-    "moveId": "tsukiakari"
-   },
-   {
-    "level": 18,
-    "moveId": "lantern_flash"
-   },
-   {
-    "level": 30,
-    "moveId": "ryuseigun"
-   }
-  ],
-  "color": "#ffe37a",
-  "baseExp": 65
- },
- {
-  "id": "lunalux",
-  "name": "ルナルクス",
-  "type": "光",
-  "role": "バランス型",
-  "description": "ランタンを かかげる 月あかりの 長老。まよった 旅人を そっと みちびく。",
-  "baseStats": {
-   "hp": 28,
-   "attack": 20,
-   "defense": 20,
-   "speed": 20
-  },
-  "statsAt50": {
-   "hp": 140,
-   "attack": 100,
-   "defense": 100,
-   "speed": 96
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "hikari_no_tsubu"
-   },
-   {
-    "level": 12,
-    "moveId": "tsukiakari"
-   },
-   {
-    "level": 18,
-    "moveId": "lantern_flash"
-   },
-   {
-    "level": 28,
-    "moveId": "ryuseigun"
-   },
-   {
-    "level": 36,
-    "moveId": "kibou_no_hikari"
-   },
-   {
-    "level": 44,
-    "moveId": "shooting_star"
-   }
-  ],
-  "color": "#f5e6b8",
-  "baseExp": 158
- },
- {
-  "id": "genbu",
-  "name": "ゲンブー",
-  "type": "砂",
-  "role": "耐久型",
-  "description": "こうらは 月の海と おなじ げんぶがん。むかし 溶岩だった 岩は とっても かたい。",
-  "baseStats": {
-   "hp": 24,
-   "attack": 13,
-   "defense": 17,
-   "speed": 7
-  },
-  "statsAt50": {
-   "hp": 118,
-   "attack": 70,
-   "defense": 95,
-   "speed": 35
-  },
-  "evolution": {
-   "level": 30,
-   "to": "ganburos"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 6,
-    "moveId": "sand_blast"
-   },
-   {
-    "level": 10,
-    "moveId": "suna_no_shield"
-   },
-   {
-    "level": 16,
-    "moveId": "ana_wo_horu"
-   },
-   {
-    "level": 24,
-    "moveId": "teppeki_guard"
-   },
-   {
-    "level": 30,
-    "moveId": "sandstorm"
-   },
-   {
-    "level": 46,
-    "moveId": "grand_crash"
-   }
-  ],
-  "color": "#c9b489",
-  "baseExp": 70
- },
- {
-  "id": "pribo",
-  "name": "プリボ",
-  "type": "金属",
-  "role": "バランス型",
-  "description": "まいごに なった 建設ロボ。レゴリスを すいこんで、なんでも 印刷して なげてくる。",
-  "baseStats": {
-   "hp": 25,
-   "attack": 14,
-   "defense": 16,
-   "speed": 10
-  },
-  "statsAt50": {
-   "hp": 125,
-   "attack": 80,
-   "defense": 92,
-   "speed": 55
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 5,
-    "moveId": "metal_bumper"
-   },
-   {
-    "level": 9,
-    "moveId": "print_attack"
-   },
-   {
-    "level": 14,
-    "moveId": "ganjou_mode"
-   },
-   {
-    "level": 18,
-    "moveId": "tetsu_no_kiba"
-   },
-   {
-    "level": 24,
-    "moveId": "solar_charge"
-   },
-   {
-    "level": 30,
-    "moveId": "rover_tackle"
-   },
-   {
-    "level": 38,
-    "moveId": "heavy_armor_press"
-   }
-  ],
-  "color": "#dfe3e8",
-  "baseExp": 90
- },
- {
-  "id": "ganburos",
-  "name": "ガンブロス",
-  "type": "砂",
-  "role": "パワー耐久型",
-  "description": "こうらは 柱状節理の 岩の とりで。月の 大地の かたさを そのまま せおっている。",
-  "baseStats": {
-   "hp": 38,
-   "attack": 22,
-   "defense": 28,
-   "speed": 8
-  },
-  "statsAt50": {
-   "hp": 170,
-   "attack": 105,
-   "defense": 135,
-   "speed": 40
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "sand_blast"
-   },
-   {
-    "level": 10,
-    "moveId": "suna_no_shield"
-   },
-   {
-    "level": 16,
-    "moveId": "ana_wo_horu"
-   },
-   {
-    "level": 24,
-    "moveId": "teppeki_guard"
-   },
-   {
-    "level": 30,
-    "moveId": "sandstorm"
-   },
-   {
-    "level": 40,
-    "moveId": "grand_crash"
-   },
-   {
-    "level": 52,
-    "moveId": "daisabaku"
-   }
-  ],
-  "color": "#8a8378",
-  "baseExp": 162
- },
- {
-  "id": "hidaneko",
-  "name": "ヒダネコ",
-  "type": "炎",
-  "role": "バランス型",
-  "description": "しっぽの先に 小さな火種を ともす 子ねこアルモン。マイナス170どの 月の夜も、この 火種が あれば へっちゃら。",
-  "baseStats": {
-   "hp": 20,
-   "attack": 14,
-   "defense": 11,
-   "speed": 14
-  },
-  "statsAt50": {
-   "hp": 98,
-   "attack": 78,
-   "defense": 58,
-   "speed": 80
-  },
-  "evolution": {
-   "level": 28,
-   "to": "kagario"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 7,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 14,
-    "moveId": "magma_kick"
-   },
-   {
-    "level": 20,
-    "moveId": "moeru_toushi"
-   },
-   {
-    "level": 26,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 34,
-    "moveId": "funka"
-   },
-   {
-    "level": 44,
-    "moveId": "kaen_housha"
-   }
-  ],
-  "color": "#f5d9a8",
-  "baseExp": 66
- },
- {
-  "id": "kagario",
-  "name": "カガリオ",
-  "type": "炎",
-  "role": "パワーアタッカー",
-  "description": "篝火（かがりび）の 大ねこ。たてがみの 炎は こごえる 夜に 仲間の 心まで あたためる。見はり番を つとめる 頼れる 兄貴分。",
-  "baseStats": {
-   "hp": 30,
-   "attack": 24,
-   "defense": 17,
-   "speed": 20
-  },
-  "statsAt50": {
-   "hp": 140,
-   "attack": 124,
-   "defense": 86,
-   "speed": 102
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 1,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 1,
-    "moveId": "magma_kick"
-   },
-   {
-    "level": 28,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 34,
-    "moveId": "moeru_toushi"
-   },
-   {
-    "level": 40,
-    "moveId": "funka"
-   },
-   {
-    "level": 48,
-    "moveId": "kaen_housha"
-   },
-   {
-    "level": 58,
-    "moveId": "bakuen"
-   }
-  ],
-  "color": "#d8402a",
-  "baseExp": 145
- },
- {
-  "id": "solpoka",
-  "name": "ソルポカ",
-  "type": "炎",
-  "role": "ためこみ型",
-  "description": "太陽の 熱を ふわふわの 羽毛に ためこむ ヒヨコアルモン。月の 長い 昼のあいだ、2週間 まるごと ひなたぼっこ している。",
-  "baseStats": {
-   "hp": 22,
-   "attack": 12,
-   "defense": 13,
-   "speed": 11
-  },
-  "statsAt50": {
-   "hp": 105,
-   "attack": 70,
-   "defense": 66,
-   "speed": 60
-  },
-  "evolution": {
-   "level": 29,
-   "to": "fureado"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "tataku"
-   },
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 8,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 14,
-    "moveId": "iwa_yoroi"
-   },
-   {
-    "level": 20,
-    "moveId": "moeru_toushi"
-   },
-   {
-    "level": 26,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 34,
-    "moveId": "funka"
-   },
-   {
-    "level": 46,
-    "moveId": "kaen_housha"
-   }
-  ],
-  "color": "#ffd23e",
-  "baseExp": 67
- },
- {
-  "id": "fureado",
-  "name": "フレアード",
-  "type": "炎",
-  "role": "速攻アタッカー",
-  "description": "太陽フレアの 火の鳥。ためこんだ 太陽の 熱を、うねる 炎の つばさに 変えて 解きはなつ。",
-  "baseStats": {
-   "hp": 28,
-   "attack": 22,
-   "defense": 16,
-   "speed": 22
-  },
-  "statsAt50": {
-   "hp": 132,
-   "attack": 116,
-   "defense": 80,
-   "speed": 112
-  },
-  "evolution": {
-   "level": 45,
-   "to": "prominence"
-  },
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 1,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 1,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 34,
-    "moveId": "moeru_toushi"
-   },
-   {
-    "level": 38,
-    "moveId": "funka"
-   },
-   {
-    "level": 46,
-    "moveId": "kaen_housha"
-   },
-   {
-    "level": 56,
-    "moveId": "bakuen"
-   }
-  ],
-  "color": "#e8552a",
-  "baseExp": 140
- },
- {
-  "id": "prominence",
-  "name": "プロミネンス",
-  "type": "炎",
-  "role": "エースアタッカー",
-  "description": "太陽の 表面から ふき上がる 巨大な 炎のループ——プロミネンスの 化身。つばさの 炎は 頭の上で つながり、地球が 何個も 入る 大きさの 輪を えがくという。",
-  "baseStats": {
-   "hp": 36,
-   "attack": 27,
-   "defense": 21,
-   "speed": 24
-  },
-  "statsAt50": {
-   "hp": 158,
-   "attack": 138,
-   "defense": 102,
-   "speed": 118
-  },
-  "evolution": null,
-  "learnset": [
-   {
-    "level": 1,
-    "moveId": "hinoko"
-   },
-   {
-    "level": 1,
-    "moveId": "kaen_tosshin"
-   },
-   {
-    "level": 1,
-    "moveId": "kaenbullet"
-   },
-   {
-    "level": 1,
-    "moveId": "funka"
-   },
-   {
-    "level": 50,
-    "moveId": "kaen_housha"
-   },
-   {
-    "level": 58,
-    "moveId": "bakuen"
-   },
-   {
-    "level": 66,
-    "moveId": "meteor_storm"
-   }
-  ],
-  "color": "#ff5a1e",
-  "baseExp": 215
- }
+  {
+    "id": "usamon",
+    "name": "うさもん",
+    "type": "光",
+    "role": "バランス型",
+    "description": "宇宙服うさぎ。明るく元気な相棒。",
+    "baseStats": {
+      "hp": 22,
+      "attack": 12,
+      "defense": 11,
+      "speed": 12
+    },
+    "statsAt50": {
+      "hp": 135,
+      "attack": 78,
+      "defense": 72,
+      "speed": 76
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 8,
+        "moveId": "kansya_no_mai"
+      },
+      {
+        "level": 24,
+        "moveId": "senjin_no_chie"
+      },
+      {
+        "level": 36,
+        "moveId": "ryuseigun"
+      },
+      {
+        "level": 42,
+        "moveId": "shooting_star"
+      },
+      {
+        "level": 45,
+        "moveId": "kansya_no_tasuki"
+      },
+      {
+        "level": 58,
+        "moveId": "luna_break"
+      },
+      {
+        "level": 72,
+        "moveId": "kibou_no_hikari"
+      },
+      {
+        "level": 85,
+        "moveId": "kirameku_kansya"
+      }
+    ],
+    "color": "#40d0ff",
+    "baseExp": 64
+  },
+  {
+    "id": "mochichi",
+    "name": "モチチ",
+    "type": "ガス",
+    "role": "耐久型",
+    "description": "月の餅から生まれた精。ふわふわ癒やし系。",
+    "baseStats": {
+      "hp": 25,
+      "attack": 10,
+      "defense": 14,
+      "speed": 7
+    },
+    "statsAt50": {
+      "hp": 140,
+      "attack": 65,
+      "defense": 72,
+      "speed": 30
+    },
+    "evolution": {
+      "level": 20,
+      "to": "mochigori"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "doku_gas"
+      },
+      {
+        "level": 7,
+        "moveId": "mochiageru"
+      },
+      {
+        "level": 13,
+        "moveId": "hataku"
+      },
+      {
+        "level": 20,
+        "moveId": "mochinageru"
+      },
+      {
+        "level": 34,
+        "moveId": "steam_burst"
+      },
+      {
+        "level": 40,
+        "moveId": "heavy_mochi_press"
+      },
+      {
+        "level": 50,
+        "moveId": "fukuramu"
+      },
+      {
+        "level": 66,
+        "moveId": "gas_storm"
+      },
+      {
+        "level": 82,
+        "moveId": "mochi_daibakuhatsu"
+      }
+    ],
+    "color": "#e0e0f0",
+    "baseExp": 60
+  },
+  {
+    "id": "mochigori",
+    "name": "モチゴリ",
+    "type": "ガス",
+    "role": "耐久型",
+    "description": "モチチの進化形。もちもちのパワーが増した。",
+    "baseStats": {
+      "hp": 35,
+      "attack": 14,
+      "defense": 18,
+      "speed": 9
+    },
+    "statsAt50": {
+      "hp": 158,
+      "attack": 76,
+      "defense": 84,
+      "speed": 38
+    },
+    "evolution": {
+      "level": 40,
+      "to": "gorimocchi"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "doku_gas"
+      },
+      {
+        "level": 7,
+        "moveId": "mochiageru"
+      },
+      {
+        "level": 13,
+        "moveId": "hataku"
+      },
+      {
+        "level": 20,
+        "moveId": "mochinageru"
+      },
+      {
+        "level": 34,
+        "moveId": "steam_burst"
+      },
+      {
+        "level": 40,
+        "moveId": "heavy_mochi_press"
+      },
+      {
+        "level": 50,
+        "moveId": "fukuramu"
+      },
+      {
+        "level": 66,
+        "moveId": "gas_storm"
+      },
+      {
+        "level": 82,
+        "moveId": "mochi_daibakuhatsu"
+      }
+    ],
+    "color": "#d0d0e8",
+    "baseExp": 120
+  },
+  {
+    "id": "gorimocchi",
+    "name": "ゴリモッチ",
+    "type": "ガス",
+    "role": "耐久型",
+    "description": "モチチの最終進化。圧倒的な耐久力。",
+    "baseStats": {
+      "hp": 45,
+      "attack": 18,
+      "defense": 24,
+      "speed": 10
+    },
+    "statsAt50": {
+      "hp": 175,
+      "attack": 88,
+      "defense": 95,
+      "speed": 45
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "doku_gas"
+      },
+      {
+        "level": 7,
+        "moveId": "mochiageru"
+      },
+      {
+        "level": 13,
+        "moveId": "hataku"
+      },
+      {
+        "level": 20,
+        "moveId": "mochinageru"
+      },
+      {
+        "level": 34,
+        "moveId": "steam_burst"
+      },
+      {
+        "level": 40,
+        "moveId": "heavy_mochi_press"
+      },
+      {
+        "level": 50,
+        "moveId": "fukuramu"
+      },
+      {
+        "level": 66,
+        "moveId": "gas_storm"
+      },
+      {
+        "level": 82,
+        "moveId": "mochi_daibakuhatsu"
+      }
+    ],
+    "color": "#c0c0d8",
+    "baseExp": 200
+  },
+  {
+    "id": "sunagani",
+    "name": "スナガニ",
+    "type": "砂",
+    "role": "防御特化型",
+    "description": "月の砂に住むカニ。がんこで守りが固い。",
+    "baseStats": {
+      "hp": 24,
+      "attack": 11,
+      "defense": 16,
+      "speed": 6
+    },
+    "statsAt50": {
+      "hp": 120,
+      "attack": 60,
+      "defense": 85,
+      "speed": 28
+    },
+    "evolution": {
+      "level": 22,
+      "to": "lobsner"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hasamu"
+      },
+      {
+        "level": 1,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 8,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 15,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 22,
+        "moveId": "rock_hasami"
+      },
+      {
+        "level": 38,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 55,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 70,
+        "moveId": "grand_crash"
+      },
+      {
+        "level": 84,
+        "moveId": "daisabaku"
+      }
+    ],
+    "color": "#c0a060",
+    "baseExp": 65
+  },
+  {
+    "id": "lobsner",
+    "name": "ロブスナー",
+    "type": "砂",
+    "role": "防御特化型",
+    "description": "スナガニの進化形。鉄壁の守り。",
+    "baseStats": {
+      "hp": 32,
+      "attack": 16,
+      "defense": 24,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 150,
+      "attack": 82,
+      "defense": 110,
+      "speed": 42
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hasamu"
+      },
+      {
+        "level": 1,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 8,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 15,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 22,
+        "moveId": "rock_hasami"
+      },
+      {
+        "level": 38,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 55,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 70,
+        "moveId": "grand_crash"
+      },
+      {
+        "level": 84,
+        "moveId": "daisabaku"
+      }
+    ],
+    "color": "#b09050",
+    "baseExp": 150
+  },
+  {
+    "id": "rairai",
+    "name": "ライライ",
+    "type": "電",
+    "role": "速攻アタッカー",
+    "description": "電気をまとうライオンの子。せっかちですばやい。",
+    "baseStats": {
+      "hp": 20,
+      "attack": 14,
+      "defense": 8,
+      "speed": 16
+    },
+    "statsAt50": {
+      "hp": 95,
+      "attack": 78,
+      "defense": 45,
+      "speed": 90
+    },
+    "evolution": {
+      "level": 20,
+      "to": "ikarion"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "spark"
+      },
+      {
+        "level": 9,
+        "moveId": "denkou_dash"
+      },
+      {
+        "level": 17,
+        "moveId": "kaminari"
+      },
+      {
+        "level": 20,
+        "moveId": "inazuma_kick"
+      },
+      {
+        "level": 35,
+        "moveId": "plasma_ball"
+      },
+      {
+        "level": 52,
+        "moveId": "raimei_no_tategami"
+      },
+      {
+        "level": 68,
+        "moveId": "thunder_storm"
+      },
+      {
+        "level": 83,
+        "moveId": "giga_volt"
+      }
+    ],
+    "color": "#ffdd44",
+    "baseExp": 62
+  },
+  {
+    "id": "ikarion",
+    "name": "イカリオン",
+    "type": "電",
+    "role": "速攻アタッカー",
+    "description": "ライライの進化形。雷をまとう獅子。",
+    "baseStats": {
+      "hp": 26,
+      "attack": 20,
+      "defense": 12,
+      "speed": 22
+    },
+    "statsAt50": {
+      "hp": 120,
+      "attack": 100,
+      "defense": 60,
+      "speed": 115
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "spark"
+      },
+      {
+        "level": 9,
+        "moveId": "denkou_dash"
+      },
+      {
+        "level": 17,
+        "moveId": "kaminari"
+      },
+      {
+        "level": 20,
+        "moveId": "inazuma_kick"
+      },
+      {
+        "level": 35,
+        "moveId": "plasma_ball"
+      },
+      {
+        "level": 52,
+        "moveId": "raimei_no_tategami"
+      },
+      {
+        "level": 68,
+        "moveId": "thunder_storm"
+      },
+      {
+        "level": 83,
+        "moveId": "giga_volt"
+      }
+    ],
+    "color": "#eebb22",
+    "baseExp": 160
+  },
+  {
+    "id": "regonyas",
+    "name": "レゴニャス",
+    "type": "影",
+    "role": "一撃屋",
+    "description": "クレーターの影に住む猫。クールで気まぐれ。",
+    "baseStats": {
+      "hp": 18,
+      "attack": 15,
+      "defense": 9,
+      "speed": 15
+    },
+    "statsAt50": {
+      "hp": 90,
+      "attack": 90,
+      "defense": 48,
+      "speed": 82
+    },
+    "evolution": {
+      "level": 23,
+      "to": "sharisu"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "shadow_claw"
+      },
+      {
+        "level": 5,
+        "moveId": "ikaku_suru"
+      },
+      {
+        "level": 8,
+        "moveId": "hara_wo_miseru"
+      },
+      {
+        "level": 23,
+        "moveId": "shadow_dive"
+      },
+      {
+        "level": 25,
+        "moveId": "renzoku_neko_punch"
+      },
+      {
+        "level": 45,
+        "moveId": "void_slash"
+      },
+      {
+        "level": 60,
+        "moveId": "yami_no_tobari"
+      },
+      {
+        "level": 74,
+        "moveId": "dark_nebula"
+      },
+      {
+        "level": 86,
+        "moveId": "genei_ranbu"
+      }
+    ],
+    "color": "#8844aa",
+    "baseExp": 66
+  },
+  {
+    "id": "sharisu",
+    "name": "シャリス",
+    "type": "影",
+    "role": "一撃屋",
+    "description": "レゴニャスの進化形。影に溶ける猫。",
+    "baseStats": {
+      "hp": 22,
+      "attack": 20,
+      "defense": 12,
+      "speed": 20
+    },
+    "statsAt50": {
+      "hp": 102,
+      "attack": 104,
+      "defense": 56,
+      "speed": 95
+    },
+    "evolution": {
+      "level": 45,
+      "to": "sharian"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "shadow_claw"
+      },
+      {
+        "level": 5,
+        "moveId": "ikaku_suru"
+      },
+      {
+        "level": 8,
+        "moveId": "hara_wo_miseru"
+      },
+      {
+        "level": 23,
+        "moveId": "shadow_dive"
+      },
+      {
+        "level": 25,
+        "moveId": "renzoku_neko_punch"
+      },
+      {
+        "level": 45,
+        "moveId": "void_slash"
+      },
+      {
+        "level": 60,
+        "moveId": "yami_no_tobari"
+      },
+      {
+        "level": 74,
+        "moveId": "dark_nebula"
+      },
+      {
+        "level": 86,
+        "moveId": "genei_ranbu"
+      }
+    ],
+    "color": "#7733aa",
+    "baseExp": 140
+  },
+  {
+    "id": "sharian",
+    "name": "シャリアン",
+    "type": "影",
+    "role": "一撃屋",
+    "description": "レゴニャスの最終進化。闇を統べる猫。",
+    "baseStats": {
+      "hp": 26,
+      "attack": 26,
+      "defense": 14,
+      "speed": 24
+    },
+    "statsAt50": {
+      "hp": 115,
+      "attack": 118,
+      "defense": 65,
+      "speed": 108
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hikkaki"
+      },
+      {
+        "level": 1,
+        "moveId": "shadow_claw"
+      },
+      {
+        "level": 5,
+        "moveId": "ikaku_suru"
+      },
+      {
+        "level": 8,
+        "moveId": "hara_wo_miseru"
+      },
+      {
+        "level": 23,
+        "moveId": "shadow_dive"
+      },
+      {
+        "level": 25,
+        "moveId": "renzoku_neko_punch"
+      },
+      {
+        "level": 45,
+        "moveId": "void_slash"
+      },
+      {
+        "level": 60,
+        "moveId": "yami_no_tobari"
+      },
+      {
+        "level": 74,
+        "moveId": "dark_nebula"
+      },
+      {
+        "level": 86,
+        "moveId": "genei_ranbu"
+      }
+    ],
+    "color": "#6622aa",
+    "baseExp": 210
+  },
+  {
+    "id": "meteko",
+    "name": "メテコ",
+    "type": "炎",
+    "role": "速攻アタッカー",
+    "description": "月に降ってきた小さな隕石から生まれた火の玉アルモン。せっかちで熱血、いつも全力で戦う。",
+    "baseStats": {
+      "hp": 19,
+      "attack": 15,
+      "defense": 9,
+      "speed": 15
+    },
+    "statsAt50": {
+      "hp": 92,
+      "attack": 84,
+      "defense": 48,
+      "speed": 86
+    },
+    "evolution": {
+      "level": 30,
+      "to": "meteodon"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "taiatari"
+      },
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 6,
+        "moveId": "magma_kick"
+      },
+      {
+        "level": 8,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 16,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 20,
+        "moveId": "iwa_yoroi"
+      },
+      {
+        "level": 24,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 30,
+        "moveId": "meteor_punch"
+      },
+      {
+        "level": 38,
+        "moveId": "funka"
+      },
+      {
+        "level": 44,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 60,
+        "moveId": "meteor_storm"
+      }
+    ],
+    "color": "#ff6a1e",
+    "baseExp": 64
+  },
+  {
+    "id": "meteodon",
+    "name": "メテオドン",
+    "type": "炎",
+    "role": "パワーアタッカー",
+    "description": "隕石のエネルギーが限界を超えて進化した姿。全身が溶岩のように燃え上がる大きな隕石獣アルモン。敵も味方も巻きこむ熱さで大暴れ！",
+    "baseStats": {
+      "hp": 34,
+      "attack": 26,
+      "defense": 20,
+      "speed": 18
+    },
+    "statsAt50": {
+      "hp": 150,
+      "attack": 132,
+      "defense": 98,
+      "speed": 92
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 1,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 1,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 1,
+        "moveId": "magma_kick"
+      },
+      {
+        "level": 30,
+        "moveId": "meteor_punch"
+      },
+      {
+        "level": 36,
+        "moveId": "funka"
+      },
+      {
+        "level": 38,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 48,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 54,
+        "moveId": "bakuen"
+      },
+      {
+        "level": 66,
+        "moveId": "meteor_storm"
+      }
+    ],
+    "color": "#e0531a",
+    "baseExp": 150
+  },
+  {
+    "id": "roubau",
+    "name": "ローバウ",
+    "type": "金属",
+    "role": "ぼうぎょ型",
+    "description": "月面ローバーがアルモンになった犬型。忠実で健気に探査チームを待っている。",
+    "baseStats": {
+      "hp": 26,
+      "attack": 11,
+      "defense": 18,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 135,
+      "attack": 62,
+      "defense": 100,
+      "speed": 40
+    },
+    "evolution": {
+      "level": 32,
+      "to": "roubaag"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 4,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 8,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 12,
+        "moveId": "tetsu_no_kiba"
+      },
+      {
+        "level": 16,
+        "moveId": "accel_drive"
+      },
+      {
+        "level": 20,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 24,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 28,
+        "moveId": "sonar_scan"
+      },
+      {
+        "level": 31,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#d8c8a0",
+    "baseExp": 62
+  },
+  {
+    "id": "roubaag",
+    "name": "ローバーグ",
+    "type": "金属",
+    "role": "重装ぼうぎょ型",
+    "description": "長い年月でボディが強化された重装甲の探査獣。背中のハンバーググリルは動力源であり非常食でもある。",
+    "baseStats": {
+      "hp": 40,
+      "attack": 19,
+      "defense": 30,
+      "speed": 9
+    },
+    "statsAt50": {
+      "hp": 182,
+      "attack": 96,
+      "defense": 148,
+      "speed": 52
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 1,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 18,
+        "moveId": "tetsu_no_kiba"
+      },
+      {
+        "level": 22,
+        "moveId": "accel_drive"
+      },
+      {
+        "level": 26,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 30,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 34,
+        "moveId": "sonar_scan"
+      },
+      {
+        "level": 38,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#b89a6a",
+    "baseExp": 158
+  },
+  {
+    "id": "shakurin",
+    "name": "シャクリン",
+    "type": "氷",
+    "role": "すばやさ型",
+    "description": "南極シャクルトンクレーターの永久影に住むペンギン風アルモン。はずかしがり屋だけど心優しい。",
+    "baseStats": {
+      "hp": 20,
+      "attack": 11,
+      "defense": 13,
+      "speed": 14
+    },
+    "statsAt50": {
+      "hp": 100,
+      "attack": 62,
+      "defense": 78,
+      "speed": 85
+    },
+    "evolution": {
+      "level": 25,
+      "to": "shakuros"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 5,
+        "moveId": "koori_no_tsubute"
+      },
+      {
+        "level": 10,
+        "moveId": "koori_no_veil"
+      },
+      {
+        "level": 16,
+        "moveId": "icicle_lance"
+      },
+      {
+        "level": 28,
+        "moveId": "fubuki"
+      }
+    ],
+    "color": "#bfe2f5",
+    "baseExp": 66
+  },
+  {
+    "id": "shakuros",
+    "name": "シャクロス",
+    "type": "氷",
+    "role": "バランス型",
+    "description": "氷の貴鳥。永久影の冷気をまとい、静かに氷原を見守る。シャクリンの進化形。",
+    "baseStats": {
+      "hp": 30,
+      "attack": 21,
+      "defense": 22,
+      "speed": 17
+    },
+    "statsAt50": {
+      "hp": 152,
+      "attack": 108,
+      "defense": 112,
+      "speed": 90
+    },
+    "evolution": {
+      "level": 45,
+      "to": "shakuruton"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "koori_no_tsubute"
+      },
+      {
+        "level": 10,
+        "moveId": "koori_no_veil"
+      },
+      {
+        "level": 16,
+        "moveId": "icicle_lance"
+      },
+      {
+        "level": 28,
+        "moveId": "fubuki"
+      },
+      {
+        "level": 36,
+        "moveId": "eikyuukage_no_iki"
+      }
+    ],
+    "color": "#8fc4e8",
+    "baseExp": 160
+  },
+  {
+    "id": "shakuruton",
+    "name": "シャクルトン",
+    "type": "氷",
+    "role": "重装攻撃型",
+    "description": "永久影を統べる氷の帝王。絶対零度の冷気で大地を凍らせ、その存在は伝説として語り継がれる。",
+    "baseStats": {
+      "hp": 38,
+      "attack": 26,
+      "defense": 28,
+      "speed": 18
+    },
+    "statsAt50": {
+      "hp": 175,
+      "attack": 128,
+      "defense": 135,
+      "speed": 95
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "koori_no_veil"
+      },
+      {
+        "level": 1,
+        "moveId": "icicle_lance"
+      },
+      {
+        "level": 28,
+        "moveId": "fubuki"
+      },
+      {
+        "level": 36,
+        "moveId": "eikyuukage_no_iki"
+      },
+      {
+        "level": 50,
+        "moveId": "zettai_reido"
+      }
+    ],
+    "color": "#5f7fb8",
+    "baseExp": 220
+  },
+  {
+    "id": "hotaruna",
+    "name": "ホタルナ",
+    "type": "光",
+    "role": "すばやさ型",
+    "description": "くらい ほらあなを てらす 月ボタル。むれで とぶと 星空の ようだ。",
+    "baseStats": {
+      "hp": 18,
+      "attack": 12,
+      "defense": 10,
+      "speed": 16
+    },
+    "statsAt50": {
+      "hp": 95,
+      "attack": 70,
+      "defense": 55,
+      "speed": 95
+    },
+    "evolution": {
+      "level": 28,
+      "to": "lunalux"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 5,
+        "moveId": "hikari_no_tsubu"
+      },
+      {
+        "level": 12,
+        "moveId": "tsukiakari"
+      },
+      {
+        "level": 18,
+        "moveId": "lantern_flash"
+      },
+      {
+        "level": 30,
+        "moveId": "ryuseigun"
+      }
+    ],
+    "color": "#ffe37a",
+    "baseExp": 65
+  },
+  {
+    "id": "lunalux",
+    "name": "ルナルクス",
+    "type": "光",
+    "role": "バランス型",
+    "description": "ランタンを かかげる 月あかりの 長老。まよった 旅人を そっと みちびく。",
+    "baseStats": {
+      "hp": 28,
+      "attack": 20,
+      "defense": 20,
+      "speed": 20
+    },
+    "statsAt50": {
+      "hp": 140,
+      "attack": 100,
+      "defense": 100,
+      "speed": 96
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "hikari_no_tsubu"
+      },
+      {
+        "level": 12,
+        "moveId": "tsukiakari"
+      },
+      {
+        "level": 18,
+        "moveId": "lantern_flash"
+      },
+      {
+        "level": 28,
+        "moveId": "ryuseigun"
+      },
+      {
+        "level": 36,
+        "moveId": "kibou_no_hikari"
+      },
+      {
+        "level": 44,
+        "moveId": "shooting_star"
+      }
+    ],
+    "color": "#f5e6b8",
+    "baseExp": 158
+  },
+  {
+    "id": "genbu",
+    "name": "ゲンブー",
+    "type": "砂",
+    "role": "耐久型",
+    "description": "こうらは 月の海と おなじ げんぶがん。むかし 溶岩だった 岩は とっても かたい。",
+    "baseStats": {
+      "hp": 24,
+      "attack": 13,
+      "defense": 17,
+      "speed": 7
+    },
+    "statsAt50": {
+      "hp": 118,
+      "attack": 70,
+      "defense": 95,
+      "speed": 35
+    },
+    "evolution": {
+      "level": 30,
+      "to": "ganburos"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 6,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 10,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 16,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 24,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 30,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 46,
+        "moveId": "grand_crash"
+      }
+    ],
+    "color": "#c9b489",
+    "baseExp": 70
+  },
+  {
+    "id": "pribo",
+    "name": "プリボ",
+    "type": "金属",
+    "role": "バランス型",
+    "description": "まいごに なった 建設ロボ。レゴリスを すいこんで、なんでも 印刷して なげてくる。",
+    "baseStats": {
+      "hp": 25,
+      "attack": 14,
+      "defense": 16,
+      "speed": 10
+    },
+    "statsAt50": {
+      "hp": 125,
+      "attack": 80,
+      "defense": 92,
+      "speed": 55
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 5,
+        "moveId": "metal_bumper"
+      },
+      {
+        "level": 9,
+        "moveId": "print_attack"
+      },
+      {
+        "level": 14,
+        "moveId": "ganjou_mode"
+      },
+      {
+        "level": 18,
+        "moveId": "tetsu_no_kiba"
+      },
+      {
+        "level": 24,
+        "moveId": "solar_charge"
+      },
+      {
+        "level": 30,
+        "moveId": "rover_tackle"
+      },
+      {
+        "level": 38,
+        "moveId": "heavy_armor_press"
+      }
+    ],
+    "color": "#dfe3e8",
+    "baseExp": 90
+  },
+  {
+    "id": "ganburos",
+    "name": "ガンブロス",
+    "type": "砂",
+    "role": "パワー耐久型",
+    "description": "こうらは 柱状節理の 岩の とりで。月の 大地の かたさを そのまま せおっている。",
+    "baseStats": {
+      "hp": 38,
+      "attack": 22,
+      "defense": 28,
+      "speed": 8
+    },
+    "statsAt50": {
+      "hp": 170,
+      "attack": 105,
+      "defense": 135,
+      "speed": 40
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "sand_blast"
+      },
+      {
+        "level": 10,
+        "moveId": "suna_no_shield"
+      },
+      {
+        "level": 16,
+        "moveId": "ana_wo_horu"
+      },
+      {
+        "level": 24,
+        "moveId": "teppeki_guard"
+      },
+      {
+        "level": 30,
+        "moveId": "sandstorm"
+      },
+      {
+        "level": 40,
+        "moveId": "grand_crash"
+      },
+      {
+        "level": 52,
+        "moveId": "daisabaku"
+      }
+    ],
+    "color": "#8a8378",
+    "baseExp": 162
+  },
+  {
+    "id": "hidaneko",
+    "name": "ヒダネコ",
+    "type": "炎",
+    "role": "バランス型",
+    "description": "しっぽの先に 小さな火種を ともす 子ねこアルモン。マイナス170どの 月の夜も、この 火種が あれば へっちゃら。",
+    "baseStats": {
+      "hp": 20,
+      "attack": 14,
+      "defense": 11,
+      "speed": 14
+    },
+    "statsAt50": {
+      "hp": 98,
+      "attack": 78,
+      "defense": 58,
+      "speed": 80
+    },
+    "evolution": {
+      "level": 28,
+      "to": "kagario"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 7,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 14,
+        "moveId": "magma_kick"
+      },
+      {
+        "level": 20,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 26,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 34,
+        "moveId": "funka"
+      },
+      {
+        "level": 44,
+        "moveId": "kaen_housha"
+      }
+    ],
+    "color": "#f5d9a8",
+    "baseExp": 66
+  },
+  {
+    "id": "kagario",
+    "name": "カガリオ",
+    "type": "炎",
+    "role": "パワーアタッカー",
+    "description": "篝火（かがりび）の 大ねこ。たてがみの 炎は こごえる 夜に 仲間の 心まで あたためる。見はり番を つとめる 頼れる 兄貴分。",
+    "baseStats": {
+      "hp": 30,
+      "attack": 24,
+      "defense": 17,
+      "speed": 20
+    },
+    "statsAt50": {
+      "hp": 140,
+      "attack": 124,
+      "defense": 86,
+      "speed": 102
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 1,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 1,
+        "moveId": "magma_kick"
+      },
+      {
+        "level": 28,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 34,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 40,
+        "moveId": "funka"
+      },
+      {
+        "level": 48,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 58,
+        "moveId": "bakuen"
+      }
+    ],
+    "color": "#d8402a",
+    "baseExp": 145
+  },
+  {
+    "id": "solpoka",
+    "name": "ソルポカ",
+    "type": "炎",
+    "role": "ためこみ型",
+    "description": "太陽の 熱を ふわふわの 羽毛に ためこむ ヒヨコアルモン。月の 長い 昼のあいだ、2週間 まるごと ひなたぼっこ している。",
+    "baseStats": {
+      "hp": 22,
+      "attack": 12,
+      "defense": 13,
+      "speed": 11
+    },
+    "statsAt50": {
+      "hp": 105,
+      "attack": 70,
+      "defense": 66,
+      "speed": 60
+    },
+    "evolution": {
+      "level": 29,
+      "to": "fureado"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 8,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 14,
+        "moveId": "iwa_yoroi"
+      },
+      {
+        "level": 20,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 26,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 34,
+        "moveId": "funka"
+      },
+      {
+        "level": 46,
+        "moveId": "kaen_housha"
+      }
+    ],
+    "color": "#ffd23e",
+    "baseExp": 67
+  },
+  {
+    "id": "fureado",
+    "name": "フレアード",
+    "type": "炎",
+    "role": "速攻アタッカー",
+    "description": "太陽フレアの 火の鳥。ためこんだ 太陽の 熱を、うねる 炎の つばさに 変えて 解きはなつ。",
+    "baseStats": {
+      "hp": 28,
+      "attack": 22,
+      "defense": 16,
+      "speed": 22
+    },
+    "statsAt50": {
+      "hp": 132,
+      "attack": 116,
+      "defense": 80,
+      "speed": 112
+    },
+    "evolution": {
+      "level": 45,
+      "to": "prominence"
+    },
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 1,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 1,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 34,
+        "moveId": "moeru_toushi"
+      },
+      {
+        "level": 38,
+        "moveId": "funka"
+      },
+      {
+        "level": 46,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 56,
+        "moveId": "bakuen"
+      }
+    ],
+    "color": "#e8552a",
+    "baseExp": 140
+  },
+  {
+    "id": "prominence",
+    "name": "プロミネンス",
+    "type": "炎",
+    "role": "エースアタッカー",
+    "description": "太陽の 表面から ふき上がる 巨大な 炎のループ——プロミネンスの 化身。つばさの 炎は 頭の上で つながり、地球が 何個も 入る 大きさの 輪を えがくという。",
+    "baseStats": {
+      "hp": 36,
+      "attack": 27,
+      "defense": 21,
+      "speed": 24
+    },
+    "statsAt50": {
+      "hp": 158,
+      "attack": 138,
+      "defense": 102,
+      "speed": 118
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "hinoko"
+      },
+      {
+        "level": 1,
+        "moveId": "kaen_tosshin"
+      },
+      {
+        "level": 1,
+        "moveId": "kaenbullet"
+      },
+      {
+        "level": 1,
+        "moveId": "funka"
+      },
+      {
+        "level": 50,
+        "moveId": "kaen_housha"
+      },
+      {
+        "level": 58,
+        "moveId": "bakuen"
+      },
+      {
+        "level": 66,
+        "moveId": "meteor_storm"
+      }
+    ],
+    "color": "#ff5a1e",
+    "baseExp": 215
+  },
+  {
+    "id": "serenios",
+    "name": "セレニオス",
+    "type": "光",
+    "role": "でんせつ",
+    "description": "月を その身に やどす 石の 守り神。むねの まん月と せなかの 三日月が しずかに かがやき、まわりを 小さな 月たちが めぐる。あれた月の みちを 何億年も 見まもってきたという。",
+    "baseStats": {
+      "hp": 44,
+      "attack": 32,
+      "defense": 30,
+      "speed": 28
+    },
+    "statsAt50": {
+      "hp": 205,
+      "attack": 170,
+      "defense": 158,
+      "speed": 150
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "luna_break"
+      },
+      {
+        "level": 1,
+        "moveId": "shooting_star"
+      },
+      {
+        "level": 1,
+        "moveId": "tsukiakari"
+      },
+      {
+        "level": 1,
+        "moveId": "kirameku_kansya"
+      },
+      {
+        "level": 60,
+        "moveId": "kibou_no_hikari"
+      }
+    ],
+    "color": "#ffd86a",
+    "baseExp": 320
+  }
 ]
