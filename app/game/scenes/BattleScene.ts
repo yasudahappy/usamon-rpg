@@ -176,6 +176,11 @@ export class BattleScene extends Phaser.Scene {
   private trainerPortrait2?: Phaser.GameObjects.Image;
   private dParticipants: Set<MonsterInstance> = new Set();
   private dOver = false;
+  // タッグ・ダブル: スロット1を 味方AI（ヒジリ）が担当する。
+  private dTag = false;
+  private dAllySlot = 1;                                  // AIが担当するプレイヤー側スロット
+  private dAllyParty: MonsterInstance[] = [];             // 味方AIのパーティ（控え含む）
+  private dAllyName = "なかま";
 
   constructor() {
     super({ key: "BattleScene" });
@@ -191,6 +196,8 @@ export class BattleScene extends Phaser.Scene {
     enemyLevel?: number;
     isWild?: boolean;
     trainerData?: TrainerData;
+    tagAllyParty?: { id: string; level: number }[]; // タッグ: 味方AI（ヒジリ）のパーティ
+    tagAllyName?: string;                            // タッグ: 味方の呼び名
   }): void {
     this.returnMapKey = data.mapKey || "moonbase";
     this.returnPlayerX = data.playerX || 0;
@@ -223,11 +230,21 @@ export class BattleScene extends Phaser.Scene {
     this.trainerPortrait2 = undefined;
     this.dParticipants = new Set();
     this.dOver = false;
+    this.dTag = false;
+    this.dAllySlot = 1;
+    this.dAllyParty = [];
+    this.dAllyName = data.tagAllyName || "なかま";
 
     // Load JSON data
     this.allMonsters = this.cache.json.get("monsters") as MonsterData[];
     this.allMoves = this.cache.json.get("moves") as MoveData[];
     this.typeChart = this.cache.json.get("types") as TypeChart;
+
+    // タッグ・ダブル: 味方AI（ヒジリ）のパーティを用意する。
+    if (this.isDouble && Array.isArray(data.tagAllyParty) && data.tagAllyParty.length > 0) {
+      this.dTag = true;
+      this.dAllyParty = data.tagAllyParty.map(e => this.createInstance(e.id, e.level));
+    }
 
     // Player state
     if (data.playerState) {
@@ -2755,7 +2772,16 @@ export class BattleScene extends Phaser.Scene {
     const t = this.trainerData!;
     this.drawBackground();
 
-    const pActives = this.playerState.party.filter(m => m.currentHp > 0).slice(0, 2);
+    // 通常ダブル: 味方2体はプレイヤーのパーティから。
+    // タッグ: スロット0=プレイヤーの先頭、スロット1=味方AI（ヒジリ）の先頭。
+    let pActives: MonsterInstance[];
+    if (this.dTag) {
+      const pLead = this.playerState.party.find(m => m.currentHp > 0) || this.playerState.party[0];
+      const aLead = this.dAllyParty.find(m => m.currentHp > 0) || this.dAllyParty[0];
+      pActives = [pLead, aLead];
+    } else {
+      pActives = this.playerState.party.filter(m => m.currentHp > 0).slice(0, 2);
+    }
     this.playerInstance = pActives[0];              // alias for shared UI paths
     this.dEReserve = t.party.slice(2);
 
@@ -2765,7 +2791,10 @@ export class BattleScene extends Phaser.Scene {
 
     this.dE.forEach(s => s && markSeen(this.playerState, s.inst.dataId));
     this.playerState.party.forEach(m => markCaught(this.playerState, m.dataId));
-    this.dP.forEach(s => s && this.dParticipants.add(s.inst));
+    // 経験値は プレイヤーのアルモンだけに配る（味方AIには配らない）。
+    this.dP.forEach(s => {
+      if (s && this.playerState.party.includes(s.inst)) this.dParticipants.add(s.inst);
+    });
 
     // hidden until the intro reveals them
     [...this.dP, ...this.dE].forEach(s => s && s.sprite.setVisible(false));
@@ -2882,6 +2911,14 @@ export class BattleScene extends Phaser.Scene {
   private beginCommandD(fromSlot: number): void {
     const alive = this.dAliveSlots(this.dP).filter(i => i >= fromSlot);
     if (alive.length === 0) { this.queueEnemyActionsD(); this.resolveRoundD(); return; }
+    // タッグ: 味方AI（ヒジリ）のスロットは 自動で行動を選び、次のスロットへ。
+    if (this.dTag && alive[0] === this.dAllySlot) {
+      this.queueAllyActionD(alive[0]);
+      const next = this.dAliveSlots(this.dP).filter(i => i > alive[0]);
+      if (next.length > 0) { this.beginCommandD(next[0]); }
+      else { this.queueEnemyActionsD(); this.resolveRoundD(); }
+      return;
+    }
     this.dCmdSlot = alive[0];
     const slot = this.dP[this.dCmdSlot]!;
     this.playerMon = slot.mon;          // alias: 技メニュー等の共有UIが参照する
@@ -2959,6 +2996,28 @@ export class BattleScene extends Phaser.Scene {
     } else {
       this.queueEnemyActionsD();
       this.resolveRoundD();
+    }
+  }
+
+  /** タッグの味方AI（ヒジリ）が スロット slot の行動を自動で選ぶ。
+   *  PPの残った こうげきわざを優先し、いなければ 補助わざ／PP無視で選ぶ。 */
+  private queueAllyActionD(slot: number): void {
+    const s = this.dP[slot];
+    if (!s) return;
+    const moves = s.mon.moves;
+    const hasPP = (idx: number) => !s.inst.pp || idx >= s.inst.pp.length || s.inst.pp[idx] > 0;
+    const usableIdx = moves.map((_, i) => i).filter(hasPP);
+    const pool = usableIdx.length ? usableIdx : moves.map((_, i) => i);
+    const atkIdx = pool.filter(i => !moves[i].isSupport);
+    const pick = (atkIdx.length ? atkIdx : pool);
+    const chosen = pick[Math.floor(Math.random() * pick.length)];
+    const move = moves[chosen];
+    if (move.isSupport) {
+      this.dActions.push({ side: "p", slot, move, targetSide: "p", targetSlot: slot });
+    } else {
+      const eAlive = this.dAliveSlots(this.dE);
+      const target = eAlive[Math.floor(Math.random() * eAlive.length)] ?? 0;
+      this.dActions.push({ side: "p", slot, move, targetSide: "e", targetSlot: target });
     }
   }
 
@@ -3151,6 +3210,17 @@ export class BattleScene extends Phaser.Scene {
       if (s && s.mon.currentHp > 0) return;
       refills.push(() => {
         const activeInsts = this.dAliveSlots(this.dP).map(j => this.dP[j]!.inst);
+        // タッグの味方AI（ヒジリ）枠は ヒジリのパーティから補充する。
+        if (this.dTag && i === this.dAllySlot) {
+          const allyBench = this.dAllyParty.find(m => m.currentHp > 0 && !activeInsts.includes(m));
+          if (!allyBench) { runNext(); return; }
+          this.replaceSlotD(this.dP, i, allyBench, true);
+          const spr = this.dP[i]!.sprite;
+          spr.setVisible(false);
+          this.showMessages([`${this.dAllyName}は ${this.dMonName(allyBench)}を くりだした！`],
+            () => this.capsuleRevealSprite(spr, true, runNext));
+          return;
+        }
         const bench = this.playerState.party.find(m => m.currentHp > 0 && !activeInsts.includes(m));
         if (!bench) { runNext(); return; }
         this.replaceSlotD(this.dP, i, bench, true);
@@ -3274,7 +3344,9 @@ export class BattleScene extends Phaser.Scene {
     const t = this.trainerData!;
     const prize = t.prizeMoneyBase;
     this.playerState.money += prize;
-    this.playerState.defeatedTrainers.push(t.id);
+    if (!this.playerState.defeatedTrainers.includes(t.id)) {
+      this.playerState.defeatedTrainers.push(t.id);
+    }
     this.dE.forEach(s => s && s.sprite.setVisible(false));
     this.showPairPortraitsD(() => {
       this.showMessages([t.dialogWin, `${prize}円 もらった！`], () => {
