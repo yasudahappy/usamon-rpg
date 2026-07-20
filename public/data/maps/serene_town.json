@@ -3708,6 +3708,13 @@
       "targetMap": "copernicus_cave",
       "targetX": 12,
       "targetY": 17
+    },
+    {
+      "x": 7,
+      "y": 13,
+      "targetMap": "gym_4",
+      "targetX": 9,
+      "targetY": 24
     }
   ]
 }
