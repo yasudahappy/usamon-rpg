@@ -688,7 +688,8 @@ export class MapScene extends Phaser.Scene {
   private startBattle(
     enemyDataId?: string,
     enemyLevel?: number,
-    trainerData?: TrainerData
+    trainerData?: TrainerData,
+    tagAlly?: { party: { id: string; level: number }[]; name: string }
   ): void {
     if (this.startingBattle || this.isWarping) return;
     this.startingBattle = true;
@@ -703,7 +704,22 @@ export class MapScene extends Phaser.Scene {
       enemyLevel,
       isWild: !trainerData,
       trainerData,
+      tagAllyParty: tagAlly?.party,
+      tagAllyName: tagAlly?.name,
     });
+  }
+
+  /** ヒジリを仲間にしていて、倒したイシイ＆シオリに もう一度 話しかけると、
+   *  ヒジリと組んだ タッグ・ダブルバトル（再戦）を始める。開始したら true。 */
+  private tryTagRematch(trainerId: string): boolean {
+    if (trainerId !== "ishii_shiori") return false;
+    if (this.currentMapKey !== "gym_3") return false;
+    if (this.playerState?.companion !== "hijiri") return false;
+    const leader = this.allTrainers.find(t => t.id === "ishii_shiori");
+    const hijiri = this.allTrainers.find(t => t.id === "gym3_hijiri");
+    if (!leader || !hijiri) return false;
+    this.startBattle(undefined, undefined, leader, { party: hijiri.party, name: "ヒジリ" });
+    return true;
   }
 
   private loadEncounterData(): void {
@@ -3393,7 +3409,7 @@ export class MapScene extends Phaser.Scene {
     if (talkTrainer) {
       this.faceSpriteToPlayer(this.trainerSprites.get(talkTrainer.id));
       if (this.playerState?.defeatedTrainers.includes(talkTrainer.id)) {
-        if (!this.tryRecruitHijiri(talkTrainer.id)) {
+        if (!this.tryRecruitHijiri(talkTrainer.id) && !this.tryTagRematch(talkTrainer.id)) {
           this.showDialog([talkTrainer.dialogWin || "いい しょうぶ だったね！"]);
         }
       } else {
@@ -3500,7 +3516,7 @@ export class MapScene extends Phaser.Scene {
       });
     if (beaten) {
       this.faceSpriteToPlayer(this.trainerSprites.get(beaten.id), this.trainerTile(beaten));
-      if (!this.tryRecruitHijiri(beaten.id)) {
+      if (!this.tryRecruitHijiri(beaten.id) && !this.tryTagRematch(beaten.id)) {
         this.showDialog([beaten.dialogWin || "いい しょうぶ だったね！"]);
       }
       return;
