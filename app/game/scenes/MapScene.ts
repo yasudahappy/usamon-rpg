@@ -434,6 +434,14 @@ export class MapScene extends Phaser.Scene {
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("serene_arrival_seen")) {
         this.time.delayedCall(700, () => this.playSereneArrival());
+      } else if (this.playerState?.defeatedTrainers.includes("luna") &&
+                 !pk.includes("voice_kiyohara_1_cleared")) {
+        // ジム4クリア後の山場：ヴォイス幹部キヨハラ戦①（イーゼン共闘タッグ）
+        if (this.lastTrainerDefeated === "kiyohara_1") {
+          this.time.delayedCall(600, () => this.playKiyoharaRetreat());
+        } else {
+          this.time.delayedCall(800, () => this.playKiyoharaShowdown());
+        }
       }
     }
 
@@ -3844,6 +3852,73 @@ export class MapScene extends Phaser.Scene {
         "エモ「街の はずれに 何かが\n落ちたようだ。」",
         "エモ「きみ、様子を 見てきて\nくれ ないか。」",
       ], () => { this.inCutscene = false; });
+    });
+  }
+
+  /** キヨハラ戦①（ジム4クリア後・ヴォイス編 山1）：対決カットシーン→
+   *  ライバル イーゼンと共闘する タッグ・ダブルバトル。 */
+  private playKiyoharaShowdown(): void {
+    if (!this.playerState) return;
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    const px = this.player.x, py = this.player.y;
+    this.cameras.main.flash(420, 40, 20, 60);
+    const kiyo = this.add.image(px + ts, py - ts * 3, this.npcTex("cast-kiyohara-down", "npc-kinoshita")).setDepth(9);
+    const grunt = this.add.image(px - ts, py - ts * 3, this.npcTex("cast-voice_grunt1-down", "npc-kinoshita")).setDepth(9);
+    this.tweens.add({ targets: [kiyo, grunt], y: py - ts * 1.6, duration: 500, ease: "Cubic.out" });
+    this.time.delayedCall(620, () => {
+      this.showDialog([
+        "「……まて。」",
+        "ヴォイス幹部 キヨハラが 立ちふさがった！",
+        "キヨハラ「セレネの町が あつめた 光……\nそれは 我々ヴォイスの 計画に つかえる。」",
+        "キヨハラ「南極の 『水』さえ おさえれば、\n月は 我々の ものだ。じゃまは させん。」",
+      ], () => {
+        const eez = this.add.image(px + ts * 3.5, py, this.npcTex("cast-eezen-left", "npc-kinoshita")).setDepth(9);
+        this.tweens.add({ targets: eez, x: px + ts * 1.3, duration: 460, ease: "Cubic.out" });
+        this.time.delayedCall(520, () => {
+          this.showDialog([
+            "イーゼン「——大変 恐縮ですが。」",
+            "ライバル イーゼンが かけつけた！",
+            "イーゼン「その たくらみ、ぼくと\nこいつで 止めさせてもらう。えぇ。」",
+            "イーゼン「勝てば ダブル、負ければ トラブル。\n——いくよ、相棒！」",
+          ], () => {
+            this.inCutscene = false;
+            const kiyoT = this.allTrainers.find(t => t.id === "kiyohara_1");
+            this.startBattle(undefined, undefined, kiyoT, {
+              party: [{ id: "meteodon", level: 40 }, { id: "sharian", level: 39 }],
+              name: "イーゼン",
+            });
+          });
+        });
+      });
+    });
+  }
+
+  /** キヨハラ戦①の勝利後：撤退カットシーン＋「水」の伏線。 */
+  private playKiyoharaRetreat(): void {
+    if (!this.playerState) return;
+    this.inCutscene = true;
+    const ts = this.tileSize;
+    const px = this.player.x, py = this.player.y;
+    const kiyo = this.add.image(px + ts, py - ts * 1.6, this.npcTex("cast-kiyohara-down", "npc-kinoshita")).setDepth(9);
+    this.showDialog([
+      "キヨハラ「……ばかな。この キヨハラが\nおくれを とるとは。」",
+      "イーゼン「詰めが あまいんだよ。えぇ。」",
+      "キヨハラ「おぼえておけ。ヴォイスの ねらいは\n『南極の 水』——月の 生命線だ。」",
+      "キヨハラ「じきに わかる。今日は 引いておく。」",
+    ], () => {
+      this.tweens.add({ targets: kiyo, y: py - ts * 5, alpha: 0, duration: 720, ease: "Cubic.in",
+        onComplete: () => kiyo.destroy() });
+      this.time.delayedCall(760, () => {
+        this.showDialog([
+          "キヨハラは 立ちさった……。",
+          "イーゼン「『水』か。次は もっと\n大きな しょうぶに なりそうだ。」",
+          "イーゼン「じゃあ また、相棒。えぇ。」",
+        ], () => {
+          this.setPitFlag("voice_kiyohara_1_cleared");
+          this.inCutscene = false;
+        });
+      });
     });
   }
 

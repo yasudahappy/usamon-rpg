@@ -830,5 +830,39 @@
     ],
     "battleSprite": "trainer-astronaut",
     "overworldSprite": "astronaut"
+  },
+  {
+    "id": "kiyohara_1",
+    "name": "ヴォイス幹部 キヨハラ",
+    "mapKey": "_event",
+    "x": 0,
+    "y": 0,
+    "direction": "down",
+    "sightRange": 0,
+    "prizeMoneyBase": 3200,
+    "dialogBefore": "ヴォイスの じゃまを するな。",
+    "dialogWin": "……ばかな。この キヨハラが おくれを とるとは。",
+    "dialogLose": "光は ヴォイスが いただく。おろかな 子どもめ。",
+    "party": [
+      {
+        "id": "roubaag",
+        "level": 42
+      },
+      {
+        "id": "shakuros",
+        "level": 40
+      },
+      {
+        "id": "roubau",
+        "level": 40
+      },
+      {
+        "id": "shakuruton",
+        "level": 41
+      }
+    ],
+    "battleSprite": "trainer-kiyohara",
+    "battleSprite2": "trainer-voice_grunt1",
+    "doubles": true
   }
 ]
