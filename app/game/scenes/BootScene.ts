@@ -124,7 +124,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bldg-solar-tower", `${base}/assets/buildings/sprites/solar_tower.png`);
 
     // Trainer battle portraits (hand-drawn, background removed)
-    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4", "ishii", "shiori", "kishishita", "hijiri", "luna", "hasegawa", "taka", "miho"].forEach(t => {
+    ["suit", "casual", "peace", "hoodie", "eezen", "girl", "worker", "redcap", "armor", "emo", "shin", "kojima", "masaki", "bikyaku", "takehana", "sunaga", "shiina", "aragaki", "astronaut", "shinobu", "kiyohara", "voice_grunt1", "voice_grunt2", "voice_grunt3", "voice_grunt4", "ishii", "shiori", "kishishita", "hijiri", "luna", "hasegawa", "taka", "miho", "matsumoto"].forEach(t => {
       this.load.image(`trainer-${t}`, `${base}/assets/trainers/${t}.png`);
     });
     // Player battle back-illustration (shown before sending out the almon)
@@ -141,7 +141,7 @@ export class BootScene extends Phaser.Scene {
       });
     });
     // トレーナー専用 overworld NPC sprites (4 directions each)
-    ["aragaki", "shiina", "sunaga", "astronaut", "bikyaku", "shin", "emo", "elder", "masaki", "kojima", "colonist_m", "mom2", "colonist_e", "hasegawa", "taka", "miho"].forEach(who => {
+    ["aragaki", "shiina", "sunaga", "astronaut", "bikyaku", "shin", "emo", "elder", "masaki", "kojima", "colonist_m", "mom2", "colonist_e", "hasegawa", "taka", "miho", "matsumoto"].forEach(who => {
       ["down", "up", "left", "right"].forEach(dir => {
         this.load.image(`cast-${who}-${dir}`, `${base}/assets/characters/cast/${who}_${dir}.png`);
       });
@@ -446,6 +446,74 @@ export class BootScene extends Phaser.Scene {
           ctx.strokeStyle = "#c6c0b0"; ctx.lineWidth = 1;
           ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI * 1.1, Math.PI * 1.7); ctx.stroke();
         }
+      } else if (id === "130") {
+        // 光の街：光の石畳。淡く発光する敷石。上端・左端にだけ目地を引き、
+        // となり同士でひとつの連続したグリッドになる（シームレス）。
+        let s = 130;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#c8c5ba";
+        for (let i = 0; i < 22; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.fillStyle = "#ece9df";
+        for (let i = 0; i < 12; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.strokeStyle = "rgba(126,138,156,0.32)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.10)"; ctx.fillRect(2, 2, ts - 4, 1);
+        ctx.fillStyle = "rgba(206,238,255,0.7)";
+        ctx.fillRect(23, 20, 1, 1); ctx.fillRect(10, 26, 1, 1);
+      } else if (id === "131") {
+        // 光の街：ひかりの道。中央がほのかに発光する歩道。方向によらず
+        // シームレスに つながるよう、放射グローと目地で表現。
+        const g = ctx.createRadialGradient(16, 16, 1, 16, 16, 19);
+        g.addColorStop(0, "rgba(150,222,255,0.26)");
+        g.addColorStop(1, "rgba(150,222,255,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(120,200,255,0.5)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
+        ctx.fillStyle = "rgba(224,246,255,0.9)";
+        ctx.fillRect(ts / 2 - 1, ts / 2 - 1, 3, 3);
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.fillRect(ts / 2, ts / 2, 1, 1);
+      } else if (id === "132") {
+        // 光の街：光の広場。明るい大理石のような床＋うっすら虹色のきらめき。
+        const g = ctx.createRadialGradient(16, 14, 2, 16, 16, 22);
+        g.addColorStop(0, "rgba(255,250,236,0.20)");
+        g.addColorStop(1, "rgba(255,250,236,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(150,152,168,0.22)"; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts);
+        ctx.moveTo(0, ts / 2 + 0.5); ctx.lineTo(ts, ts / 2 + 0.5);
+        ctx.moveTo(ts / 2 + 0.5, 0); ctx.lineTo(ts / 2 + 0.5, ts); ctx.stroke();
+        for (const [px, py, col] of [[6, 8, "rgba(255,182,202,0.55)"], [23, 10, "rgba(184,212,255,0.55)"], [12, 24, "rgba(200,255,212,0.55)"], [26, 23, "rgba(255,236,172,0.55)"]] as [number, number, string][]) {
+          ctx.fillStyle = col; ctx.fillRect(px, py, 1, 1);
+        }
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.fillRect(9, 12, 1, 1); ctx.fillRect(20, 19, 1, 1);
+      } else if (id === "133") {
+        // 光の街：星のインレイ。広場の床に金色の星の紋章を象嵌。
+        const bg = ctx.createRadialGradient(16, 14, 2, 16, 16, 22);
+        bg.addColorStop(0, "rgba(255,250,236,0.20)");
+        bg.addColorStop(1, "rgba(255,250,236,0)");
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(150,152,168,0.22)"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts, ts);
+        const glow = ctx.createRadialGradient(16, 16, 1, 16, 16, 13);
+        glow.addColorStop(0, "rgba(255,226,150,0.42)");
+        glow.addColorStop(1, "rgba(255,226,150,0)");
+        ctx.fillStyle = glow; ctx.fillRect(0, 0, ts, ts);
+        // 4方向にのびる星（ひし形＋クロス）
+        ctx.fillStyle = "#fff6d8";
+        ctx.beginPath();
+        ctx.moveTo(16, 4); ctx.lineTo(19, 16); ctx.lineTo(16, 28); ctx.lineTo(13, 16); ctx.closePath();
+        ctx.moveTo(4, 16); ctx.lineTo(16, 13); ctx.lineTo(28, 16); ctx.lineTo(16, 19); ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#f4c86a";
+        ctx.beginPath(); ctx.arc(16, 16, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(15, 15, 1, 1);
       } else if (id === "61") {
         // Paved walkway: light stone panels with seams + corner rivets
         ctx.strokeStyle = "#c2baa8"; ctx.lineWidth = 1;
