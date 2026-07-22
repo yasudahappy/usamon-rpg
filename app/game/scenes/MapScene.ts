@@ -456,6 +456,20 @@ export class MapScene extends Phaser.Scene {
       this.placeMoonAltar();
     }
 
+    // きりのたに — ジム5への道の 霧ダンジョン（ガス出現）。
+    if (this.currentMapKey === "kiri_valley") {
+      this.placeKiriValley();
+    }
+
+    // くものうみタウン — ジム5の町。リーダー クモナ。
+    if (this.currentMapKey === "cloud_town") {
+      this.placeCloudTown();
+      const pk = this.playerState?.pickups || [];
+      if (this.playerState && !pk.includes("cloud_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playCloudArrival());
+      }
+    }
+
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
     if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
       this.placeCaveCapsules();
@@ -6697,6 +6711,60 @@ export class MapScene extends Phaser.Scene {
         });
       },
     });
+  }
+
+  /** きりのたに：霧のヘイズ＋ただよう雲＋教育看板。 */
+  private placeKiriValley(): void {
+    const ts = this.tileSize;
+    const W = this.mapData.width * ts, H = this.mapData.height * ts;
+    this.add.rectangle(0, 0, W, H, 0xdfe0ea, 0.20).setOrigin(0).setDepth(55);
+    for (let i = 0; i < 7; i++) {
+      const cx = (2 + Math.random() * (this.mapData.width - 4)) * ts;
+      const cy = (2 + Math.random() * (this.mapData.height - 4)) * ts;
+      const puff = this.add.ellipse(cx, cy, ts * 3.4, ts * 1.7, 0xffffff, 0.14).setDepth(56);
+      this.tweens.add({ targets: puff, x: cx + ts * 2, alpha: 0.05, duration: 4000 + Math.random() * 3000,
+        yoyo: true, repeat: -1, ease: "Sine.inOut", delay: Math.random() * 2000 });
+    }
+    // 教育看板（岩に立てられた札）
+    this.nectarExam.push({ x: 13, y: 9, fn: () => this.showDialog([
+      "たて札：『この先 雲の海（Mare Nubium）』",
+      "むかしの人は 月の くらい平原を『海』と\nよんだ。でも 月に 水の海は なく、空気も\nないので『雲』も できない。",
+      "見えた もようを 海や 雲に たとえた——\n人の そうぞうりょくの なごりなんだ。",
+    ]) });
+  }
+
+  /** くものうみタウン：リーダー クモナ（プレビュー）＋ジム扉＋教育看板。 */
+  private placeCloudTown(): void {
+    const ts = this.tileSize;
+    // クモナ（ジム前に立つ）。ジム本体は次フェーズ。
+    const kx = 10, ky = 8;
+    this.add.image(kx * ts + ts / 2, ky * ts + ts / 2, this.npcTex("cast-kumona-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: kx, y: ky, fn: () => this.showDialog([
+      "クモナ「あら、晴れの海から きたのね。」",
+      "クモナ「ここは 雲の海——きりと ガスの町。\nわたしの ジムは いま ととのえてる ところ。」",
+      "クモナ「じゅんびが できたら、けむに\nまかれない 自信、ためしに きてね。」",
+    ]) });
+    // ジムの扉（準備中）
+    this.nectarExam.push({ x: 13, y: 7, fn: () => this.showDialog([
+      "くものうみジム——とびらは まだ かたく\nとじている。",
+      "『リーダー クモナ。かいかん もうすこし\nまっててね。』",
+    ]) });
+    // 海の教育看板
+    this.nectarExam.push({ x: 4, y: 13, fn: () => this.showDialog([
+      "たて札：『雲の海 Mare Nubium』",
+      "みなみの 嵐の大洋の となり。くらい\nげんぶがんの 平原が、雲の うみのように\n見えることから この名が ついた。",
+    ]) });
+  }
+
+  /** くものうみタウン初回到着のひとこと。 */
+  private playCloudArrival(): void {
+    if (this.hasPitFlag("cloud_arrival_seen")) return;
+    this.setPitFlag("cloud_arrival_seen");
+    this.inCutscene = true;
+    this.showDialog([
+      "（きりを ぬけると、ひらけた 平原が\nひろがっていた……）",
+      "ここが 雲の海——くものうみタウン。\nガスの ジムが あるらしい。",
+    ], () => { this.inCutscene = false; });
   }
 
   /** 地下フロアの最奥、ぬしのガンブロス（レベル33・1回きりの野生ボス）。 */
