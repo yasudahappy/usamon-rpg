@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { MonsterData, MoveData, PlayerState } from "../data/types";
 import { applyEvolution, getNewMoveAtLevel } from "../data/levelSystem";
 import { markCaught } from "../data/dex";
+import { restorePP } from "../data/movePP";
 
 interface EvoItem {
   partyIndex: number;
@@ -142,6 +143,7 @@ export class EvolutionScene extends Phaser.Scene {
               if (mv && !inst.moves.includes(mv) && inst.moves.length < 4) {
                 inst.moves.push(mv);
               }
+              restorePP(inst, this.allMoves);   // しんか時にPP全回復
             }
 
             this.setMsg(`おめでとう！ ${fromData.name}は ${toData.name}に しんかした！`);
