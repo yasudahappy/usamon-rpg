@@ -706,11 +706,12 @@ export class BattleScene extends Phaser.Scene {
     };
     if (this.isDouble) {
       // ダブルバトルは1体につき1つの足場を描く（makeSlotD の配置に合わせる）。
+      // 足場が小さく見えたので大きめに（重なりすぎない範囲で拡大）。
       for (let i = 0; i < 2; i++) {
-        drawPlat(this.EPLAT_X - 74 + i * 112, this.EPLAT_Y + i * 6, 104, 34);
+        drawPlat(this.EPLAT_X - 74 + i * 112, this.EPLAT_Y + i * 6, 140, 44);
       }
       for (let i = 0; i < 2; i++) {
-        drawPlat(this.PPLAT_X - 72 + i * 150, this.PPLAT_Y + i * 7, 120, 42);
+        drawPlat(this.PPLAT_X - 72 + i * 150, this.PPLAT_Y + i * 7, 158, 54);
       }
     } else {
       drawPlat(this.EPLAT_X, this.EPLAT_Y, 182, 46);

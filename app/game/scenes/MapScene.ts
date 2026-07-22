@@ -6738,7 +6738,7 @@ export class MapScene extends Phaser.Scene {
     const ts = this.tileSize;
     // クモナ（ジム前に立つ）。ジム本体は次フェーズ。
     const kx = 10, ky = 8;
-    this.add.image(kx * ts + ts / 2, ky * ts + ts / 2, this.npcTex("cast-kumona-down", "npc-kinoshita")).setDepth(9);
+    this.add.image(kx * ts + ts / 2, ky * ts + ts / 2, this.npcTex("cast-shiina-down", "npc-kinoshita")).setDepth(9);
     this.nectarExam.push({ x: kx, y: ky, fn: () => this.showDialog([
       "クモナ「あら、晴れの海から きたのね。」",
       "クモナ「ここは 雲の海——きりと ガスの町。\nわたしの ジムは いま ととのえてる ところ。」",

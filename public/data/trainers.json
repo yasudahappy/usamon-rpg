@@ -828,8 +828,8 @@
         "level": 37
       }
     ],
-    "battleSprite": "trainer-astronaut",
-    "overworldSprite": "astronaut"
+    "battleSprite": "trainer-luna",
+    "overworldSprite": "luna"
   },
   {
     "id": "kiyohara_1",
@@ -941,7 +941,7 @@
         "level": 43
       }
     ],
-    "battleSprite": "trainer-kumona",
-    "overworldSprite": "kumona"
+    "battleSprite": "trainer-girl",
+    "overworldSprite": "shiina"
   }
 ]
