@@ -464,6 +464,7 @@ export class MapScene extends Phaser.Scene {
     // くものうみタウン — ジム5の町。リーダー クモナ。
     if (this.currentMapKey === "cloud_town") {
       this.placeCloudTown();
+      this.placeCloudResourceBiz();
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("cloud_arrival_seen")) {
         this.time.delayedCall(700, () => this.playCloudArrival());
@@ -6796,6 +6797,83 @@ export class MapScene extends Phaser.Scene {
       "（きりを ぬけると、ひらけた 平原が\nひろがっていた……）",
       "ここが 雲の海——くものうみタウン。\nガスの ジムが あるらしい。",
     ], () => { this.inCutscene = false; });
+  }
+
+  /**
+   * 宇宙資源ビジネス編：月資源開発の タカ＆ミホ。
+   * 実在の月資源（ヘリウム3・レゴリスの金属/酸素・きょくの水氷）を
+   * 子ども向けに紹介しつつ、ヴォイス団の「水のひとりじめ」に対する
+   * 「みんなのための月」というテーマにつなげる。
+   */
+  private placeCloudResourceBiz(): void {
+    const ts = this.tileSize;
+
+    // 資源サンプル展示台（レゴリスと氷のサンプル）のテクスチャを生成。
+    if (!this.textures.exists("cloud-resource-display")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.ellipse(16, 29, 13, 3, 0, 0, Math.PI * 2); ctx.fill();
+      // 展示テーブル
+      ctx.fillStyle = "#6d6f86"; ctx.fillRect(4, 18, 24, 9);
+      ctx.fillStyle = "#4c4e63"; ctx.fillRect(4, 25, 24, 3);
+      ctx.fillStyle = "#8a8ca6"; ctx.fillRect(4, 18, 24, 2);
+      // 左：レゴリス（月のすな）の山
+      ctx.fillStyle = "#8b8172";
+      ctx.beginPath(); ctx.moveTo(7, 18); ctx.lineTo(12, 8); ctx.lineTo(16, 18); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#a49a88"; ctx.fillRect(10, 13, 2, 2);
+      // 右：氷（水）のかたまり
+      ctx.fillStyle = "#bfe6ff"; ctx.fillRect(18, 9, 8, 9);
+      ctx.fillStyle = "#e8f6ff"; ctx.fillRect(19, 10, 3, 3);
+      ctx.strokeStyle = "#8fd0f5"; ctx.lineWidth = 1;
+      ctx.strokeRect(18, 9, 8, 9);
+      this.textures.addCanvas("cloud-resource-display", c);
+    }
+
+    // タカ（月資源開発 社長）
+    const tx = 6, ty = 10;
+    this.add.image(tx * ts + ts / 2, ty * ts + ts / 2, this.npcTex("cast-taka-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: tx, y: ty, fn: () => this.showDialog([
+      "タカ「やあ。きみが 晴れの海から きた\nトレーナーだね。おれは タカ。」",
+      "タカ「『月資源開発（つきしげんかいはつ）』の\nしゃちょうを やってる。月には ちきゅうに\nない たからが ねむってるんだ。」",
+      "タカ「たとえば ヘリウム3。太陽の 風が\n何おく年も かけて 月の すなに ためた、\nめずらしい ガスさ。」",
+      "タカ「いつか それを つかって、よごれの\nすくない エネルギーを つくれるかも——\nそんな 夢を おいかけてるんだ。」",
+    ]) });
+
+    // ミホ（月資源開発 研究責任者）— 一度だけ おみやげ（スターカプセル）
+    const mx = 8, my = 11;
+    this.add.image(mx * ts + ts / 2, my * ts + ts / 2, this.npcTex("cast-miho-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: mx, y: my, fn: () => {
+      const pk = this.playerState?.pickups || [];
+      const first = !pk.includes("cloud_miho_gift");
+      const lines = [
+        "ミホ「ふふ、タカの ゆめの はなし きいた？\nわたしは ミホ。月資源開発の\nけんきゅう 責任者よ。」",
+        "ミホ「月の すな——レゴリスには、鉄や\nチタン、それに 酸素まで ふくまれてるの。\nいえや ロケットの ざいりょうに なるわ。」",
+        "ミホ「そして いちばん たいせつなのが 水。\n月の みなみの きょくには、日が あたらない\nクレーターに こおりが のこっているの。」",
+        "ミホ「水を わければ 水素と 酸素。\nロケットの ねんりょうにも、こきゅうする\n空気にも なる。月で 生きる かぎ なのよ。」",
+        "ミホ「……でも その 水を ひとりじめ\nしようとする 者も いる。だれの ものでも\nない 月の たからを、みんなの ために——ね。」",
+      ];
+      if (first) {
+        this.showDialog([...lines,
+          "ミホ「きみのような トレーナーに\n期待してる。これ、うちの けんきゅうしょの\nおみやげよ。」",
+        ], () => {
+          this.awardNectarItem("cloud_miho_gift", "star_capsule", "スターカプセル", [
+            "（ミホから けんきゅうしょの おみやげを\nうけとった。）",
+          ]);
+        });
+      } else {
+        this.showDialog(lines);
+      }
+    } });
+
+    // 資源サンプル展示台
+    const dx = 9, dy = 12;
+    this.add.image(dx * ts + ts / 2, dy * ts + ts / 2, "cloud-resource-display").setDepth(8);
+    this.nectarExam.push({ x: dx, y: dy, fn: () => this.showDialog([
+      "展示台：『月の しげん サンプル』",
+      "左は レゴリス（月のすな）。右は きょくの\nこおり（水）を さいげんした もの。",
+      "ちいさな カード：『月の たからは、あらそう\nためでなく、みんなで つかうために。』\n——月資源開発",
+    ]) });
   }
 
   /** 地下フロアの最奥、ぬしのガンブロス（レベル33・1回きりの野生ボス）。 */

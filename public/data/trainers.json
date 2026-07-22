@@ -754,16 +754,16 @@
   },
   {
     "id": "luna_gym1",
-    "name": "ジムトレーナー ホシオ",
+    "name": "ジムトレーナー ハセガワ",
     "mapKey": "gym_4",
     "x": 5,
     "y": 21,
     "direction": "up",
     "sightRange": 2,
     "prizeMoneyBase": 850,
-    "dialogBefore": "セレネジムへ ようこそ！\nプリズムで 光の橋を つくって すすむんだ。\nまずは ぼくと しょうぶだ！",
-    "dialogWin": "まぶしい……！ きみ、才能 あるね。",
-    "dialogLose": "光は そう かんたんには つかめないよ。",
+    "dialogBefore": "セレネジムへ ようこそ。\nわたしは ハセガワ。ルナ台長の じょしゅだ。\nプリズムで 光の橋を つくって すすむ——\nまずは わたしと ぶんせき…いや、しょうぶだ！",
+    "dialogWin": "みごとな データだ……！ きみ、才能 あるね。",
+    "dialogLose": "光の せいしつは そう かんたんには つかめないよ。",
     "party": [
       {
         "id": "hotaruna",
@@ -774,8 +774,8 @@
         "level": 31
       }
     ],
-    "battleSprite": "trainer-shiina",
-    "overworldSprite": "shiina"
+    "battleSprite": "trainer-hasegawa",
+    "overworldSprite": "hasegawa"
   },
   {
     "id": "luna_gym2",
