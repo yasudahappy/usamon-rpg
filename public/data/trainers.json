@@ -864,5 +864,84 @@
     "battleSprite": "trainer-kiyohara",
     "battleSprite2": "trainer-voice_grunt1",
     "doubles": true
+  },
+  {
+    "id": "kiri_1",
+    "name": "たびびと ナギ",
+    "mapKey": "kiri_valley",
+    "x": 7,
+    "y": 16,
+    "direction": "right",
+    "sightRange": 3,
+    "prizeMoneyBase": 950,
+    "dialogBefore": "きりが こいね。この谷を こえると 雲の海だ。\nでも その前に……ちょっと 手合わせ しないか？",
+    "dialogWin": "いい うでだ。きりの むこうも きっと だいじょうぶ。",
+    "dialogLose": "きりに まかれて 気を つけてな。",
+    "party": [
+      {
+        "id": "mochigori",
+        "level": 35
+      },
+      {
+        "id": "sunagani",
+        "level": 35
+      }
+    ],
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "colonist_m"
+  },
+  {
+    "id": "kiri_2",
+    "name": "ガスけんきゅういん ホノ",
+    "mapKey": "kiri_valley",
+    "x": 13,
+    "y": 7,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 1000,
+    "dialogBefore": "この きりは ガスの アルモンが はいた ものかも。\nデータの ために——勝負！",
+    "dialogWin": "きちょうな サンプルが とれたよ。ありがとう！",
+    "dialogLose": "きりの なぞは まだ とけない。",
+    "party": [
+      {
+        "id": "mochichi",
+        "level": 34
+      },
+      {
+        "id": "gorimocchi",
+        "level": 36
+      }
+    ],
+    "battleSprite": "trainer-masaki",
+    "overworldSprite": "masaki"
+  },
+  {
+    "id": "kumona",
+    "name": "ジムリーダー クモナ",
+    "mapKey": "gym_5",
+    "x": 9,
+    "y": 3,
+    "direction": "down",
+    "sightRange": 0,
+    "prizeMoneyBase": 2800,
+    "dialogBefore": "ようこそ、雲の海へ。\nわたしは クモナ。きりと ガスを あやつるの。\nさあ——けむに まかれない ように ね。",
+    "dialogWin": "……見えない ものを 見る 力。あなたには あるのね。\nネビュラバッジを どうぞ。",
+    "dialogLose": "きりの むこうは、まだ 見えないみたい。",
+    "party": [
+      {
+        "id": "gorimocchi",
+        "level": 40
+      },
+      {
+        "id": "mochigori",
+        "level": 41
+      },
+      {
+        "id": "gorimocchi",
+        "level": 43
+      }
+    ],
+    "battleSprite": "trainer-kumona",
+    "overworldSprite": "kumona"
   }
 ]

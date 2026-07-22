@@ -1,386 +1,409 @@
 {
- "sand_route_1": {
-  "encounterRate": 0.1,
-  "monsters": [
-   {
-    "id": "mochichi",
-    "weight": 40,
-    "minLevel": 2,
-    "maxLevel": 4
-   },
-   {
-    "id": "sunagani",
-    "weight": 35,
-    "minLevel": 2,
-    "maxLevel": 4
-   },
-   {
-    "id": "rairai",
-    "weight": 20,
-    "minLevel": 3,
-    "maxLevel": 4
-   },
-   {
-    "id": "regonyas",
-    "weight": 5,
-    "minLevel": 3,
-    "maxLevel": 5
-   }
-  ]
- },
- "crater_cave": {
-  "encounterRate": 0.1,
-  "monsters": [
-   {
-    "id": "meteko",
-    "weight": 55,
-    "minLevel": 8,
-    "maxLevel": 12
-   },
-   {
-    "id": "sunagani",
-    "weight": 25,
-    "minLevel": 8,
-    "maxLevel": 11
-   },
-   {
-    "id": "rairai",
-    "weight": 20,
-    "minLevel": 9,
-    "maxLevel": 12
-   }
-  ]
- },
- "crater_cave_b1": {
-  "encounterRate": 0.11,
-  "monsters": [
-   {
-    "id": "meteko",
-    "weight": 60,
-    "minLevel": 11,
-    "maxLevel": 15
-   },
-   {
-    "id": "regonyas",
-    "weight": 22,
-    "minLevel": 11,
-    "maxLevel": 14
-   },
-   {
-    "id": "ikarion",
-    "weight": 18,
-    "minLevel": 12,
-    "maxLevel": 15
-   }
-  ]
- },
- "crater_cave_b2": {
-  "encounterRate": 0.12,
-  "monsters": [
-   {
-    "id": "meteko",
-    "weight": 62,
-    "minLevel": 14,
-    "maxLevel": 18
-   },
-   {
-    "id": "sharisu",
-    "weight": 20,
-    "minLevel": 14,
-    "maxLevel": 17
-   },
-   {
-    "id": "ikarion",
-    "weight": 18,
-    "minLevel": 15,
-    "maxLevel": 18
-   }
-  ]
- },
- "sand_route_2": {
-  "encounterRate": 0.12,
-  "monsters": [
-   {
-    "id": "sunagani",
-    "weight": 30,
-    "minLevel": 16,
-    "maxLevel": 20
-   },
-   {
-    "id": "roubau",
-    "weight": 20,
-    "minLevel": 16,
-    "maxLevel": 20
-   }
-  ]
- },
- "frost_route_1": {
-  "encounterRate": 0.12,
-  "monsters": [
-   {
-    "id": "shakurin",
-    "weight": 45,
-    "minLevel": 18,
-    "maxLevel": 22
-   },
-   {
-    "id": "roubau",
-    "weight": 30,
-    "minLevel": 18,
-    "maxLevel": 21
-   },
-   {
-    "id": "mochichi",
-    "weight": 25,
-    "minLevel": 18,
-    "maxLevel": 21
-   }
-  ]
- },
- "lava_tube": {
-  "encounterRate": 0.12,
-  "monsters": [
-   {
-    "id": "hotaruna",
-    "weight": 30,
-    "minLevel": 22,
-    "maxLevel": 26
-   },
-   {
-    "id": "genbu",
-    "weight": 25,
-    "minLevel": 22,
-    "maxLevel": 25
-   },
-   {
-    "id": "meteko",
-    "weight": 18,
-    "minLevel": 22,
-    "maxLevel": 26
-   },
-   {
-    "id": "pribo",
-    "weight": 15,
-    "minLevel": 23,
-    "maxLevel": 26
-   },
-   {
-    "id": "regonyas",
-    "weight": 12,
-    "minLevel": 22,
-    "maxLevel": 25
-   }
-  ]
- },
- "lava_tube_deep": {
-  "encounterRate": 0.12,
-  "monsters": [
-   {
-    "id": "meteko",
-    "weight": 34,
-    "minLevel": 24,
-    "maxLevel": 28
-   },
-   {
-    "id": "hidaneko",
-    "weight": 14,
-    "minLevel": 24,
-    "maxLevel": 27
-   },
-   {
-    "id": "genbu",
-    "weight": 20,
-    "minLevel": 24,
-    "maxLevel": 27
-   },
-   {
-    "id": "pribo",
-    "weight": 12,
-    "minLevel": 24,
-    "maxLevel": 27
-   },
-   {
-    "id": "hotaruna",
-    "weight": 11,
-    "minLevel": 24,
-    "maxLevel": 27
-   },
-   {
-    "id": "regonyas",
-    "weight": 9,
-    "minLevel": 24,
-    "maxLevel": 26
-   }
-  ]
- },
- "rill_route": {
-  "encounterRate": 0.1,
-  "monsters": [
-   {
-    "id": "solpoka",
-    "weight": 14,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "hidaneko",
-    "weight": 16,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "meteko",
-    "weight": 20,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "genbu",
-    "weight": 20,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "rairai",
-    "weight": 12,
-    "minLevel": 25,
-    "maxLevel": 27
-   },
-   {
-    "id": "sunagani",
-    "weight": 9,
-    "minLevel": 25,
-    "maxLevel": 27
-   },
-   {
-    "id": "hotaruna",
-    "weight": 9,
-    "minLevel": 25,
-    "maxLevel": 28
-   }
-  ]
- },
- "taurus_pass": {
-  "encounterRate": 0.11,
-  "monsters": [
-   {
-    "id": "roubau",
-    "weight": 20,
-    "minLevel": 27,
-    "maxLevel": 30
-   },
-   {
-    "id": "genbu",
-    "weight": 22,
-    "minLevel": 27,
-    "maxLevel": 30
-   },
-   {
-    "id": "hidaneko",
-    "weight": 15,
-    "minLevel": 27,
-    "maxLevel": 29
-   },
-   {
-    "id": "meteko",
-    "weight": 15,
-    "minLevel": 27,
-    "maxLevel": 29
-   },
-   {
-    "id": "hotaruna",
-    "weight": 14,
-    "minLevel": 27,
-    "maxLevel": 30
-   },
-   {
-    "id": "rairai",
-    "weight": 14,
-    "minLevel": 27,
-    "maxLevel": 29
-   }
-  ]
- },
- "taurus_cave": {
-  "encounterRate": 0.13,
-  "monsters": [
-   {
-    "id": "regonyas",
-    "weight": 25,
-    "minLevel": 28,
-    "maxLevel": 30
-   },
-   {
-    "id": "sharisu",
-    "weight": 18,
-    "minLevel": 28,
-    "maxLevel": 31
-   },
-   {
-    "id": "pribo",
-    "weight": 15,
-    "minLevel": 28,
-    "maxLevel": 30
-   },
-   {
-    "id": "roubau",
-    "weight": 14,
-    "minLevel": 28,
-    "maxLevel": 31
-   },
-   {
-    "id": "hotaruna",
-    "weight": 14,
-    "minLevel": 28,
-    "maxLevel": 30
-   },
-   {
-    "id": "genbu",
-    "weight": 14,
-    "minLevel": 28,
-    "maxLevel": 30
-   }
-  ]
- },
- "taurus_cave_b1": {
-  "encounterRate": 0.13,
-  "monsters": [
-   {
-    "id": "regonyas",
-    "weight": 25,
-    "minLevel": 28,
-    "maxLevel": 30
-   },
-   {
-    "id": "sharisu",
-    "weight": 18,
-    "minLevel": 28,
-    "maxLevel": 31
-   },
-   {
-    "id": "pribo",
-    "weight": 15,
-    "minLevel": 28,
-    "maxLevel": 30
-   },
-   {
-    "id": "roubau",
-    "weight": 14,
-    "minLevel": 28,
-    "maxLevel": 31
-   },
-   {
-    "id": "hotaruna",
-    "weight": 14,
-    "minLevel": 28,
-    "maxLevel": 30
-   },
-   {
-    "id": "genbu",
-    "weight": 14,
-    "minLevel": 28,
-    "maxLevel": 30
-   }
-  ]
- }
+  "sand_route_1": {
+    "encounterRate": 0.1,
+    "monsters": [
+      {
+        "id": "mochichi",
+        "weight": 40,
+        "minLevel": 2,
+        "maxLevel": 4
+      },
+      {
+        "id": "sunagani",
+        "weight": 35,
+        "minLevel": 2,
+        "maxLevel": 4
+      },
+      {
+        "id": "rairai",
+        "weight": 20,
+        "minLevel": 3,
+        "maxLevel": 4
+      },
+      {
+        "id": "regonyas",
+        "weight": 5,
+        "minLevel": 3,
+        "maxLevel": 5
+      }
+    ]
+  },
+  "crater_cave": {
+    "encounterRate": 0.1,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 55,
+        "minLevel": 8,
+        "maxLevel": 12
+      },
+      {
+        "id": "sunagani",
+        "weight": 25,
+        "minLevel": 8,
+        "maxLevel": 11
+      },
+      {
+        "id": "rairai",
+        "weight": 20,
+        "minLevel": 9,
+        "maxLevel": 12
+      }
+    ]
+  },
+  "crater_cave_b1": {
+    "encounterRate": 0.11,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 60,
+        "minLevel": 11,
+        "maxLevel": 15
+      },
+      {
+        "id": "regonyas",
+        "weight": 22,
+        "minLevel": 11,
+        "maxLevel": 14
+      },
+      {
+        "id": "ikarion",
+        "weight": 18,
+        "minLevel": 12,
+        "maxLevel": 15
+      }
+    ]
+  },
+  "crater_cave_b2": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 62,
+        "minLevel": 14,
+        "maxLevel": 18
+      },
+      {
+        "id": "sharisu",
+        "weight": 20,
+        "minLevel": 14,
+        "maxLevel": 17
+      },
+      {
+        "id": "ikarion",
+        "weight": 18,
+        "minLevel": 15,
+        "maxLevel": 18
+      }
+    ]
+  },
+  "sand_route_2": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "sunagani",
+        "weight": 30,
+        "minLevel": 16,
+        "maxLevel": 20
+      },
+      {
+        "id": "roubau",
+        "weight": 20,
+        "minLevel": 16,
+        "maxLevel": 20
+      }
+    ]
+  },
+  "frost_route_1": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "shakurin",
+        "weight": 45,
+        "minLevel": 18,
+        "maxLevel": 22
+      },
+      {
+        "id": "roubau",
+        "weight": 30,
+        "minLevel": 18,
+        "maxLevel": 21
+      },
+      {
+        "id": "mochichi",
+        "weight": 25,
+        "minLevel": 18,
+        "maxLevel": 21
+      }
+    ]
+  },
+  "lava_tube": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "hotaruna",
+        "weight": 30,
+        "minLevel": 22,
+        "maxLevel": 26
+      },
+      {
+        "id": "genbu",
+        "weight": 25,
+        "minLevel": 22,
+        "maxLevel": 25
+      },
+      {
+        "id": "meteko",
+        "weight": 18,
+        "minLevel": 22,
+        "maxLevel": 26
+      },
+      {
+        "id": "pribo",
+        "weight": 15,
+        "minLevel": 23,
+        "maxLevel": 26
+      },
+      {
+        "id": "regonyas",
+        "weight": 12,
+        "minLevel": 22,
+        "maxLevel": 25
+      }
+    ]
+  },
+  "lava_tube_deep": {
+    "encounterRate": 0.12,
+    "monsters": [
+      {
+        "id": "meteko",
+        "weight": 34,
+        "minLevel": 24,
+        "maxLevel": 28
+      },
+      {
+        "id": "hidaneko",
+        "weight": 14,
+        "minLevel": 24,
+        "maxLevel": 27
+      },
+      {
+        "id": "genbu",
+        "weight": 20,
+        "minLevel": 24,
+        "maxLevel": 27
+      },
+      {
+        "id": "pribo",
+        "weight": 12,
+        "minLevel": 24,
+        "maxLevel": 27
+      },
+      {
+        "id": "hotaruna",
+        "weight": 11,
+        "minLevel": 24,
+        "maxLevel": 27
+      },
+      {
+        "id": "regonyas",
+        "weight": 9,
+        "minLevel": 24,
+        "maxLevel": 26
+      }
+    ]
+  },
+  "rill_route": {
+    "encounterRate": 0.1,
+    "monsters": [
+      {
+        "id": "solpoka",
+        "weight": 14,
+        "minLevel": 25,
+        "maxLevel": 28
+      },
+      {
+        "id": "hidaneko",
+        "weight": 16,
+        "minLevel": 25,
+        "maxLevel": 28
+      },
+      {
+        "id": "meteko",
+        "weight": 20,
+        "minLevel": 25,
+        "maxLevel": 28
+      },
+      {
+        "id": "genbu",
+        "weight": 20,
+        "minLevel": 25,
+        "maxLevel": 28
+      },
+      {
+        "id": "rairai",
+        "weight": 12,
+        "minLevel": 25,
+        "maxLevel": 27
+      },
+      {
+        "id": "sunagani",
+        "weight": 9,
+        "minLevel": 25,
+        "maxLevel": 27
+      },
+      {
+        "id": "hotaruna",
+        "weight": 9,
+        "minLevel": 25,
+        "maxLevel": 28
+      }
+    ]
+  },
+  "taurus_pass": {
+    "encounterRate": 0.11,
+    "monsters": [
+      {
+        "id": "roubau",
+        "weight": 20,
+        "minLevel": 27,
+        "maxLevel": 30
+      },
+      {
+        "id": "genbu",
+        "weight": 22,
+        "minLevel": 27,
+        "maxLevel": 30
+      },
+      {
+        "id": "hidaneko",
+        "weight": 15,
+        "minLevel": 27,
+        "maxLevel": 29
+      },
+      {
+        "id": "meteko",
+        "weight": 15,
+        "minLevel": 27,
+        "maxLevel": 29
+      },
+      {
+        "id": "hotaruna",
+        "weight": 14,
+        "minLevel": 27,
+        "maxLevel": 30
+      },
+      {
+        "id": "rairai",
+        "weight": 14,
+        "minLevel": 27,
+        "maxLevel": 29
+      }
+    ]
+  },
+  "taurus_cave": {
+    "encounterRate": 0.13,
+    "monsters": [
+      {
+        "id": "regonyas",
+        "weight": 25,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "sharisu",
+        "weight": 18,
+        "minLevel": 28,
+        "maxLevel": 31
+      },
+      {
+        "id": "pribo",
+        "weight": 15,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "roubau",
+        "weight": 14,
+        "minLevel": 28,
+        "maxLevel": 31
+      },
+      {
+        "id": "hotaruna",
+        "weight": 14,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "genbu",
+        "weight": 14,
+        "minLevel": 28,
+        "maxLevel": 30
+      }
+    ]
+  },
+  "taurus_cave_b1": {
+    "encounterRate": 0.13,
+    "monsters": [
+      {
+        "id": "regonyas",
+        "weight": 25,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "sharisu",
+        "weight": 18,
+        "minLevel": 28,
+        "maxLevel": 31
+      },
+      {
+        "id": "pribo",
+        "weight": 15,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "roubau",
+        "weight": 14,
+        "minLevel": 28,
+        "maxLevel": 31
+      },
+      {
+        "id": "hotaruna",
+        "weight": 14,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "genbu",
+        "weight": 14,
+        "minLevel": 28,
+        "maxLevel": 30
+      }
+    ]
+  },
+  "kiri_valley": {
+    "encounterRate": 0.11,
+    "monsters": [
+      {
+        "id": "mochichi",
+        "weight": 34,
+        "minLevel": 33,
+        "maxLevel": 36
+      },
+      {
+        "id": "mochigori",
+        "weight": 40,
+        "minLevel": 34,
+        "maxLevel": 37
+      },
+      {
+        "id": "gorimocchi",
+        "weight": 26,
+        "minLevel": 35,
+        "maxLevel": 38
+      }
+    ]
+  }
 }
