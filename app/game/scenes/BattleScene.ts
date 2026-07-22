@@ -12,7 +12,7 @@ import {
 import { calculateCaptureRate } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
 import { rollNatureGender, ensureNatureGender, applyNature, genderSymbol, genderColor } from "../data/natureGender";
-import { moveMaxPP, ensureInstancePP } from "../data/movePP";
+import { moveMaxPP, ensureInstancePP, restorePP } from "../data/movePP";
 import { markSeen, markCaught } from "../data/dex";
 import {
   getExpReward,
@@ -1927,6 +1927,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (this.playerInstance.moves.length < 4) {
       this.playerInstance.moves.push(moveId);
+      restorePP(this.playerInstance, this.allMoves);   // 新わざ習得でPP全回復
       // Refresh battle monster moves
       this.playerMon = this.instanceToBattleMonster(this.playerInstance);
 
@@ -2059,6 +2060,7 @@ export class BattleScene extends Phaser.Scene {
       const oldMoveId = this.playerInstance.moves[index];
       const oldMove = this.allMoves.find((m) => m.id === oldMoveId)!;
       this.playerInstance.moves[index] = this.pendingMoveId;
+      restorePP(this.playerInstance, this.allMoves);   // 新わざ習得でPP全回復
       this.playerMon = this.instanceToBattleMonster(this.playerInstance);
       this.pendingMoveId = null;
 
@@ -3379,6 +3381,7 @@ export class BattleScene extends Phaser.Scene {
           const mvName = this.allMoves.find(m => m.id === mv)?.name ?? mv;
           if (inst.moves.length < 4) {
             inst.moves.push(mv);
+            restorePP(inst, this.allMoves);   // 新わざ習得でPP全回復
             msgs.push(`${data.name}は ${mvName}を おぼえた！`);
           } else {
             msgs.push(`${data.name}は ${mvName}を おぼえたかったが\nわざが いっぱいだった…`);

@@ -6620,8 +6620,39 @@ export class MapScene extends Phaser.Scene {
         duration: 1500 + i * 120, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     }
 
-    // 町ぜんたいに ほんのり 明るい光のトーン
-    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xfff3c8, 0.045)
+    // 入口・リカバリーポッド前にも街灯（光の街の第一印象）
+    for (const [lx, ly] of [[16, 30], [24, 30], [19, 32], [21, 26]] as [number, number][]) lampAt(lx, ly);
+
+    // ★中央の「光のモニュメント」：にじ色の光の柱がそびえる ランドマーク
+    const mmx = 21 * ts + ts / 2, mmy = 22 * ts + ts / 2;
+    if (!this.textures.exists("serene-monument")) {
+      const c = document.createElement("canvas"); c.width = 28; c.height = 56;
+      const g = c.getContext("2d")!; g.imageSmoothingEnabled = false;
+      g.fillStyle = "rgba(0,0,0,0.28)"; g.beginPath(); g.ellipse(14, 53, 11, 3, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#4a5372"; g.fillRect(6, 44, 16, 9); g.fillStyle = "#5f6b8f"; g.fillRect(6, 44, 16, 2);
+      g.fillStyle = "#cfe6ff"; g.beginPath(); g.moveTo(14, 2); g.lineTo(22, 14); g.lineTo(20, 44); g.lineTo(8, 44); g.lineTo(6, 14); g.closePath(); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.82)"; g.beginPath(); g.moveTo(14, 2); g.lineTo(16, 14); g.lineTo(15, 44); g.lineTo(12, 44); g.lineTo(12, 14); g.closePath(); g.fill();
+      g.strokeStyle = "#9ec7e0"; g.lineWidth = 1; g.beginPath(); g.moveTo(14, 2); g.lineTo(22, 14); g.lineTo(20, 44); g.lineTo(8, 44); g.lineTo(6, 14); g.closePath(); g.stroke();
+      this.textures.addCanvas("serene-monument", c);
+    }
+    this.add.image(mmx, mmy, "serene-monument").setOrigin(0.5, 1).setDepth(8);
+    const beamCols = [0xff6b6b, 0xffb26b, 0xfff26b, 0x7be07b, 0x6bc7ff, 0x9b8bff];
+    for (let i = 0; i < beamCols.length; i++) {
+      const col = this.add.rectangle(mmx, mmy - ts * 1.7, 12 - i, ts * 4.5, beamCols[i], 0.10)
+        .setOrigin(0.5, 1).setDepth(7).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: col, alpha: { from: 0.16, to: 0.05 }, scaleY: { from: 1, to: 1.15 },
+        duration: 1600 + i * 160, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+    const mOrb = this.add.circle(mmx, mmy - ts * 1.75, 11, 0xffffff, 0.5).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: mOrb, alpha: { from: 0.6, to: 0.2 }, scale: { from: 1, to: 1.8 },
+      duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.nectarExam.push({ x: 21, y: 23, fn: () => this.showDialog([
+      "『光のモニュメント』——晴れの海が あつめた\n太陽の光を、にじ色に わけて 空へ かえす。",
+      "セレネタウンの ほこり。夜でも ほんのり\nあかるい、光の街の しるしだ。",
+    ]) });
+
+    // 町ぜんたいに ほんのり 明るい光のトーン（少し強めに）
+    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xfff3c8, 0.07)
       .setOrigin(0, 0).setDepth(40);
   }
 
