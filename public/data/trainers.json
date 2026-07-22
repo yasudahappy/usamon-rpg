@@ -779,16 +779,16 @@
   },
   {
     "id": "luna_gym2",
-    "name": "ジムトレーナー ソラ",
+    "name": "ジムトレーナー マツモト",
     "mapKey": "gym_4",
     "x": 12,
     "y": 14,
     "direction": "down",
     "sightRange": 2,
     "prizeMoneyBase": 900,
-    "dialogBefore": "ここまで 来たんだね。\n夜空の 星は みんな 遠い 太陽——\nその ひかり、うけてみろ！",
-    "dialogWin": "……つよい。リーダー ルナも きっと よろこぶ。",
-    "dialogLose": "星の かがやきには かなわないでしょ？",
+    "dialogBefore": "ようこそ。わたしは マツモト。\nこの てんもんだいの うんえいを まかされてる。\n夜空の 星は みんな 遠い 太陽——\nその ひかり、しっかり うけてみたまえ！",
+    "dialogWin": "……おみごと。リーダー ルナも きっと よろこぶ。",
+    "dialogLose": "星の かがやきには まだまだ かなわないよ。",
     "party": [
       {
         "id": "lunalux",
@@ -799,8 +799,8 @@
         "level": 32
       }
     ],
-    "battleSprite": "trainer-bikyaku",
-    "overworldSprite": "bikyaku"
+    "battleSprite": "trainer-matsumoto",
+    "overworldSprite": "matsumoto"
   },
   {
     "id": "luna",
