@@ -885,6 +885,35 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * ゲイのモンスターとオスのモンスターが手持ちにそろっていると、いっしょに
+   * 歩くうちに オスも ゲイになる仕掛け。条件を満たす歩みだけを数え、
+   * 5000歩に達したら オスを1体 ゲイに変える（多様性はすてきだ、というノリ）。
+   */
+  private checkGayConversion(): void {
+    const ps = this.playerState;
+    if (!ps || this.dialogActive || this.inCutscene) return;
+    const party = ps.party || [];
+    const hasGay = party.some(m => m.gender === "gay");
+    const male = party.find(m => m.gender === "male");
+    // 条件が くずれたら カウンターは そのまま止める（また そろえば再開）。
+    if (!hasGay || !male) return;
+
+    ps.gayWalkSteps = (ps.gayWalkSteps ?? 0) + 1;
+    if (ps.gayWalkSteps < 5000) return;
+
+    // 5000歩 到達：オスを1体 ゲイに変える。
+    ps.gayWalkSteps = 0;
+    male.gender = "gay";
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const name = all.find(m => m.id === male.dataId)?.name ?? "なかま";
+    this.showDialog([
+      `いっしょに 5000ぽ あるいた……`,
+      `${name}は ゲイの なかまと すごすうちに\n自分の きもちに 気づいたようだ。`,
+      `${name}は ゲイに なった！`,
+    ]);
+  }
+
   /** ジムリーダー イシイ＆シオリを倒したあと、ヒジリに話しかけると
    *  仲間になる。仲間化（または仲間化ずみの会話）を表示したら true。 */
   private tryRecruitHijiri(trainerId: string): boolean {
@@ -1242,6 +1271,9 @@ export class MapScene extends Phaser.Scene {
 
         // Check random encounter
         this.checkRandomEncounter();
+
+        // ゲイ＋オスが手持ちにいると、歩くうちにオスもゲイになる仕掛け
+        this.checkGayConversion();
 
         // Nectar Town step-on triggers (overlook / eavesdrop cutscenes)
         this.checkNectarStepTriggers();

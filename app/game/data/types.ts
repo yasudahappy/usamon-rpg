@@ -73,6 +73,7 @@ export interface PlayerState {
   seen?: string[]; // ずかん: dataIds the player has encountered (みつけた)
   caught?: string[]; // ずかん: dataIds the player has owned/caught (つかまえた)
   companion?: string; // 仲間になって ついてくる キャラ（例: "hijiri"）
+  gayWalkSteps?: number; // ゲイ＋オスが手持ちにいる間の歩数（5000歩でオス→ゲイ）
 }
 
 // ---- Trainer data ----
