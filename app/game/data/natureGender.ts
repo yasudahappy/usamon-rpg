@@ -27,6 +27,27 @@ export function applyNature(stats: Stats, nature?: string): Stats {
   return out;
 }
 
+/** せいべつによる のうりょく補正。
+ *  ゲイ=防御、レズビアン=攻撃、バイ=体力(HP)、トランス=全体的に。
+ *  男/女/その他は補正なし（フラット）。 */
+export const GENDER_MODS: Record<string, Partial<Record<keyof Stats, number>>> = {
+  gay: { defense: 1.15 },
+  lesbian: { attack: 1.15 },
+  bi: { hp: 1.15 },
+  trans: { hp: 1.1, attack: 1.1, defense: 1.1, speed: 1.1 },
+};
+
+/** せいべつ補正を適用して返す（純関数・冪等）。HPも対象になりうる。 */
+export function applyGender(stats: Stats, gender?: Gender): Stats {
+  const mod = gender ? GENDER_MODS[gender] : undefined;
+  const out: Stats = { ...stats };
+  if (!mod) return out;
+  (Object.keys(mod) as (keyof Stats)[]).forEach((k) => {
+    out[k] = Math.floor(out[k] * (mod[k] as number));
+  });
+  return out;
+}
+
 // せいかく（フレーバー。能力には影響しない、子ども向けのやさしい性格リスト）。
 export const NATURES = [
   "がんばりや",

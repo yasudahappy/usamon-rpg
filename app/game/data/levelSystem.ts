@@ -1,5 +1,5 @@
 import { MonsterData, MoveData, MonsterInstance, Stats } from "./types";
-import { rollNatureGender, applyNature } from "./natureGender";
+import { rollNatureGender, applyNature, applyGender } from "./natureGender";
 import { moveMaxPP } from "./movePP";
 
 /**
@@ -80,7 +80,7 @@ export function createMonsterInstance(
     throw new Error(`Monster data not found: ${dataId}`);
   }
   const ng = rollNatureGender();
-  const stats = applyNature(calculateStats(data, level), ng.nature);
+  const stats = applyGender(applyNature(calculateStats(data, level), ng.nature), ng.gender);
   const moves = getMovesForLevel(data, level, allMoves);
 
   return {
@@ -104,7 +104,7 @@ export function refreshInstanceStats(
 ): void {
   const data = allMonsters.find((m) => m.id === instance.dataId);
   if (!data) return;
-  instance.stats = applyNature(calculateStats(data, instance.level), instance.nature);
+  instance.stats = applyGender(applyNature(calculateStats(data, instance.level), instance.nature), instance.gender);
   instance.maxHp = instance.stats.hp;
   if (instance.currentHp > instance.maxHp) instance.currentHp = instance.maxHp;
 }
@@ -141,7 +141,7 @@ export function applyEvolution(
 
   const oldMaxHp = instance.maxHp;
   instance.dataId = newDataId;
-  const newStats = calculateStats(newData, instance.level);
+  const newStats = applyGender(applyNature(calculateStats(newData, instance.level), instance.nature), instance.gender);
   instance.stats = newStats;
   instance.maxHp = newStats.hp;
   // Heal proportionally
@@ -160,7 +160,7 @@ export function applyLevelUp(
   if (!data) return;
 
   const oldMaxHp = instance.maxHp;
-  const newStats = applyNature(calculateStats(data, instance.level), instance.nature);
+  const newStats = applyGender(applyNature(calculateStats(data, instance.level), instance.nature), instance.gender);
   instance.stats = newStats;
   instance.maxHp = newStats.hp;
   // Heal the HP gained
