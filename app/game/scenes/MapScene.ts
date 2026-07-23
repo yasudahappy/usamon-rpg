@@ -5519,6 +5519,18 @@ export class MapScene extends Phaser.Scene {
     // ⑮ 月クイズの子ども
     put(this.npcTex("cast-char8-down", "npc-mom"), 19, 19, () => this.triggerQuizKid());
 
+    // 「同行」をくれる トレーナー（3つ目の町＝ネクタルタウン）
+    put(this.npcTex("cast-char0-down", "npc-kinoshita"), 10, 19, () => {
+      const given = this.awardNectarItem("nectar_companion_item", "companion", "同行", [
+        "やあ！ きみ、たくさんの アルモンと\n旅してるんだね。いい どうぐを あげよう。",
+        "これは 『同行』。もっていると、バトルに\nでていない アルモンにも、たおした あいての\nはんぶんの けいけんちが はいるんだ。",
+        "ひかえの子たちも いっしょに そだつよ。\nみんなで つよくなろう！",
+      ]);
+      if (!given) this.showDialog([
+        "『同行』、やくだってるかい？\nひかえの子たちも どんどん そだつはずだよ。",
+      ]);
+    });
+
     // ⑪ 雪だまりの隠しどうぐ ×2
     put("nectar-drift", 4, 6, () => {
       const given = this.awardNectarItem("nectar_hidden_1", "star_capsule", "スターカプセル", [

@@ -11,6 +11,17 @@
   "pp": 20
  },
  {
+  "id": "hikari_no_yaiba",
+  "name": "ひかりのやいば",
+  "type": "光",
+  "power": 65,
+  "accuracy": 100,
+  "isSupport": false,
+  "effect": null,
+  "description": "光を やいばに かえて 切りつける こうげきわざ。",
+  "pp": 15
+ },
+ {
   "id": "kansya_no_mai",
   "name": "かんしゃのまい",
   "type": "光",

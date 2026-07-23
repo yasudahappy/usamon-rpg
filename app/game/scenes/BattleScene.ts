@@ -807,6 +807,9 @@ export class BattleScene extends Phaser.Scene {
   // preserving aspect so both wide and tall monsters read at a similar size.
   // Per-species battle-size tweak (multiplies the fit-to-box scale). Used when a
   // monster should read smaller/larger than its raw art implies.
+  // トレーナー撃破の賞金を すこし増やす倍率。
+  private static PRIZE_MULT = 1.5;
+
   private static MONSTER_SCALE: Record<string, number> = {
     usamon: 0.77,
     mochichi: 0.5,
@@ -1940,6 +1943,40 @@ export class BattleScene extends Phaser.Scene {
 
   private afterExpCallback: (() => void) | null = null;
 
+  /** 「同行」を持っているか（＝ひかえにも経験値が入る）。 */
+  private hasCompanionItem(): boolean {
+    return (this.playerState.items || []).some((i) => i.id === "companion" && i.count > 0);
+  }
+
+  /**
+   * インスタンスに経験値を与え、レベルアップ・わざ習得（4つ未満なら自動）・
+   * 進化予約をまとめて処理する。msgs を渡すと途中経過を積む（渡さなければ静か）。
+   */
+  private grantExpToInstance(inst: MonsterInstance, addExp: number, msgs?: string[]): void {
+    if (addExp <= 0) return;
+    const data = this.allMonsters.find((m) => m.id === inst.dataId)!;
+    inst.exp += addExp;
+    while (inst.level < 100 && inst.exp >= getExpForLevel(inst.level + 1)) {
+      inst.level++;
+      applyLevelUp(inst, this.allMonsters);
+      msgs?.push(`${data.name}は レベル${inst.level}に なった！`);
+      const mv = getNewMoveAtLevel(data, inst.level);
+      if (mv && !inst.moves.includes(mv) && inst.moves.length < 4) {
+        inst.moves.push(mv);
+        restorePP(inst, this.allMoves);
+        const mvName = this.allMoves.find((m) => m.id === mv)?.name ?? mv;
+        msgs?.push(`${data.name}は ${mvName}を おぼえた！`);
+      }
+    }
+    const evo = checkEvolution(inst, this.allMonsters);
+    if (evo) {
+      const idx = this.playerState.party.indexOf(inst);
+      if (idx >= 0 && !this.pendingEvolutions.some((p) => p.partyIndex === idx)) {
+        this.pendingEvolutions.push({ partyIndex: idx, fromId: inst.dataId, toId: evo.evolvesTo });
+      }
+    }
+  }
+
   private handleExpGain(afterDone?: () => void): void {
     this.afterExpCallback = afterDone || null;
     const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
@@ -1948,13 +1985,25 @@ export class BattleScene extends Phaser.Scene {
     this.refreshPlayerExp();
 
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
+    const msgs = [`${playerData.name}は ${expGain}けいけんちを かくとく！`];
 
-    this.showMessages(
-      [`${playerData.name}は ${expGain}けいけんちを かくとく！`],
-      () => {
-        this.checkLevelUp();
+    // 「同行」：バトルに出ていない生存アルモンにも半分の経験値。
+    if (this.hasCompanionItem()) {
+      const half = Math.floor(expGain / 2);
+      let any = false;
+      for (const inst of this.playerState.party) {
+        if (inst === this.playerInstance || inst.currentHp <= 0) continue;
+        this.grantExpToInstance(inst, half);   // 静かに処理（進化は戦闘後）
+        any = true;
       }
-    );
+      if (any && half > 0) {
+        msgs.push(`「同行」の こうかで ひかえの アルモンにも\n${half}けいけんちが はいった！`);
+      }
+    }
+
+    this.showMessages(msgs, () => {
+      this.checkLevelUp();
+    });
   }
 
   private checkLevelUp(): void {
@@ -2749,7 +2798,7 @@ export class BattleScene extends Phaser.Scene {
     if (!this.trainerData || this.trainerPartyIndex >= this.trainerData.party.length) {
       // Trainer defeated! Show the trainer portrait again with the defeat line.
       const t = this.trainerData!;
-      const prize = t.prizeMoneyBase;
+      const prize = Math.floor(t.prizeMoneyBase * BattleScene.PRIZE_MULT);
       this.playerState.money += prize;
       this.playerState.defeatedTrainers.push(t.id);
       this.enemySprite.setVisible(false);
@@ -3429,7 +3478,7 @@ export class BattleScene extends Phaser.Scene {
     this.dOver = true;
     this.phase = "victory";
     const t = this.trainerData!;
-    const prize = t.prizeMoneyBase;
+    const prize = Math.floor(t.prizeMoneyBase * BattleScene.PRIZE_MULT);
     this.playerState.money += prize;
     if (!this.playerState.defeatedTrainers.includes(t.id)) {
       this.playerState.defeatedTrainers.push(t.id);
@@ -3476,6 +3525,16 @@ export class BattleScene extends Phaser.Scene {
       if (evo) {
         const idx = this.playerState.party.indexOf(inst);
         if (idx >= 0) this.pendingEvolutions.push({ partyIndex: idx, fromId: inst.dataId, toId: evo.evolvesTo });
+      }
+    }
+    // 「同行」：参加していない生存アルモンにも半分の経験値。
+    if (this.hasCompanionItem()) {
+      const half = Math.floor(total / 2);
+      for (const inst of this.playerState.party) {
+        if (this.dParticipants.has(inst) || inst.currentHp <= 0) continue;
+        const data = this.allMonsters.find(m => m.id === inst.dataId)!;
+        msgs.push(`（同行）${data.name}は ${half}けいけんちを かくとく！`);
+        this.grantExpToInstance(inst, half, msgs);
       }
     }
     if (msgs.length === 0) { cb(); return; }
