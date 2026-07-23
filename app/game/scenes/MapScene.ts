@@ -205,7 +205,7 @@ export class MapScene extends Phaser.Scene {
 
   // Menu system
   private menuOpen = false;
-  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" = "none";
+  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" | "hold_item" = "none";
   // てもちのアクションメニュー／アルモン詳細ビュー
   private partyActionSel = 0;
   private monDetailPage = 0;   // 0=じょうほう, 1=のうりょく, 2=わざ
@@ -1550,6 +1550,7 @@ export class MapScene extends Phaser.Scene {
     if (this.menuSubScreen !== "none") {
       if (this.menuSubScreen === "party") { this.updatePartyScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "party_action") { this.updatePartyActionMenu(a, b, menu, dpad); return; }
+      if (this.menuSubScreen === "hold_item") { this.updateHoldItemScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "mon_detail") { this.updateMonDetail(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "bag" || this.menuSubScreen === "bag_target") { this.updateBagScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "zukan" || this.menuSubScreen === "zukan_detail") { this.updateZukanScreen(a, b, menu, dpad); return; }
@@ -1630,8 +1631,8 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  // ---- てもち: アクションメニュー（しょうさい / いれかえ / やめる） ----
-  private static PARTY_ACTIONS = ["しょうさい", "いれかえ", "やめる"];
+  // ---- てもち: アクションメニュー（しょうさい / どうぐ / いれかえ / やめる） ----
+  private static PARTY_ACTIONS = ["しょうさい", "どうぐ", "いれかえ", "やめる"];
 
   private drawPartyActionMenu(): void {
     // 下地はパーティ画面をそのまま残し、右下に小さなメニューを重ねる。
@@ -1684,10 +1685,148 @@ export class MapScene extends Phaser.Scene {
     if (justDown || kbDown) { this.partyActionSel = (this.partyActionSel + 1) % n; this.drawPartyActionMenu(); return; }
     if (a || kbEnter) {
       if (this.partyActionSel === 0) { this.monDetailPage = 0; this.menuSubScreen = "mon_detail"; this.drawMonDetail(); }
-      else if (this.partyActionSel === 1) { this.partyPickIndex = this.partySelIndex; this.menuSubScreen = "party"; this.drawPartyScreen(); }
+      else if (this.partyActionSel === 1) { this.holdSel = 0; this.showHoldItemScreen(); }
+      else if (this.partyActionSel === 2) { this.partyPickIndex = this.partySelIndex; this.menuSubScreen = "party"; this.drawPartyScreen(); }
       else { this.menuSubScreen = "party"; this.drawPartyScreen(); }
       return;
     }
+  }
+
+  // ---- もちもの（どうぐを もたせる / あずかる） ----
+  private holdSel = 0;
+  private holdGpPrevDpad: string | null = null;
+
+  /** いま選んでいるアルモンの「もちもの」画面で表示する行を組み立てる。 */
+  private holdRows(): { kind: "unhold" | "hold" | "cancel"; id?: string; label: string }[] {
+    const party = this.playerState?.party || [];
+    const inst = party[this.partySelIndex];
+    const rows: { kind: "unhold" | "hold" | "cancel"; id?: string; label: string }[] = [];
+    if (inst?.held) {
+      const nm = this.itemName(inst.held);
+      rows.push({ kind: "unhold", label: `「${nm}」を あずかる` });
+    }
+    for (const it of this.ownedItems()) {
+      rows.push({ kind: "hold", id: it.id, label: `${it.name} を もたせる (×${it.count})` });
+    }
+    rows.push({ kind: "cancel", label: "やめる" });
+    return rows;
+  }
+
+  private itemName(id: string): string {
+    const all = (this.cache.json.get("items") as { id: string; name: string }[]) || [];
+    return all.find(i => i.id === id)?.name ?? id;
+  }
+
+  private showHoldItemScreen(): void {
+    this.holdSel = 0;
+    this.holdGpPrevDpad = null;
+    this.drawHoldItemScreen();
+  }
+
+  private drawHoldItemScreen(): void {
+    this.menuSubScreen = "hold_item";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const party = this.playerState?.party || [];
+    const inst = party[this.partySelIndex];
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const mon = all.find(m => m.id === inst?.dataId);
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x0a1628, 0.97); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+
+    const heldNow = inst?.held ? this.itemName(inst.held) : "なし";
+    const title = this.add.text(this.uiX(W / 2), this.uiY(30), `${mon?.name ?? "アルモン"} の もちもの`, {
+      fontSize: `${this.uiS(19)}px`, color: "#66aaff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(title);
+    const cur = this.add.text(this.uiX(W / 2), this.uiY(56), `いま：${heldNow}`, {
+      fontSize: `${this.uiS(14)}px`, color: "#cddaec", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5);
+    this.menuElements.push(cur);
+
+    const rows = this.holdRows();
+    const rowH = 44, top = 84;
+    rows.forEach((row, i) => {
+      const y = top + i * rowH;
+      const on = i === this.holdSel;
+      const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+      panel.fillStyle(on ? 0x1b3a63 : 0x0d1a33, on ? 0.95 : 0.85);
+      panel.fillRoundedRect(this.uiX(28), this.uiY(y), this.uiS(W - 56), this.uiS(rowH - 8), 8);
+      panel.lineStyle(on ? 3 : 2, on ? 0x8fd0ff : 0x3a5680);
+      panel.strokeRoundedRect(this.uiX(28), this.uiY(y), this.uiS(W - 56), this.uiS(rowH - 8), 8);
+      this.menuElements.push(panel);
+      const color = row.kind === "unhold" ? "#ffe0a0" : row.kind === "cancel" ? "#c0ccdd" : "#ffffff";
+      const t = this.add.text(this.uiX(48), this.uiY(y + (rowH - 8) / 2), `${on ? "▶ " : "  "}${row.label}`, {
+        fontSize: `${this.uiS(15)}px`, color, fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0, 0.5);
+      this.menuElements.push(t);
+      const zone = this.add.zone(this.uiX(28), this.uiY(y), this.uiS(W - 56), this.uiS(rowH - 8)).setOrigin(0, 0).setScrollFactor(0).setInteractive().setDepth(203);
+      zone.on("pointerdown", () => { this.holdSel = i; this.activateHoldRow(); });
+      this.menuElements.push(zone);
+    });
+
+    const hint = this.add.text(this.uiX(W / 2), this.uiY(top + rows.length * rowH + 16), "▲▼でせんたく  A:けってい  B:もどる", {
+      fontSize: `${this.uiS(12)}px`, color: "#88aacc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+    this.menuElements.push(hint);
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private activateHoldRow(): void {
+    const rows = this.holdRows();
+    const row = rows[this.holdSel];
+    if (!row) return;
+    const inst = (this.playerState?.party || [])[this.partySelIndex];
+    if (!inst || !this.playerState) return;
+    if (row.kind === "cancel") { this.menuSubScreen = "party_action"; this.drawPartyActionMenu(); return; }
+    if (row.kind === "unhold") {
+      this.addBagItem(inst.held!);
+      inst.held = undefined;
+      this.showHoldItemScreen();
+      return;
+    }
+    // hold: 今もっている物があれば先にバッグへ戻し、選んだ物を1つ減らして持たせる。
+    if (row.id) {
+      if (inst.held) this.addBagItem(inst.held);
+      if (!this.removeBagItem(row.id)) { this.showHoldItemScreen(); return; }
+      inst.held = row.id;
+      this.holdSel = 0;
+      this.showHoldItemScreen();
+    }
+  }
+
+  private addBagItem(id: string): void {
+    if (!this.playerState) return;
+    const it = this.playerState.items.find(i => i.id === id);
+    if (it) it.count++; else this.playerState.items.push({ id, count: 1 });
+  }
+
+  private removeBagItem(id: string): boolean {
+    if (!this.playerState) return false;
+    const it = this.playerState.items.find(i => i.id === id);
+    if (!it || it.count <= 0) return false;
+    it.count--;
+    if (it.count <= 0) this.playerState.items = this.playerState.items.filter(i => i.id !== id);
+    return true;
+  }
+
+  private updateHoldItemScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    const rows = this.holdRows();
+    const justUp = dpad === "up" && this.holdGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.holdGpPrevDpad !== "down";
+    let kbUp = false, kbDown = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+    }
+    this.holdGpPrevDpad = dpad;
+    if (b || menu) { this.menuSubScreen = "party_action"; this.drawPartyActionMenu(); return; }
+    if (justUp || kbUp) { this.holdSel = (this.holdSel - 1 + rows.length) % rows.length; this.drawHoldItemScreen(); return; }
+    if (justDown || kbDown) { this.holdSel = (this.holdSel + 1) % rows.length; this.drawHoldItemScreen(); return; }
+    if (a) this.activateHoldRow();
   }
 
   // ---- アルモン詳細ビュー（のうりょく / わざ の2ページ） ----
@@ -1770,8 +1909,8 @@ export class MapScene extends Phaser.Scene {
         ["タイプ", data?.type ?? "？", "#ffffff"],
         ["せいべつ", genderLabel(inst.gender), genderColor(inst.gender)],
         ["せいかく", inst.nature ?? "―", "#ffe08a"],
+        ["もちもの", inst.held ? this.itemName(inst.held) : "なし", inst.held ? "#ffd98a" : "#dbe6f2"],
         ["やくわり", data?.role ?? "？", "#ffffff"],
-        ["ずかんばんごう", `No.${String(dexNo).padStart(3, "0")}`, "#ffffff"],
         ["つかまえた", isCaught ? "○" : "―", isCaught ? "#9fffa8" : "#dbe6f2"],
         ["しんか", evoText, "#c0ffe0"],
       ];
