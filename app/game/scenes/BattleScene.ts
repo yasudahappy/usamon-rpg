@@ -1943,9 +1943,11 @@ export class BattleScene extends Phaser.Scene {
 
   private afterExpCallback: (() => void) | null = null;
 
-  /** 「同行」を持っているか（＝ひかえにも経験値が入る）。 */
+  /** 「同行」を持っているか（バッグにある or だれかが もちものにしている）。 */
   private hasCompanionItem(): boolean {
-    return (this.playerState.items || []).some((i) => i.id === "companion" && i.count > 0);
+    const inBag = (this.playerState.items || []).some((i) => i.id === "companion" && i.count > 0);
+    const held = (this.playerState.party || []).some((m) => m.held === "companion");
+    return inBag || held;
   }
 
   /**
