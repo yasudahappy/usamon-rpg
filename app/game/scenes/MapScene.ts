@@ -906,6 +906,7 @@ export class MapScene extends Phaser.Scene {
     ps.gayWalkSteps = 0;
     male.gender = "gay";
     const all = this.cache.json.get("monsters") as MonsterData[];
+    refreshInstanceStats(male, all);   // ゲイの防御ボーナスを反映
     const name = all.find(m => m.id === male.dataId)?.name ?? "なかま";
     this.showDialog([
       `いっしょに 5000ぽ あるいた……`,

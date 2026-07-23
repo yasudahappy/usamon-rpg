@@ -162,6 +162,7 @@ export class BattleScene extends Phaser.Scene {
   private playerInfoObjects: Phaser.GameObjects.GameObject[] = [];
   private itemIconSprites: Phaser.GameObjects.Image[] = [];
   private fleeAttempts = 0;
+  private forcedSwitch = false;   // ひんし後の強制交代メニュー中（もどる不可）
 
   // ---- Double battle (2vs2) state — singles code never touches these ----
   private isDouble = false;
@@ -565,6 +566,10 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.killTweensOf(sprite);
     sprite.clearTint();
     sprite.setVisible(false);
+    // ひんし演出などで sprite.y が下がったまま残っていると、登場位置が
+    // だんだん低くなる。接地の基準Y(groundY)にスナップしてから登場させる。
+    const gy = sprite.getData("groundY");
+    if (typeof gy === "number") sprite.setY(gy);
     const fromX = isPlayer ? -24 : 664;
     const fromY = sprite.y - 90 * this.sy;
     this.throwCapsuleArc(fromX, fromY, sprite.x, sprite.y + sprite.displayHeight * 0.2,
@@ -826,6 +831,7 @@ export class BattleScene extends Phaser.Scene {
     solpoka: 0.55,
     fureado: 1.15,
     prominence: 1.3,
+    serenios: 1.3,
   };
 
   // Extra multiplier applied ONLY to the back-view (the player's own monster).
@@ -1434,6 +1440,19 @@ export class BattleScene extends Phaser.Scene {
         this.chooseBattleItem(this.battleItems().length);   // もどる
       }
     } else if (this.phase === "switch_mon") {
+      // ひんし後の強制交代：もどる無し・選んだら即くりだす。
+      if (this.forcedSwitch) {
+        const faintParty = this.playerState.party.filter((m) => m.currentHp > 0);
+        const maxF = Math.min(this.commandSlots.length, 6);
+        if (justUp && this.selectedCommand >= 2) { this.selectedCommand -= 2; this.highlightLearnSlots(this.selectedCommand); }
+        if (justDown && this.selectedCommand + 2 < maxF) { this.selectedCommand += 2; this.highlightLearnSlots(this.selectedCommand); }
+        if (justLeft && this.selectedCommand % 2 === 1) { this.selectedCommand -= 1; this.highlightLearnSlots(this.selectedCommand); }
+        if (justRight && this.selectedCommand % 2 === 0 && this.selectedCommand + 1 < maxF) { this.selectedCommand += 1; this.highlightLearnSlots(this.selectedCommand); }
+        if (confirm && faintParty[this.selectedCommand]) {
+          this.chooseFaintSwitch(faintParty[this.selectedCommand]);
+        }
+        return;   // もどる（B/ESC）は受け付けない
+      }
       // Party-switch selection (2-column grid of alive members + もどる).
       const activeInsts = this.isDouble
         ? this.dAliveSlots(this.dP).map(i => this.dP[i]!.inst)
@@ -1811,10 +1830,13 @@ export class BattleScene extends Phaser.Scene {
       this.playerInstance.currentHp = 0;
       this.playFaintFx(this.playerSprite);
       const faintedData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
-      const hasAlive = this.playerState.party.some((m) => m.currentHp > 0);
-      if (hasAlive) {
+      const alive = this.playerState.party.filter((m) => m.currentHp > 0);
+      if (alive.length > 0) {
         this.showMessages([`${faintedData.name}は たおれた！`], () => {
-          this.playerSendNext();
+          // 控えが2体以上なら「どのアルモンを出す？」と選ばせる。
+          // 1体だけなら選択の余地がないのでそのまま出す。
+          if (alive.length >= 2) this.promptFaintSwitch();
+          else this.playerSendNext();
         });
       } else {
         this.showMessages(
@@ -1829,8 +1851,65 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Player: send out next healthy monster after a faint ----
 
-  private playerSendNext(): void {
-    const next = this.playerState.party.find((m) => m.currentHp > 0);
+  /**
+   * ひんし後に「どのアルモンを 出す？」と選ばせるメニュー（強制交代）。
+   * もどる無し・行動を消費しない。シングル戦専用。
+   */
+  private promptFaintSwitch(): void {
+    const aliveParty = this.playerState.party.filter((m) => m.currentHp > 0);
+    if (aliveParty.length === 0) { this.endBattleDefeat(); return; }
+
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+
+    const positions = [
+      { x: 160, y: Math.round(360 * this.sy) }, { x: 480, y: Math.round(360 * this.sy) },
+      { x: 160, y: Math.round(410 * this.sy) }, { x: 480, y: Math.round(410 * this.sy) },
+      { x: 160, y: Math.round(455 * this.sy) }, { x: 480, y: Math.round(455 * this.sy) },
+    ];
+    const options = aliveParty.map(m => {
+      const d = this.allMonsters.find(md => md.id === m.dataId)!;
+      return `${d.name} Lv${m.level} HP${m.currentHp}/${m.maxHp}`;
+    });
+
+    this.forcedSwitch = true;
+    this.phase = "switch_mon";
+    this.selectedCommand = 0;
+
+    for (let i = 0; i < options.length; i++) {
+      const px = positions[i % positions.length].x;
+      const py = positions[i % positions.length].y;
+      const bg = this.add.graphics().setDepth(20);
+      const text = this.add.text(px, py, options[i], {
+        fontSize: "19px", color: "#ffffff", fontFamily: "'DotGothic16', monospace",
+        stroke: "#000000", strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(21);
+      const zone = this.add.zone(px, py, 280, 40).setInteractive().setDepth(22).setOrigin(0.5);
+      const idx = i;
+      zone.on("pointerdown", () => {
+        if (this.phase !== "switch_mon") return;
+        this.chooseFaintSwitch(aliveParty[idx]);
+      });
+      this.commandSlots.push({ label: options[i], x: px, y: py, bg, text, zone });
+    }
+    this.highlightLearnSlots(0);
+    this.setMessage("つぎは どの アルモンを だす？");
+  }
+
+  /** 強制交代でアルモンを選んだとき：行動消費なしで そのまま くりだす。 */
+  private chooseFaintSwitch(mon: MonsterInstance): void {
+    if (this.phase === "executing") return;
+    this.phase = "executing";
+    this.forcedSwitch = false;
+    this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
+    this.commandSlots = [];
+    this.playerSendNext(mon);
+  }
+
+  private playerSendNext(chosen?: MonsterInstance): void {
+    const next = (chosen && chosen.currentHp > 0)
+      ? chosen
+      : this.playerState.party.find((m) => m.currentHp > 0);
     if (!next) {
       this.endBattleDefeat();
       return;
@@ -2568,6 +2647,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private doSwitch(newMon: MonsterInstance): void {
+    // A連打で交代処理が二重に走り画面がバグるのを防ぐ：確定した瞬間に
+    // 入力を受けない executing フェーズへ移す（switch_mon の再入を止める）。
+    if (this.phase === "executing") return;
+    this.phase = "executing";
     this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
     this.commandSlots = [];
 
@@ -3314,13 +3397,14 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private doSwitchD(newMon: MonsterInstance): void {
+    if (this.phase === "executing") return;   // A連打での二重交代を防ぐ
+    this.phase = "executing";
     this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
     this.commandSlots = [];
     this.rebuildCommandWindow();
     this.hideCommandWindow();
     const slot = this.dP[this.dCmdSlot]!;
     const oldName = slot.mon.name;
-    this.phase = "executing";
     // もどれ！（回収）→ ゆけっ！（カプセルから登場）。こうたいは行動を消費する。
     this.showMessages([`${oldName} もどれ！`], () => {
       this.recallSprite(slot.sprite, () => {
