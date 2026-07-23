@@ -9,6 +9,7 @@ import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
 import { ensureNatureGender, genderLabel, genderColor, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
 import { moveMaxPP, ensureInstancePP, restorePP } from "../data/movePP";
+import { writeSaveData as persistSaveData, clearSaveData, exportBackupCode, importBackupCode } from "../data/saveData";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -2833,16 +2834,14 @@ export class MapScene extends Phaser.Scene {
   }
 
   private writeSaveData(): boolean {
-    try {
-      localStorage.setItem("usamon-save-data", JSON.stringify({
-        playerState: this.playerState,
-        mapKey: this.currentMapKey,
-        gridX: this.gridX,
-        gridY: this.gridY,
-        timestamp: Date.now(),
-      }));
-      return true;
-    } catch { return false; }
+    // 二重化つきの永続化（本体へ書く前に、直前の正常な本体を控えへ退避）。
+    return persistSaveData({
+      playerState: this.playerState,
+      mapKey: this.currentMapKey,
+      gridX: this.gridX,
+      gridY: this.gridY,
+      timestamp: Date.now(),
+    });
   }
 
   // ---- オートレポート: 15分ごとに安全なタイミングで自動セーブ ----
@@ -2913,6 +2912,8 @@ export class MapScene extends Phaser.Scene {
       { label: "ひだりきき モード", kind: "toggle", value: s.leftHanded },
       { label: "BGM", kind: "toggle", value: s.bgm },
       { label: "こうかおん", kind: "toggle", value: s.se },
+      { label: "データを バックアップ", kind: "action" },
+      { label: "コードから ふっかつ", kind: "action" },
       { label: "さいしょから はじめる", kind: "danger" },
     ];
   }
@@ -3004,7 +3005,35 @@ export class MapScene extends Phaser.Scene {
       this.drawSettingsScreen();
       return;
     }
-    if (i === 5) this.showRestartConfirm();
+    if (i === 5) { this.doExportBackup(); return; }
+    if (i === 6) { this.doImportBackup(); return; }
+    if (i === 7) this.showRestartConfirm();
+  }
+
+  /** バックアップコードを作り、コピー＆保管をうながす。 */
+  private doExportBackup(): void {
+    // 手動レポートと同じく、まず今の状態を本体へ確実に書き出す。
+    this.writeSaveData();
+    const code = exportBackupCode();
+    if (!code) { window.alert("まだ きろくが ないみたい。\nいちど レポートを つけてね。"); return; }
+    try { navigator.clipboard?.writeText(code); } catch { /* ignore */ }
+    // prompt はコードを選択コピーできる。クリップボードが使えない端末の保険。
+    window.prompt(
+      "バックアップコードだよ！\nコピーして、メモアプリなどに たいせつに ほぞんしてね。\n（これがあれば データが きえても ふっかつできるよ）",
+      code
+    );
+  }
+
+  /** バックアップコードを貼り付けてデータを復元する。 */
+  private doImportBackup(): void {
+    const code = window.prompt("バックアップコードを はりつけてね。\n（いまの きろくは じょうがきされるよ）");
+    if (!code) return;
+    if (importBackupCode(code)) {
+      window.alert("データを ふっかつしたよ！\nゲームを さいよみこみします。");
+      try { window.location.reload(); } catch { /* ignore */ }
+    } else {
+      window.alert("コードが ただしくないみたい…\nもういちど かくにんしてね。");
+    }
   }
 
   private updateSettingsScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
@@ -3057,11 +3086,8 @@ export class MapScene extends Phaser.Scene {
   }
 
   private doRestartGame(): void {
-    // Wipe all saved progress + character setup, then start a brand-new game.
-    try {
-      localStorage.removeItem("usamon-save-data");
-      localStorage.removeItem("usamon-player-setup");
-    } catch (e) { /* ignore */ }
+    // Wipe all saved progress + character setup (control+backup), then start fresh.
+    clearSaveData();
     this.menuOpen = false;
     this.menuSubScreen = "none";
     this.clearMenuElements();

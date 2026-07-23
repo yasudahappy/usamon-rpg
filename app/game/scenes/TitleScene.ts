@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { readSaveData, clearSaveData } from "../data/saveData";
 
 const F = "'DotGothic16', monospace";
 
@@ -119,15 +120,17 @@ export class TitleScene extends Phaser.Scene {
       if (setup.playerName) name = setup.playerName;
     } catch { /* ignore */ }
     try {
-      const raw = localStorage.getItem("usamon-save-data");
-      if (raw) {
+      const s = readSaveData();   // 本体が壊れていれば控えから自動復旧
+      if (s) {
         hasSave = true;
-        const s = JSON.parse(raw);
-        const ps = s.playerState || {};
+        const ps = (s.playerState || {}) as {
+          playSeconds?: number; party?: { dataId: string }[];
+          box?: { dataId: string }[]; defeatedTrainers?: string[];
+        };
         playSeconds = ps.playSeconds || 0;
         const ids = new Set<string>();
-        (ps.party || []).forEach((m: { dataId: string }) => ids.add(m.dataId));
-        (ps.box || []).forEach((m: { dataId: string }) => ids.add(m.dataId));
+        (ps.party || []).forEach((m) => ids.add(m.dataId));
+        (ps.box || []).forEach((m) => ids.add(m.dataId));
         caught = ids.size;
         trainers = (ps.defeatedTrainers || []).length;
       }
@@ -295,12 +298,9 @@ export class TitleScene extends Phaser.Scene {
     this.busy = true;
     let data: Record<string, unknown> = { mapKey: "player_home", intro: true };
     try {
-      const raw = localStorage.getItem("usamon-save-data");
-      if (raw) {
-        const s = JSON.parse(raw);
-        if (s.mapKey) {
-          data = { mapKey: s.mapKey, playerX: s.gridX, playerY: s.gridY, playerState: s.playerState };
-        }
+      const s = readSaveData();   // 本体が壊れていれば控えから自動復旧
+      if (s && s.mapKey) {
+        data = { mapKey: s.mapKey, playerX: s.gridX, playerY: s.gridY, playerState: s.playerState };
       }
     } catch { /* ignore */ }
     this.cameras.main.fadeOut(300, 0, 0, 0);
@@ -315,10 +315,7 @@ export class TitleScene extends Phaser.Scene {
 
   private doNewGame(): void {
     this.busy = true;
-    try {
-      localStorage.removeItem("usamon-save-data");
-      localStorage.removeItem("usamon-player-setup");
-    } catch { /* ignore */ }
+    clearSaveData();   // 本体・控え・セットアップをまとめて消す
     this.cameras.main.fadeOut(300, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("SetupScene"));
   }
