@@ -1872,7 +1872,7 @@ export class MapScene extends Phaser.Scene {
 
     const colW = (W - 48) / 2;
     const colX = [24, 24 + colW];
-    const top = 66, rowH = 40;
+    const top = 70, rowH = 48;
     const headers = ["てもち", "ボックス"];
 
     // 2カラム（左：てもち／右：ボックス）
@@ -1880,8 +1880,8 @@ export class MapScene extends Phaser.Scene {
       const list = side === 0 ? party : box;
       const active = this.pcSide === side;
       // カラム見出し
-      this.menuElements.push(this.add.text(this.uiX(colX[side] + colW / 2), this.uiY(top - 16), `${headers[side]} (${list.length}${side === 0 ? "/6" : ""})`, {
-        fontSize: `${this.uiS(14)}px`, color: active ? "#ffe08a" : "#9fb4cc", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      this.menuElements.push(this.add.text(this.uiX(colX[side] + colW / 2), this.uiY(top - 18), `${headers[side]} (${list.length}${side === 0 ? "/6" : ""})`, {
+        fontSize: `${this.uiS(17)}px`, color: active ? "#ffe08a" : "#9fb4cc", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
       }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
 
       const visible = MapScene.PC_VISIBLE;
@@ -1900,15 +1900,15 @@ export class MapScene extends Phaser.Scene {
         this.menuElements.push(panel);
         if (inst) {
           const nm = this.monName(inst.dataId);
-          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 7), nm, {
-            fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 10), nm, {
+            fontSize: `${this.uiS(18)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
           }).setScrollFactor(0).setDepth(202));
-          this.menuElements.push(this.add.text(this.uiX(colX[side] + colW - 14), this.uiY(y + 8), `Lv${inst.level}`, {
-            fontSize: `${this.uiS(12)}px`, color: "#ffe0a0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + colW - 14), this.uiY(y + 12), `Lv${inst.level}`, {
+            fontSize: `${this.uiS(15)}px`, color: "#ffe0a0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
           }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
         } else {
-          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 7), "―", {
-            fontSize: `${this.uiS(14)}px`, color: "#5b6a80", fontFamily: F,
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 10), "―", {
+            fontSize: `${this.uiS(18)}px`, color: "#5b6a80", fontFamily: F,
           }).setScrollFactor(0).setDepth(202));
         }
         const zone = this.add.zone(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8)).setOrigin(0, 0).setScrollFactor(0).setInteractive().setDepth(203);
@@ -1929,11 +1929,11 @@ export class MapScene extends Phaser.Scene {
     mbox.lineStyle(2, 0x3a6690); mbox.strokeRoundedRect(this.uiX(20), this.uiY(msgY), this.uiS(W - 40), this.uiS(70), 8);
     this.menuElements.push(mbox);
     this.menuElements.push(this.add.text(this.uiX(32), this.uiY(msgY + 12), this.pcMsg, {
-      fontSize: `${this.uiS(13)}px`, color: "#eaf3ff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
-      wordWrap: { width: this.uiS(W - 64) }, lineSpacing: 4,
+      fontSize: `${this.uiS(15)}px`, color: "#eaf3ff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      wordWrap: { width: this.uiS(W - 64) }, lineSpacing: 5,
     }).setScrollFactor(0).setDepth(202));
     this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(msgY + 84), "◀▶でリスト  ▲▼でせんたく  A:あずける/ひきだす  B:とじる", {
-      fontSize: `${this.uiS(11)}px`, color: "#88aacc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      fontSize: `${this.uiS(12)}px`, color: "#88aacc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5, 0));
     this.applyTextResolution(this.menuElements);
   }
