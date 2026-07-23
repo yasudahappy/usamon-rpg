@@ -7049,9 +7049,63 @@ export class MapScene extends Phaser.Scene {
       "セレネタウンの ほこり。夜でも ほんのり\nあかるい、光の街の しるしだ。",
     ]) });
 
+    // ===== 光の街ならではの 夜空＆オーロラ演出（他の街との差別化）=====
+    const townW = this.mapData.width * ts, townH = this.mapData.height * ts;
+
+    // 1) 晴れの海に うつる 星空（またたく星）
+    let ss = 7777; const srnd = () => { ss = (ss * 16807) % 2147483647; return ss / 2147483647; };
+    for (let i = 0; i < 46; i++) {
+      const stx = srnd() * townW, sty = 6 + srnd() * (4.4 * ts);
+      const star = this.add.circle(stx, sty, srnd() < 0.2 ? 1.6 : 1, 0xffffff, 0.9).setDepth(6);
+      this.tweens.add({ targets: star, alpha: { from: 0.9, to: 0.15 },
+        duration: 800 + srnd() * 1600, yoyo: true, repeat: -1, delay: srnd() * 1500, ease: "Sine.easeInOut" });
+    }
+
+    // 2) オーロラのカーテン（天文台の光ショー）— 海の上を ゆっくり流れる
+    if (!this.textures.exists("serene-aurora")) {
+      const c = document.createElement("canvas"); c.width = 256; c.height = 64;
+      const g = c.getContext("2d")!;
+      const grad = g.createLinearGradient(0, 0, 0, 64);
+      grad.addColorStop(0, "rgba(255,255,255,0)");
+      grad.addColorStop(0.5, "rgba(255,255,255,0.7)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad; g.fillRect(0, 0, 256, 64);
+      this.textures.addCanvas("serene-aurora", c);
+    }
+    for (const [ay, tint, dur] of [[46, 0x7be0c0, 9000], [82, 0x9b8bff, 11000], [64, 0x6bc7ff, 13000]] as [number, number, number][]) {
+      const rib = this.add.image(townW / 2, ay, "serene-aurora")
+        .setDisplaySize(townW + 200, 40).setTint(tint).setDepth(6)
+        .setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.1);
+      this.tweens.add({ targets: rib, alpha: { from: 0.1, to: 0.28 }, duration: 2600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      this.tweens.add({ targets: rib, x: rib.x + 40, duration: dur, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      this.tweens.add({ targets: rib, scaleY: rib.scaleY * 1.3, duration: 3400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+
+    // 3) 街に ただよう 星屑（ゆっくり のぼって 消える）
+    let ms = 909; const mrnd = () => { ms = (ms * 16807) % 2147483647; return ms / 2147483647; };
+    const moteCols = [0xfff2b0, 0xbfe8ff, 0xffd7f0, 0xffffff];
+    for (let i = 0; i < 16; i++) {
+      const px = mrnd() * townW, py = 6 * ts + mrnd() * (townH - 8 * ts);
+      const mote = this.add.circle(px, py, mrnd() < 0.3 ? 2 : 1.3, moteCols[i % 4], 0.9)
+        .setDepth(7).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: mote, y: py - 40 - mrnd() * 30, alpha: { from: 0.85, to: 0 },
+        duration: 4000 + mrnd() * 3000, repeat: -1, delay: mrnd() * 3000, ease: "Sine.easeIn" });
+    }
+
+    // 4) 天文台の サーチライト（ランドマークの光が ゆっくり空をなでる）
+    const ox = 34.5 * ts, oy = 9 * ts;
+    const searchBeam = this.add.rectangle(ox, oy, 6, 5.5 * ts, 0xfff2b0, 0.12)
+      .setOrigin(0.5, 1).setDepth(6).setBlendMode(Phaser.BlendModes.ADD);
+    searchBeam.setAngle(-35);
+    this.tweens.add({ targets: searchBeam, angle: { from: -55, to: -8 }, duration: 4200, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.tweens.add({ targets: searchBeam, alpha: { from: 0.16, to: 0.06 }, duration: 1500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    const obGlow = this.add.circle(ox, oy, 7, 0xfff2b0, 0.4).setDepth(7).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: obGlow, alpha: { from: 0.5, to: 0.2 }, scale: { from: 1, to: 1.5 }, duration: 1300, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+
     // 町ぜんたいに ほんのり 明るい光のトーン（少し強めに）
-    this.add.rectangle(0, 0, this.mapData.width * ts, this.mapData.height * ts, 0xfff3c8, 0.07)
-      .setOrigin(0, 0).setDepth(40);
+    this.add.rectangle(0, 0, townW, townH, 0xfff3c8, 0.07).setOrigin(0, 0).setDepth(40);
+    // うっすら 夜のトーン（他の街＝昼のレゴリスと差をつける、上空側にだけ）
+    this.add.rectangle(0, 0, townW, 6 * ts, 0x2a2f5a, 0.12).setOrigin(0, 0).setDepth(41);
   }
 
   // ---- タウルスのどうくつ: 暗闇＋ぬし ----
