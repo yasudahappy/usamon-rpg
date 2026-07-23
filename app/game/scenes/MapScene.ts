@@ -4755,6 +4755,7 @@ export class MapScene extends Phaser.Scene {
       house_9: "cast-char6-down",
       // セレネタウン
       house_10: "cast-char5-down", house_11: "cast-char4-down",
+      house_12: "cast-char3-down", house_13: "cast-char6-down",
     };
     this.residentSprite = this.add.image(
       this.residentNpcX * this.tileSize + this.tileSize / 2,
@@ -4824,6 +4825,16 @@ export class MapScene extends Phaser.Scene {
         "『セレネ』って いい ひびきでしょ？\nギリシャ神話の 月の 女神の 名前よ。",
         "日本の 月探査機 かぐや の 英語名も\n『SELENE（セレーネ）』。2007年に 月を\nまわって 地形を くわしく 調べたの。",
         "かぐやが うつした 『地球の出』の 映像、\nいつか ぜひ 見てみてね。",
+      ],
+      house_12: [
+        "いらっしゃい！ ここは 光の街の\nふつうの おうち。あがっていきなよ。",
+        "月には 空気が ないから 音が\nつたわらないんだ。外は しーんと\nしずかな せかいなんだよ。",
+        "だから 家の 中の おしゃべりが\nよけいに あたたかく かんじるのさ。",
+      ],
+      house_13: [
+        "ようこそ ほしぞらの家へ。",
+        "この 街の 床、きれいでしょう？\n光の 石畳は 夜でも ほんのり\n光って みちを てらしてくれるの。",
+        "せっかくだから ゆっくりしていってね。",
       ],
     };
     this.showDialog(lines[this.currentMapKey] ?? lines.house_1);
