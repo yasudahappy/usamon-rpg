@@ -205,7 +205,7 @@ export class MapScene extends Phaser.Scene {
 
   // Menu system
   private menuOpen = false;
-  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" | "hold_item" = "none";
+  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" | "hold_item" | "pc_box" = "none";
   // てもちのアクションメニュー／アルモン詳細ビュー
   private partyActionSel = 0;
   private monDetailPage = 0;   // 0=じょうほう, 1=のうりょく, 2=わざ
@@ -1551,6 +1551,7 @@ export class MapScene extends Phaser.Scene {
       if (this.menuSubScreen === "party") { this.updatePartyScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "party_action") { this.updatePartyActionMenu(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "hold_item") { this.updateHoldItemScreen(a, b, menu, dpad); return; }
+      if (this.menuSubScreen === "pc_box") { this.updatePcBoxScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "mon_detail") { this.updateMonDetail(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "bag" || this.menuSubScreen === "bag_target") { this.updateBagScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "zukan" || this.menuSubScreen === "zukan_detail") { this.updateZukanScreen(a, b, menu, dpad); return; }
@@ -1827,6 +1828,177 @@ export class MapScene extends Phaser.Scene {
     if (justUp || kbUp) { this.holdSel = (this.holdSel - 1 + rows.length) % rows.length; this.drawHoldItemScreen(); return; }
     if (justDown || kbDown) { this.holdSel = (this.holdSel + 1) % rows.length; this.drawHoldItemScreen(); return; }
     if (a) this.activateHoldRow();
+  }
+
+  // ---- パソコン：あずける／ひきだす（てもち↔ボックス） ----
+  private pcSide: 0 | 1 = 0;   // 0=てもち, 1=ボックス
+  private pcSel = 0;
+  private pcScroll = 0;
+  private pcMsg = "";
+  private pcGpPrevDpad: string | null = null;
+  private static PC_VISIBLE = 6;   // ボックスの表示行数
+
+  /** リカバリーポッドの右下パソコンを起動。 */
+  private openPcBox(): void {
+    if (!this.playerState) return;
+    if (!this.playerState.box) this.playerState.box = [];   // 旧セーブ互換
+    this.menuOpen = true;
+    this.menuSubScreen = "pc_box";
+    this.pcSide = 0; this.pcSel = 0; this.pcScroll = 0;
+    this.pcMsg = "あずける アルモンや ひきだす アルモンを えらんでね。";
+    this.pcGpPrevDpad = null;
+    this.drawPcBoxScreen();
+  }
+
+  private monName(id: string): string {
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    return all.find(m => m.id === id)?.name ?? id;
+  }
+
+  private drawPcBoxScreen(): void {
+    this.menuSubScreen = "pc_box";
+    this.clearMenuElements();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const party = this.playerState?.party || [];
+    const box = this.playerState?.box || [];
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x08131f, 0.98); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(24), "そうこ パソコン", {
+      fontSize: `${this.uiS(20)}px`, color: "#7fd0ff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
+
+    const colW = (W - 48) / 2;
+    const colX = [24, 24 + colW];
+    const top = 66, rowH = 40;
+    const headers = ["てもち", "ボックス"];
+
+    // 2カラム（左：てもち／右：ボックス）
+    for (let side = 0; side < 2; side++) {
+      const list = side === 0 ? party : box;
+      const active = this.pcSide === side;
+      // カラム見出し
+      this.menuElements.push(this.add.text(this.uiX(colX[side] + colW / 2), this.uiY(top - 16), `${headers[side]} (${list.length}${side === 0 ? "/6" : ""})`, {
+        fontSize: `${this.uiS(14)}px`, color: active ? "#ffe08a" : "#9fb4cc", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
+
+      const visible = MapScene.PC_VISIBLE;
+      const scroll = side === 1 ? this.pcScroll : 0;
+      for (let r = 0; r < Math.min(visible, side === 0 ? 6 : list.length); r++) {
+        const idx = r + (side === 1 ? scroll : 0);
+        if (side === 0 && idx >= 6) break;
+        const y = top + r * rowH;
+        const inst = list[idx];
+        const on = active && idx === this.pcSel;
+        const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+        panel.fillStyle(on ? 0x1b4a63 : 0x0d2233, on ? 0.96 : 0.8);
+        panel.fillRoundedRect(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8), 6);
+        panel.lineStyle(on ? 3 : 1, on ? 0x8fe0ff : 0x33556f);
+        panel.strokeRoundedRect(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8), 6);
+        this.menuElements.push(panel);
+        if (inst) {
+          const nm = this.monName(inst.dataId);
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 7), nm, {
+            fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+          }).setScrollFactor(0).setDepth(202));
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + colW - 14), this.uiY(y + 8), `Lv${inst.level}`, {
+            fontSize: `${this.uiS(12)}px`, color: "#ffe0a0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+          }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+        } else {
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 7), "―", {
+            fontSize: `${this.uiS(14)}px`, color: "#5b6a80", fontFamily: F,
+          }).setScrollFactor(0).setDepth(202));
+        }
+        const zone = this.add.zone(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8)).setOrigin(0, 0).setScrollFactor(0).setInteractive().setDepth(203);
+        const cs = side, ci = idx;
+        zone.on("pointerdown", () => {
+          this.pcSide = cs as 0 | 1;
+          if (cs === 1) { this.pcSel = ci; } else { this.pcSel = ci; }
+          this.activatePcRow();
+        });
+        this.menuElements.push(zone);
+      }
+    }
+
+    // メッセージ＋操作ヒント
+    const msgY = top + MapScene.PC_VISIBLE * rowH + 14;
+    const mbox = this.add.graphics().setScrollFactor(0).setDepth(201);
+    mbox.fillStyle(0x0a1c30, 0.95); mbox.fillRoundedRect(this.uiX(20), this.uiY(msgY), this.uiS(W - 40), this.uiS(70), 8);
+    mbox.lineStyle(2, 0x3a6690); mbox.strokeRoundedRect(this.uiX(20), this.uiY(msgY), this.uiS(W - 40), this.uiS(70), 8);
+    this.menuElements.push(mbox);
+    this.menuElements.push(this.add.text(this.uiX(32), this.uiY(msgY + 12), this.pcMsg, {
+      fontSize: `${this.uiS(13)}px`, color: "#eaf3ff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      wordWrap: { width: this.uiS(W - 64) }, lineSpacing: 4,
+    }).setScrollFactor(0).setDepth(202));
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(msgY + 84), "◀▶でリスト  ▲▼でせんたく  A:あずける/ひきだす  B:とじる", {
+      fontSize: `${this.uiS(11)}px`, color: "#88aacc", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5, 0));
+    this.applyTextResolution(this.menuElements);
+  }
+
+  private pcListLen(side: 0 | 1): number {
+    return side === 0 ? (this.playerState?.party.length || 0) : (this.playerState?.box.length || 0);
+  }
+
+  private clampPcCursor(): void {
+    const len = this.pcListLen(this.pcSide);
+    if (len === 0) { this.pcSel = 0; return; }
+    if (this.pcSel >= len) this.pcSel = len - 1;
+    if (this.pcSel < 0) this.pcSel = 0;
+    // ボックスのスクロール調整
+    if (this.pcSide === 1) {
+      if (this.pcSel < this.pcScroll) this.pcScroll = this.pcSel;
+      if (this.pcSel >= this.pcScroll + MapScene.PC_VISIBLE) this.pcScroll = this.pcSel - MapScene.PC_VISIBLE + 1;
+    }
+  }
+
+  /** 選択中の行に対して あずける／ひきだす を実行。 */
+  private activatePcRow(): void {
+    if (!this.playerState) return;
+    const party = this.playerState.party;
+    const box = this.playerState.box;
+    if (this.pcSide === 0) {
+      // てもち → ボックス（あずける）
+      const inst = party[this.pcSel];
+      if (!inst) return;
+      if (party.length <= 1) { this.pcMsg = "さいごの 1ぴきは あずけられないよ！"; this.drawPcBoxScreen(); return; }
+      party.splice(this.pcSel, 1);
+      box.push(inst);
+      this.pcMsg = `${this.monName(inst.dataId)}を ボックスに あずけた！`;
+    } else {
+      // ボックス → てもち（ひきだす）
+      const inst = box[this.pcSel];
+      if (!inst) return;
+      if (party.length >= 6) { this.pcMsg = "てもちが いっぱい！（6ひきまで）"; this.drawPcBoxScreen(); return; }
+      box.splice(this.pcSel, 1);
+      party.push(inst);
+      this.pcMsg = `${this.monName(inst.dataId)}を てもちに いれた！`;
+    }
+    this.clampPcCursor();
+    this.drawPcBoxScreen();
+  }
+
+  private updatePcBoxScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    const justUp = dpad === "up" && this.pcGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.pcGpPrevDpad !== "down";
+    const justLeft = dpad === "left" && this.pcGpPrevDpad !== "left";
+    const justRight = dpad === "right" && this.pcGpPrevDpad !== "right";
+    let kbUp = false, kbDown = false, kbLeft = false, kbRight = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+      kbLeft = Phaser.Input.Keyboard.JustDown(this.cursors.left);
+      kbRight = Phaser.Input.Keyboard.JustDown(this.cursors.right);
+    }
+    this.pcGpPrevDpad = dpad;
+    if (b || menu) { this.closeMenu(); return; }
+    if (justLeft || kbLeft) { this.pcSide = 0; this.pcSel = 0; this.pcScroll = 0; this.clampPcCursor(); this.drawPcBoxScreen(); return; }
+    if (justRight || kbRight) { this.pcSide = 1; this.pcSel = 0; this.pcScroll = 0; this.clampPcCursor(); this.drawPcBoxScreen(); return; }
+    if (justUp || kbUp) { this.pcSel--; this.clampPcCursor(); this.drawPcBoxScreen(); return; }
+    if (justDown || kbDown) { this.pcSel++; this.clampPcCursor(); this.drawPcBoxScreen(); return; }
+    if (a) this.activatePcRow();
   }
 
   // ---- アルモン詳細ビュー（のうりょく / わざ の2ページ） ----
@@ -3483,6 +3655,10 @@ export class MapScene extends Phaser.Scene {
     this.add.image(8 * ts + ts / 2, Math.round(1.35 * ts), "pod-plant").setDepth(6);
     this.add.image(8 * ts + ts / 2, Math.round(5.9 * ts), "pod-pc").setDepth(6);
     this.add.image(1 * ts + ts / 2, 6 * ts + ts / 2, "pod-bench").setDepth(6);
+
+    // 右下のパソコン：あずける／ひきだす（てもち↔ボックス）。
+    // 足もとのタイル(8,6)を調べると起動する。
+    this.nectarExam.push({ x: 8, y: 6, fn: () => this.openPcBox() });
   }
 
   private genPodTextures(): void {
