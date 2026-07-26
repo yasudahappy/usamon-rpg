@@ -98,6 +98,11 @@ export function ensureNatureGender(inst: MonsterInstance): void {
     if (!inst.nature) inst.nature = ng.nature;
     if (!inst.gender) inst.gender = ng.gender;
   }
+  // 旧セーブの「ノンバイナリー」は LGBT のいずれかへ割り振り直す（1回きり・以後固定）。
+  if (inst.gender === "nonbinary") {
+    const opts: Gender[] = ["lesbian", "gay", "bi", "trans"];
+    inst.gender = opts[Math.floor(Math.random() * opts.length)];
+  }
 }
 
 /** せいべつの表示用ラベル（記号＋よみ）。 */
