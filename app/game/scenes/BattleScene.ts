@@ -826,6 +826,7 @@ export class BattleScene extends Phaser.Scene {
     meteodon: 1.2,
     roubau: 0.6,
     shakurin: 0.5,
+    shakuros: 1.15,
     shakuruton: 1.3,
     hotaruna: 0.5,
     genbu: 0.5,
