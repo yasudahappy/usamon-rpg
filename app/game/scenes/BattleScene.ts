@@ -1616,13 +1616,14 @@ export class BattleScene extends Phaser.Scene {
         }
       }
 
+      const didHeal = eff.type === "heal" || eff.type === "healAndBuff";
       this.showMessages(messages, () => {
-        // Update HP bar if healed
-        if (attacker === this.playerMon) {
-          this.refreshPlayerHp();
-        }
+        if (attacker === this.playerMon) this.refreshPlayerHp();
         onComplete();
       });
+      // 回復メーターを わざの文章と同時に みたす（プレイヤー・敵どちらでも）。
+      // 以前は プレイヤー側のみ、しかも次のダメージ時にしか反映されなかった。
+      if (didHeal) this.animateHpBar(attacker, attacker === this.playerMon, () => {});
     } else {
       // Attack move
       // Check accuracy
@@ -3247,7 +3248,9 @@ export class BattleScene extends Phaser.Scene {
           messages.push(`${subject.name}の ${statName}が ${mult > 1 ? "あがった" : "さがった"}！`);
         }
       }
+      const didHealD = eff.type === "heal" || eff.type === "healAndBuff";
       this.showMessages(messages, () => { this.refreshPanelD(att); onComplete(); });
+      if (didHealD) this.refreshPanelD(att);   // 回復メーターを 文章と同時に更新
       return;
     }
 
