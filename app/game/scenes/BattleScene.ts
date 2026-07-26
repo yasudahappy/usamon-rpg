@@ -1431,8 +1431,8 @@ export class BattleScene extends Phaser.Scene {
         this.handleMoveLearnChoice(this.selectedCommand);
       }
     } else if (this.phase === "item_select") {
-      // Bag selection (2-column grid of usable items + もどる).
-      const maxSlots = Math.min(this.commandSlots.length, 6);
+      // Bag selection (2-column grid of usable items + もどる, up to 8 slots).
+      const maxSlots = Math.min(this.commandSlots.length, 8);
       if (justUp && this.selectedCommand >= 2) { this.selectedCommand -= 2; this.highlightLearnSlots(this.selectedCommand); }
       if (justDown && this.selectedCommand + 2 < maxSlots) { this.selectedCommand += 2; this.highlightLearnSlots(this.selectedCommand); }
       if (justLeft && this.selectedCommand % 2 === 1) { this.selectedCommand -= 1; this.highlightLearnSlots(this.selectedCommand); }
@@ -2144,7 +2144,7 @@ export class BattleScene extends Phaser.Scene {
 
   private highlightLearnSlots(index: number): void {
     const w = 260;
-    const h = 40;
+    const h = 34;
     this.commandSlots.forEach((slot, i) => {
       slot.bg.clear();
       if (i === index) {
@@ -2402,11 +2402,12 @@ export class BattleScene extends Phaser.Scene {
     this.commandSlots.forEach(s => { s.bg.destroy(); s.text.destroy(); s.zone.destroy(); });
     this.commandSlots = [];
     this.clearItemIcons();
-    const positions = [
-      { x: 160, y: Math.round(360 * this.sy) }, { x: 480, y: Math.round(360 * this.sy) },
-      { x: 160, y: Math.round(405 * this.sy) }, { x: 480, y: Math.round(405 * this.sy) },
-      { x: 160, y: Math.round(450 * this.sy) }, { x: 480, y: Math.round(450 * this.sy) },
-    ];
+    // 4行×2列＝8スロット。どうぐは最大7種類＋「もどる」＝8個 まで
+    // 重ならず 収まる（旧・3行6スロットだと 6種類のとき もどるが重なった）。
+    const rowsY = [350, 386, 422, 458];
+    const positions = rowsY.flatMap(ry => [
+      { x: 160, y: Math.round(ry * this.sy) }, { x: 480, y: Math.round(ry * this.sy) },
+    ]);
     const labels = [...items.map(it => `${it.name} ×${it.count}`), "もどる"];
     this.phase = "item_select";
     this.selectedCommand = 0;
@@ -2429,7 +2430,7 @@ export class BattleScene extends Phaser.Scene {
           .setDepth(21).setDisplaySize(iconW, iconW);
         this.itemIconSprites.push(icon);
       }
-      const zone = this.add.zone(px, py, 290, 40).setInteractive().setDepth(22).setOrigin(0.5);
+      const zone = this.add.zone(px, py, 290, 34).setInteractive().setDepth(22).setOrigin(0.5);
       const idx = i;
       zone.on("pointerdown", () => this.chooseBattleItem(idx));
       this.commandSlots.push({ label: labels[i], x: px, y: py, bg, text, zone });
