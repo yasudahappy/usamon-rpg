@@ -1642,9 +1642,11 @@ export class BattleScene extends Phaser.Scene {
         const hits = Phaser.Math.Between(move.effect.min || 2, move.effect.max || 5);
         messages.push(`${attacker.name}の ${move.name}！`);
         let totalDamage = 0;
+        let multiCrit = false;
         for (let i = 0; i < hits; i++) {
-          const { damage } = calculateDamage(attacker, target, move, this.typeChart);
+          const { damage, crit } = calculateDamage(attacker, target, move, this.typeChart);
           totalDamage += damage;
+          if (crit) multiCrit = true;
         }
         target.currentHp = Math.max(0, target.currentHp - totalDamage);
         messages.push(`${hits}かい あたった！`);
@@ -1652,13 +1654,16 @@ export class BattleScene extends Phaser.Scene {
         this.showMessages(messages, () => {
           this.blinkSprite(targetSprite, () => {
             this.syncHpToInstance(target);
-            this.animateHpBar(target, target === this.playerMon, onComplete);
+            this.animateHpBar(target, target === this.playerMon, () => {
+              if (multiCrit) this.showMessages(["きゅうしょに あたった！"], onComplete);
+              else onComplete();
+            });
           });
         });
         return;
       }
 
-      const { damage, effectiveness } = calculateDamage(attacker, target, move, this.typeChart);
+      const { damage, effectiveness, crit } = calculateDamage(attacker, target, move, this.typeChart);
       messages.push(`${attacker.name}の ${move.name}！`);
 
       this.showMessages(messages, () => {
@@ -1668,6 +1673,7 @@ export class BattleScene extends Phaser.Scene {
         this.blinkSprite(targetSprite, () => {
           this.animateHpBar(target, target === this.playerMon, () => {
             const effMessages: string[] = [];
+            if (crit) effMessages.push("きゅうしょに あたった！");
             if (effectiveness >= 2.0) effMessages.push("こうかは バツグンだ！");
             else if (effectiveness <= 0.5) effMessages.push("こうかは いまひとつ…");
             if (effMessages.length > 0) {
@@ -3262,14 +3268,17 @@ export class BattleScene extends Phaser.Scene {
       this.showMessages([`${att.mon.name}の ${move.name}！`, "しかし こうげきは はずれた！"], onComplete);
       return;
     }
-    let damage = 0; let effectiveness = 1; let hitLine: string | null = null;
+    let damage = 0; let effectiveness = 1; let hitLine: string | null = null; let crit = false;
     if (move.effect && move.effect.type === "multiHit") {
       const hits = Phaser.Math.Between(move.effect.min || 2, move.effect.max || 5);
-      for (let i = 0; i < hits; i++) damage += calculateDamage(att.mon, tgt.mon, move, this.typeChart).damage;
+      for (let i = 0; i < hits; i++) {
+        const r = calculateDamage(att.mon, tgt.mon, move, this.typeChart);
+        damage += r.damage; if (r.crit) crit = true;
+      }
       hitLine = `${hits}かい あたった！`;
     } else {
       const r = calculateDamage(att.mon, tgt.mon, move, this.typeChart);
-      damage = r.damage; effectiveness = r.effectiveness;
+      damage = r.damage; effectiveness = r.effectiveness; crit = r.crit;
     }
     this.showMessages([`${att.mon.name}の ${move.name}！`], () => {
       tgt.mon.currentHp = Math.max(0, tgt.mon.currentHp - damage);
@@ -3278,6 +3287,7 @@ export class BattleScene extends Phaser.Scene {
         this.animateHpBarD(tgt, () => {
           const extra: string[] = [];
           if (hitLine) extra.push(hitLine);
+          if (crit) extra.push("きゅうしょに あたった！");
           if (effectiveness >= 2.0) extra.push("こうかは バツグンだ！");
           else if (effectiveness <= 0.5) extra.push("こうかは いまひとつ…");
           if (extra.length > 0) this.showMessages(extra, onComplete);
