@@ -46,6 +46,8 @@ export class MapScene extends Phaser.Scene {
   private gridY = 0;
   // タウルスのどうくつ: たいまつの明かり風オーバーレイ（プレイヤー追従）
   private caveDarkness?: Phaser.GameObjects.Image;
+  // きりのたに: まわりを霧が つつむヴィネット（プレイヤー追従）
+  private kiriFog?: Phaser.GameObjects.Image;
 
   // Map transition
   private currentMapKey = "moonbase";
@@ -270,6 +272,7 @@ export class MapScene extends Phaser.Scene {
     this.labRes2Sprite = undefined;
     this.nectarExam = [];
     this.caveDarkness = undefined;
+    this.kiriFog = undefined;
     this.quizAwaiting = null;
     this.shopOpen = false;
     if (data.playerState) {
@@ -1093,7 +1096,9 @@ export class MapScene extends Phaser.Scene {
     const tileId = layers.floor[this.gridY]?.[this.gridX];
     // Sand tiles: 5-12, 14-21 (edges), 32-36 (variants). 80 = cave floor.
     // 90 = frost regolith (ice tiles 91 stay encounter-free so slides feel good).
-    const encounterTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36,80,90];
+    // 60 = レゴリス（きりのたに/リルの谷/タウルスさんどう の野原）。みち(65)は
+    // 安全な通り道として除外。町は encounterData に無いので誤発火しない。
+    const encounterTiles = [5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,32,33,34,35,36,60,80,90];
     if (!encounterTiles.includes(tileId)) return;
 
     // Use encounter rate from data
@@ -1314,6 +1319,9 @@ export class MapScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     // Cave darkness follows the player every frame (even mid-step between tiles).
+    if (this.kiriFog && this.player) {
+      this.kiriFog.setPosition(this.player.x, this.player.y);
+    }
     if (this.caveDarkness && this.player) {
       this.caveDarkness.setPosition(this.player.x, this.player.y);
     }
@@ -7200,19 +7208,96 @@ export class MapScene extends Phaser.Scene {
   private placeKiriValley(): void {
     const ts = this.tileSize;
     const W = this.mapData.width * ts, H = this.mapData.height * ts;
-    this.add.rectangle(0, 0, W, H, 0xdfe0ea, 0.20).setOrigin(0).setDepth(55);
-    for (let i = 0; i < 7; i++) {
-      const cx = (2 + Math.random() * (this.mapData.width - 4)) * ts;
-      const cy = (2 + Math.random() * (this.mapData.height - 4)) * ts;
-      const puff = this.add.ellipse(cx, cy, ts * 3.4, ts * 1.7, 0xffffff, 0.14).setDepth(56);
-      this.tweens.add({ targets: puff, x: cx + ts * 2, alpha: 0.05, duration: 4000 + Math.random() * 3000,
-        yoyo: true, repeat: -1, ease: "Sine.inOut", delay: Math.random() * 2000 });
+
+    // つめたい霧の谷ならではの空気感（青灰色の しっとりトーン）
+    this.add.rectangle(0, 0, W, H, 0xaebccc, 0.16).setOrigin(0).setDepth(54);
+
+    // やわらかい 霧のテクスチャ（放射状にうすれる）を用意
+    if (!this.textures.exists("kiri-fog")) {
+      const c = document.createElement("canvas"); c.width = 128; c.height = 128;
+      const g = c.getContext("2d")!;
+      const grad = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+      grad.addColorStop(0, "rgba(255,255,255,0.55)");
+      grad.addColorStop(0.55, "rgba(255,255,255,0.22)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+      this.textures.addCanvas("kiri-fog", c);
     }
+
+    let ks = 4242; const krnd = () => { ks = (ks * 16807) % 2147483647; return ks / 2147483647; };
+
+    // 1) 何層にも ながれる 霧のかたまり（大きさ・速さ・濃さを変えて 奥行きを出す）
+    for (let i = 0; i < 10; i++) {
+      const cx = krnd() * W, cy = (1.5 + krnd() * (this.mapData.height - 3)) * ts;
+      const scl = 2.6 + krnd() * 3.2;                 // 2.6〜5.8タイル径
+      const bank = this.add.image(cx, cy, "kiri-fog")
+        .setDisplaySize(ts * scl, ts * scl * 0.62)
+        .setTint(0xdce6f0).setDepth(56).setAlpha(0.12 + krnd() * 0.12);
+      const drift = (krnd() < 0.5 ? 1 : -1) * (ts * 2 + krnd() * ts * 3);
+      this.tweens.add({ targets: bank, x: cx + drift, duration: 7000 + krnd() * 6000,
+        yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: krnd() * 3000 });
+      this.tweens.add({ targets: bank, alpha: { from: bank.alpha, to: bank.alpha * 0.4 },
+        duration: 3000 + krnd() * 2500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+
+    // 2) 地面を這う ひくい霧（下の方に たまる もや）
+    for (let i = 0; i < 5; i++) {
+      const cx = krnd() * W, cy = H - (krnd() * 3 + 0.5) * ts;
+      const band = this.add.image(cx, cy, "kiri-fog")
+        .setDisplaySize(ts * (5 + krnd() * 3), ts * 1.6)
+        .setTint(0xe6edf4).setDepth(57).setAlpha(0.16);
+      this.tweens.add({ targets: band, x: cx + ts * (2 + krnd() * 2) * (krnd() < 0.5 ? 1 : -1),
+        duration: 9000 + krnd() * 5000, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: krnd() * 2000 });
+    }
+
+    // 3) ガスの噴きだし口：地面から もやが ふわっと わきあがる（雲の海のガス）
+    for (const [gx, gy] of [[5, 6], [15, 12], [8, 18], [16, 20]] as [number, number][]) {
+      const vx = gx * ts + ts / 2, vy = gy * ts + ts / 2;
+      // ちいさな噴出口の あと
+      this.add.ellipse(vx, vy + 6, 14, 6, 0x8f9bb0, 0.35).setDepth(3);
+      this.time.addEvent({
+        delay: 900 + krnd() * 700, loop: true, callback: () => {
+          const puff = this.add.image(vx + (krnd() * 8 - 4), vy, "kiri-fog")
+            .setDisplaySize(ts * 1.2, ts * 1.0).setTint(0xf0f4f9).setDepth(58).setAlpha(0.32);
+          this.tweens.add({ targets: puff, y: vy - ts * (1.6 + krnd()), scaleX: puff.scaleX * 1.8,
+            scaleY: puff.scaleY * 1.8, alpha: 0, duration: 2200 + krnd() * 800,
+            ease: "Sine.easeOut", onComplete: () => puff.destroy() });
+        },
+      });
+    }
+
+    // 4) まわりを 霧で とじる ヴィネット（見とおしを わるくして 迷いこむ感じ）
+    for (const [ex, ey, sw, sh] of [[W / 2, 0, W * 1.3, ts * 4], [W / 2, H, W * 1.3, ts * 4],
+      [0, H / 2, ts * 4, H * 1.3], [W, H / 2, ts * 4, H * 1.3]] as [number, number, number, number][]) {
+      const edge = this.add.image(ex, ey, "kiri-fog").setDisplaySize(sw, sh)
+        .setTint(0xd7e0ec).setDepth(59).setAlpha(0.22);
+      this.tweens.add({ targets: edge, alpha: { from: 0.22, to: 0.12 },
+        duration: 2600 + krnd() * 1500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+
+    // 5) プレイヤーのまわりだけ すこし見えて、外は 霧でかすむヴィネット（追従）
+    if (!this.textures.exists("kiri-vignette")) {
+      const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+      const ctx = c.getContext("2d")!;
+      const g = ctx.createRadialGradient(256, 256, 54, 256, 256, 240);
+      g.addColorStop(0, "rgba(226,234,244,0)");
+      g.addColorStop(0.5, "rgba(220,230,244,0.30)");
+      g.addColorStop(1, "rgba(214,226,242,0.62)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+      this.textures.addCanvas("kiri-vignette", c);
+    }
+    this.kiriFog = this.add.image(this.player.x, this.player.y, "kiri-vignette").setDepth(60);
+
     // 教育看板（岩に立てられた札）
     this.nectarExam.push({ x: 13, y: 9, fn: () => this.showDialog([
       "たて札：『この先 雲の海（Mare Nubium）』",
       "むかしの人は 月の くらい平原を『海』と\nよんだ。でも 月に 水の海は なく、空気も\nないので『雲』も できない。",
       "見えた もようを 海や 雲に たとえた——\n人の そうぞうりょくの なごりなんだ。",
+    ]) });
+    // ガス噴出口の看板（教育：雲の海に たまる 重いガス）
+    this.nectarExam.push({ x: 6, y: 6, fn: () => this.showDialog([
+      "地面の さけめから、しろい もやが\nふきだしている……。",
+      "この谷は くぼ地。まわりより ひくいので、\nおもい ガスや ちりが たまりやすく、\nいつも きりに つつまれているのだ。",
     ]) });
   }
 
