@@ -2000,14 +2000,15 @@ export class BattleScene extends Phaser.Scene {
     // 「同行」：バトルに出ていない生存アルモンにも半分の経験値。
     if (this.hasCompanionItem()) {
       const half = Math.floor(expGain / 2);
-      let any = false;
-      for (const inst of this.playerState.party) {
-        if (inst === this.playerInstance || inst.currentHp <= 0) continue;
-        this.grantExpToInstance(inst, half);   // 静かに処理（進化は戦闘後）
-        any = true;
-      }
-      if (any && half > 0) {
+      const benched = this.playerState.party.filter(
+        (inst) => inst !== this.playerInstance && inst.currentHp > 0
+      );
+      if (benched.length > 0 && half > 0) {
         msgs.push(`「同行」の こうかで ひかえの アルモンにも\n${half}けいけんちが はいった！`);
+        // レベルアップ・わざ習得も報告する（進化は戦闘後）。
+        for (const inst of benched) {
+          this.grantExpToInstance(inst, half, msgs);
+        }
       }
     }
 
