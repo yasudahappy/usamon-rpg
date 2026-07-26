@@ -19,17 +19,23 @@ export function getTypeEffectiveness(
   return eff !== undefined ? eff : 1.0;
 }
 
+/** こうげきが急所に当たる確率（約8%）。 */
+export const CRIT_CHANCE = 1 / 12;
+/** 急所に当たったときのダメージ倍率。 */
+export const CRIT_MULT = 1.5;
+
 /**
  * ダメージ計算
- * damage = floor(((2*level/5+2) * power * (attacker.attack*attackMod) / (defender.defense*defenseMod)) / 50 + 2) * typeEffectiveness
+ * damage = floor(((2*level/5+2) * power * (attacker.attack*attackMod) / (defender.defense*defenseMod)) / 50 + 2) * typeEffectiveness * (急所なら1.5)
  * 最低ダメージ: 1
+ * 一定確率(CRIT_CHANCE)で急所に当たり、ダメージが CRIT_MULT 倍になる。
  */
 export function calculateDamage(
   attacker: BattleMonster,
   defender: BattleMonster,
   move: BattleMove,
   typeChart: TypeChart
-): { damage: number; effectiveness: number } {
+): { damage: number; effectiveness: number; crit: boolean } {
   const effectiveness = getTypeEffectiveness(
     move.type,
     defender.type,
@@ -41,11 +47,16 @@ export function calculateDamage(
   const atk = attacker.attack * attacker.attackMod;
   const def = defender.defense * defender.defenseMod;
 
+  const crit = Math.random() < CRIT_CHANCE;
+
   const baseDamage =
     Math.floor(
       ((2 * level / 5 + 2) * power * atk) / (def * 50) + 2
     );
-  const finalDamage = Math.max(1, Math.floor(baseDamage * effectiveness));
+  const finalDamage = Math.max(
+    1,
+    Math.floor(baseDamage * effectiveness * (crit ? CRIT_MULT : 1))
+  );
 
-  return { damage: finalDamage, effectiveness };
+  return { damage: finalDamage, effectiveness, crit };
 }
