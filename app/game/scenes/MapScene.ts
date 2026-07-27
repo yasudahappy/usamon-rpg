@@ -7,7 +7,7 @@ import { calculateStats, getExpForLevel, refreshInstanceStats, createMonsterInst
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
-import { ensureNatureGender, genderLabel, genderColor, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
+import { ensureNatureGender, genderLabel, genderColor, genderSymbol, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
 import { moveMaxPP, ensureInstancePP, restorePP } from "../data/movePP";
 import { writeSaveData as persistSaveData, clearSaveData, exportBackupCode, importBackupCode } from "../data/saveData";
 
@@ -2289,9 +2289,17 @@ export class MapScene extends Phaser.Scene {
               fontSize: `${this.uiS(17)}px`, color: "#fff0c0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
             }).setScrollFactor(0).setDepth(202));
           } else {
+            ensureNatureGender(inst);
             this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 10), this.monName(inst.dataId), {
               fontSize: `${this.uiS(18)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
             }).setScrollFactor(0).setDepth(202));
+            // せいべつ記号（Lvの すぐ左に、性別カラーで）
+            const gsym = genderSymbol(inst.gender);
+            if (gsym) {
+              this.menuElements.push(this.add.text(this.uiX(colX[side] + colW - 54), this.uiY(y + 11), gsym, {
+                fontSize: `${this.uiS(17)}px`, color: genderColor(inst.gender), fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+              }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+            }
             this.menuElements.push(this.add.text(this.uiX(colX[side] + colW - 14), this.uiY(y + 12), `Lv${inst.level}`, {
               fontSize: `${this.uiS(15)}px`, color: "#ffe0a0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
             }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
@@ -2324,7 +2332,105 @@ export class MapScene extends Phaser.Scene {
     this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(msgY + 84), "◀▶でリスト  ▲▼でせんたく  A:あずける/ひきだす  B:とじる", {
       fontSize: `${this.uiS(12)}px`, color: "#9fbf6a", fontFamily: F, stroke: "#000000", strokeThickness: 3,
     }).setScrollFactor(0).setDepth(202).setOrigin(0.5, 0));
+    // 画面下の あきスペースに スタッフ（タカ＆ミホ）を おいて、はなしかけられるように。
+    this.drawDaycareStaff(msgY + 108);
     this.applyTextResolution(this.menuElements);
+  }
+
+  /** あずけやメニュー下部の あきスペースに タカ＆ミホを描き、はなしかけられるようにする。 */
+  private drawDaycareStaff(topY: number): void {
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const panelH = (H - 16) - topY;
+    if (panelH < 96) return;   // 画面が せまいときは 省略（はみ出し防止）
+
+    const p = this.add.graphics().setScrollFactor(0).setDepth(201);
+    p.fillStyle(0x1b2a10, 0.95); p.fillRoundedRect(this.uiX(20), this.uiY(topY), this.uiS(W - 40), this.uiS(panelH), 10);
+    p.lineStyle(2, 0x6f9440); p.strokeRoundedRect(this.uiX(20), this.uiY(topY), this.uiS(W - 40), this.uiS(panelH), 10);
+    this.menuElements.push(p);
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(topY + 8), "スタッフに はなしかけよう", {
+      fontSize: `${this.uiS(13)}px`, color: "#cfe89a", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5, 0));
+
+    const staff: Array<{ name: string; tex: string; who: "taka" | "miho" }> = [
+      { name: "タカ", tex: this.npcTex("cast-taka-down", "npc-kinoshita"), who: "taka" },
+      { name: "ミホ", tex: this.npcTex("cast-miho-down", "npc-kinoshita"), who: "miho" },
+    ];
+    const half = (W - 40) / 2;
+    const spriteY = topY + panelH * 0.5;
+    for (let i = 0; i < 2; i++) {
+      const cx = 20 + half * (i + 0.5);
+      const s = staff[i];
+      if (this.textures.exists(s.tex)) {
+        const img = this.add.image(this.uiX(cx), this.uiY(spriteY), s.tex).setScrollFactor(0).setDepth(202).setOrigin(0.5);
+        const bmax = this.uiS(Math.min(panelH * 0.46, 92));
+        img.setScale(Math.min(bmax / img.width, bmax / img.height));
+        this.menuElements.push(img);
+      }
+      this.menuElements.push(this.add.text(this.uiX(cx), this.uiY(topY + panelH - 40), s.name, {
+        fontSize: `${this.uiS(14)}px`, color: "#ffffff", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(202).setOrigin(0.5, 0));
+      // 「はなす」ボタン
+      const bw = 96, bh = 24;
+      const btn = this.add.graphics().setScrollFactor(0).setDepth(202);
+      btn.fillStyle(0x3a5a1f, 0.98); btn.fillRoundedRect(this.uiX(cx - bw / 2), this.uiY(topY + panelH - 20), this.uiS(bw), this.uiS(bh), 6);
+      btn.lineStyle(2, 0xbde86a); btn.strokeRoundedRect(this.uiX(cx - bw / 2), this.uiY(topY + panelH - 20), this.uiS(bw), this.uiS(bh), 6);
+      this.menuElements.push(btn);
+      this.menuElements.push(this.add.text(this.uiX(cx), this.uiY(topY + panelH - 8), "はなす", {
+        fontSize: `${this.uiS(12)}px`, color: "#eaffc4", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(203).setOrigin(0.5));
+      // タッチ判定（この半分ぜんたいで はなしかけられる）
+      const zone = this.add.zone(this.uiX(cx - half / 2), this.uiY(topY + 4), this.uiS(half), this.uiS(panelH - 8)).setOrigin(0, 0).setScrollFactor(0).setInteractive().setDepth(204);
+      const who = s.who;
+      zone.on("pointerdown", () => this.talkDaycareStaff(who));
+      this.menuElements.push(zone);
+    }
+  }
+
+  /** タカ／ミホに はなしかける（あずけやの じょうたいに あわせた セリフ）。 */
+  private talkDaycareStaff(who: "taka" | "miho"): void {
+    const dc = this.ensureDaycare();
+    const dep = dc.deposited;
+    const n = dep.length;
+    const hasMale = dep.some(m => m.gender === "male");
+    const hasFemale = dep.some(m => m.gender === "female");
+    let lines: string[];
+    if (who === "taka") {
+      if (dc.pendingEgg) {
+        lines = ["タカ「おっ、タマゴが 生まれてたぞ！\n手持ちを 空けて うけとりに おいで。」"];
+      } else if (n === 0) {
+        lines = [
+          "タカ「よう！ おれは タカ。\nこの あずけやの あるじさ。」",
+          "タカ「たびで つかれた アルモンを、\nここで あずかって そだてておくよ。\nいつでも つれて おいで。」",
+        ];
+      } else if (hasMale && hasFemale) {
+        lines = [
+          "タカ「オスと メスが なかよく してるな。\nいっぱい あるけば、そのうち\nタマゴが 生まれるかもしれんぞ。」",
+        ];
+      } else {
+        lines = [
+          `タカ「いま ${n}ひき あずかってるぞ。\nだいじに めんどうを みてるから、\nあんしんして たびを つづけな。」`,
+        ];
+      }
+    } else {
+      if (dc.pendingEgg) {
+        lines = ["ミホ「タマゴが 生まれてるのよ！\nはやく うけとって あげてね。」"];
+      } else if (n === 0) {
+        lines = [
+          "ミホ「こんにちは、ミホよ。\nタカと ふたりで やっているの。」",
+          "ミホ「オスと メスの アルモンを あずけると、\nなかよくなって タマゴを つれてくることが\nあるのよ。ふしぎでしょ？」",
+        ];
+      } else if (hasMale && hasFemale) {
+        lines = [
+          "ミホ「オスと メスが いっしょね。\nたくさん あるいて、タマゴが 生まれるのを\nたのしみに していてね。」",
+        ];
+      } else {
+        lines = [
+          "ミホ「あずかってる子たちは げんきよ。\nときどき かおを 見せに きてあげてね。」",
+        ];
+      }
+    }
+    this.showDialog(lines, () => this.drawDaycareScreen());
   }
 
   /** 選択中の行に対して あずける／ひきだす を実行。 */
