@@ -423,5 +423,46 @@
         "maxLevel": 28
       }
     ]
+  },
+  "luna_rille": {
+    "encounterRate": 0.11,
+    "monsters": [
+      {
+        "id": "mochigori",
+        "weight": 24,
+        "minLevel": 28,
+        "maxLevel": 31
+      },
+      {
+        "id": "regonyas",
+        "weight": 22,
+        "minLevel": 28,
+        "maxLevel": 31
+      },
+      {
+        "id": "gorimocchi",
+        "weight": 18,
+        "minLevel": 29,
+        "maxLevel": 32
+      },
+      {
+        "id": "sharisu",
+        "weight": 16,
+        "minLevel": 29,
+        "maxLevel": 32
+      },
+      {
+        "id": "hotaruna",
+        "weight": 12,
+        "minLevel": 28,
+        "maxLevel": 30
+      },
+      {
+        "id": "sharian",
+        "weight": 8,
+        "minLevel": 31,
+        "maxLevel": 33
+      }
+    ]
   }
 }
