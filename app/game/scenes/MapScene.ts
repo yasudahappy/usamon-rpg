@@ -476,6 +476,11 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
+    // あずけや（屋内）
+    if (this.currentMapKey === "daycare") {
+      this.placeDaycareInterior();
+    }
+
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
     if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
       this.placeCaveCapsules();
@@ -7852,9 +7857,8 @@ export class MapScene extends Phaser.Scene {
     ], () => { this.inCutscene = false; });
   }
 
-  /** あずけや：タカ＆ミホが 運営する 施設。カウンターに 話しかけると ひらく。 */
-  private placeDaycare(): void {
-    const ts = this.tileSize;
+  /** あずけや用テクスチャ（カウンター＋看板）を用意する。 */
+  private ensureDaycareTextures(): void {
     // あずけやカウンター（たまごモチーフ）のテクスチャ
     if (!this.textures.exists("daycare-counter")) {
       const c = document.createElement("canvas"); c.width = 32; c.height = 32;
@@ -7883,12 +7887,43 @@ export class MapScene extends Phaser.Scene {
       ctx.fillText("あずけや", 16, 15);
       this.textures.addCanvas("daycare-sign", c);
     }
-
-    const cx = 17, cy = 10;   // カウンターの位置（歩いて 話しかける）
-    this.add.image(cx * ts + ts / 2, cy * ts + ts / 2, "daycare-counter").setDepth(9);
-    this.add.image(cx * ts + ts / 2, (cy - 1) * ts + ts / 2, "daycare-sign").setDepth(9);
-    this.nectarExam.push({ x: cx, y: cy, fn: () => this.openDaycare() });
   }
+
+  /** くものうみタウン：あずけや建物の 入口に 看板を たてる（中に 入れる）。 */
+  private placeDaycare(): void {
+    const ts = this.tileSize;
+    this.ensureDaycareTextures();
+    // 入口の わきに「あずけや」の 看板
+    this.add.image(19 * ts + ts / 2, 9 * ts + ts / 2, "daycare-sign").setDepth(9);
+  }
+
+  /** あずけや屋内：カウンター＋タカ＆ミホ。カウンターで あずけやメニューを ひらく。 */
+  private placeDaycareInterior(): void {
+    const ts = this.tileSize;
+    this.ensureDaycareTextures();
+    // カウンター（3マスぶん）
+    for (const x of [4, 5, 6]) {
+      this.add.image(x * ts + ts / 2, 3 * ts + ts / 2, "daycare-counter").setDepth(6);
+      this.nectarExam.push({ x, y: 3, fn: () => this.openDaycare() });
+    }
+    // カウンターの おくに タカ＆ミホ（運営）
+    this.add.image(4 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-taka-down", "npc-kinoshita")).setDepth(9);
+    this.add.image(6 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-miho-down", "npc-kinoshita")).setDepth(9);
+    // ちいさな飾り：たまごの 見本
+    this.ensureEggTexture();
+    if (this.textures.exists("egg-icon")) {
+      const e = this.add.image(8 * ts + ts / 2, 2 * ts + ts / 2, "egg-icon").setDepth(9).setOrigin(0.5);
+      e.setScale(Math.min((ts * 0.7) / e.width, (ts * 0.7) / e.height));
+    }
+    // 説明パネル（あずけやの あそびかた）
+    this.nectarExam.push({ x: 2, y: 5, fn: () => this.showDialog([
+      "はり紙：『あずけやの あそびかた』",
+      "・アルモンを 3びきまで あずかります。",
+      "・オスと メスを あずけると、あるくうちに\n　タマゴが 生まれることが あります。",
+      "・生まれた タマゴは、手持ちを 空けて\n　うけとってね。あるくと かえるよ。",
+    ]) });
+  }
+
 
   /**
    * 宇宙資源ビジネス編：月資源開発の タカ＆ミホ。
@@ -7921,50 +7956,29 @@ export class MapScene extends Phaser.Scene {
       this.textures.addCanvas("cloud-resource-display", c);
     }
 
-    // タカ（月資源開発 社長）
-    const tx = 6, ty = 10;
-    this.add.image(tx * ts + ts / 2, ty * ts + ts / 2, this.npcTex("cast-taka-down", "npc-kinoshita")).setDepth(9);
-    this.nectarExam.push({ x: tx, y: ty, fn: () => this.showDialog([
-      "タカ「やあ。きみが 晴れの海から きた\nトレーナーだね。おれは タカ。」",
-      "タカ「『月資源開発（つきしげんかいはつ）』の\nしゃちょうを やってる。月には ちきゅうに\nない たからが ねむってるんだ。」",
-      "タカ「たとえば ヘリウム3。太陽の 風が\n何おく年も かけて 月の すなに ためた、\nめずらしい ガスさ。」",
-      "タカ「いつか それを つかって、よごれの\nすくない エネルギーを つくれるかも——\nそんな 夢を おいかけてるんだ。」",
-    ]) });
-
-    // ミホ（月資源開発 研究責任者）— 一度だけ おみやげ（スターカプセル）
-    const mx = 8, my = 11;
-    this.add.image(mx * ts + ts / 2, my * ts + ts / 2, this.npcTex("cast-miho-down", "npc-kinoshita")).setDepth(9);
-    this.nectarExam.push({ x: mx, y: my, fn: () => {
+    // 資源サンプル展示台（タカ＆ミホは あずけやの 中にいる。ここは 屋外の展示）
+    // — 初回に けんきゅうしょの おみやげ（スターカプセル）＋月資源の 教育。
+    const dx = 9, dy = 12;
+    this.add.image(dx * ts + ts / 2, dy * ts + ts / 2, "cloud-resource-display").setDepth(8);
+    this.nectarExam.push({ x: dx, y: dy, fn: () => {
       const pk = this.playerState?.pickups || [];
       const first = !pk.includes("cloud_miho_gift");
       const lines = [
-        "ミホ「ふふ、タカの ゆめの はなし きいた？\nわたしは ミホ。月資源開発の\nけんきゅう 責任者よ。」",
-        "ミホ「月の すな——レゴリスには、鉄や\nチタン、それに 酸素まで ふくまれてるの。\nいえや ロケットの ざいりょうに なるわ。」",
-        "ミホ「そして いちばん たいせつなのが 水。\n月の みなみの きょくには、日が あたらない\nクレーターに こおりが のこっているの。」",
-        "ミホ「水を わければ 水素と 酸素。\nロケットの ねんりょうにも、こきゅうする\n空気にも なる。月で 生きる かぎ なのよ。」",
-        "ミホ「……でも その 水を ひとりじめ\nしようとする 者も いる。だれの ものでも\nない 月の たからを、みんなの ために——ね。」",
+        "展示台：『月の しげん サンプル』——\nタカ＆ミホの 月資源開発。",
+        "左は レゴリス（月のすな）。ヘリウム3や、\n鉄・チタン・酸素まで ふくまれていて、\nいえや ロケットの ざいりょうに なる。",
+        "右は きょくの こおり（水）。わければ\n水素と 酸素。ねんりょうにも、こきゅうする\n空気にも なる。月で 生きる かぎ。",
+        "ちいさな カード：『月の たからは、あらそう\nためでなく、みんなで つかうために。』",
       ];
       if (first) {
-        this.showDialog([...lines,
-          "ミホ「きみのような トレーナーに\n期待してる。これ、うちの けんきゅうしょの\nおみやげよ。」",
-        ], () => {
+        this.showDialog(lines, () => {
           this.awardNectarItem("cloud_miho_gift", "star_capsule", "スターカプセル", [
-            "（ミホから けんきゅうしょの おみやげを\nうけとった。）",
+            "（展示の わきに おみやげが おいてあった。\nありがたく いただこう。）",
           ]);
         });
       } else {
         this.showDialog(lines);
       }
     } });
-
-    // 資源サンプル展示台
-    const dx = 9, dy = 12;
-    this.add.image(dx * ts + ts / 2, dy * ts + ts / 2, "cloud-resource-display").setDepth(8);
-    this.nectarExam.push({ x: dx, y: dy, fn: () => this.showDialog([
-      "展示台：『月の しげん サンプル』",
-      "左は レゴリス（月のすな）。右は きょくの\nこおり（水）を さいげんした もの。",
-      "ちいさな カード：『月の たからは、あらそう\nためでなく、みんなで つかうために。』\n——月資源開発",
-    ]) });
   }
 
   /** 地下フロアの最奥、ぬしのガンブロス（レベル33・1回きりの野生ボス）。 */
