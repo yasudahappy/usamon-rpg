@@ -7714,17 +7714,78 @@ export class MapScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(7);
   }
 
-  /** コペルニクス洞窟: ひかりいし（星石）が くらやみに ぼうっと 光る演出。 */
+  /** コペルニクス洞窟: ひかりいし（星石）の 道しるべ・光条の 看板・研究者。
+   *  くらやみを ひかりいしの 灯りをたよりに 探索し、実在の コペルニクス
+   *  （光条クレーター）を まなべるようにする。 */
   private placeCopernicusCaveDecor(): void {
     const ts = this.tileSize;
-    const lights: [number, number][] = [[10, 3], [16, 3], [13, 2]];
+
+    // --- ひかりいし（星石）の 道しるべ：入口→分岐→各部屋→最奥を つなぐ灯り ---
+    const lights: [number, number][] = [
+      [12, 16], [13, 14],                 // 入口の部屋
+      [13, 12], [13, 10], [13, 8], [13, 6], // 中央のたて坑道
+      [10, 10], [7, 10], [5, 9],          // 分岐→ひだりの部屋
+      [20, 7], [22, 8],                    // みぎの部屋
+      [10, 3], [16, 3], [13, 4], [13, 2],  // 最奥チャンバー（祭壇へ）
+    ];
     for (const [x, y] of lights) {
       const gx = x * ts + ts / 2, gy = y * ts + ts / 2;
       const glow = this.add.graphics().setDepth(62); // 暗闇(60)より上＝道しるべの灯り
       glow.fillStyle(0xbfe6ff, 0.22); glow.fillCircle(gx, gy, ts * 0.9);
       glow.fillStyle(0xeaf6ff, 0.32); glow.fillCircle(gx, gy, ts * 0.42);
-      this.tweens.add({ targets: glow, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      // 中心の 星石（小さな ひし形）
+      glow.fillStyle(0xffffff, 0.85);
+      glow.beginPath();
+      glow.moveTo(gx, gy - ts * 0.16); glow.lineTo(gx + ts * 0.12, gy);
+      glow.lineTo(gx, gy + ts * 0.16); glow.lineTo(gx - ts * 0.12, gy);
+      glow.closePath(); glow.fillPath();
+      this.tweens.add({ targets: glow, alpha: 0.6, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     }
+
+    // --- 光条（レイ）の 看板：くらやみでも 光る ビーコンとして 置く ---
+    // 位置は かべタイル（player が となりから 見る）。
+    const signs: { x: number; y: number; lines: string[] }[] = [
+      { x: 11, y: 13, lines: [
+        "はり紙：『コペルニクスどうくつ』",
+        "月で いちばん 目立つ 光条（レイ）\nクレーター、コペルニクスの 地下だよ。",
+        "くらやみは ひかりいしの 灯りを\nたよりに すすもう。",
+      ] },
+      { x: 5, y: 7, lines: [
+        "はり紙：『光条（レイ）って なに？』",
+        "クレーターから 放射状に のびる\n明るい すじ。数百kmも のびていて、\n満月のとき 地球からも よく見える。",
+        "ここの ひかりいしは、その 光条を\nちいさく 写しとったような 石なんだ。",
+      ] },
+      { x: 8, y: 3, lines: [
+        "はり紙：『若い クレーター』",
+        "コペルニクスは 直径 約93km。\n月では わりと『若く』、約8おく年前の\nいん石の しょうとつで できた。",
+        "若いから、光条が まだ 消えずに\nくっきり のこっているんだ。",
+      ] },
+      { x: 24, y: 7, lines: [
+        "はり紙：『中央丘（ちゅうおうきゅう）』",
+        "大きな クレーターの まん中には、\nしょうとつの はんどうで もり上がった\n『中央丘』という 山が できることがある。",
+        "内がわの かべが だんだん（テラス）に\nなっているのも コペルニクスの とくちょう。",
+      ] },
+    ];
+    for (const s of signs) {
+      const gx = s.x * ts + ts / 2, gy = s.y * ts + ts / 2;
+      const g = this.add.graphics().setDepth(62);
+      g.fillStyle(0x1b2540, 0.95); g.fillRoundedRect(gx - ts * 0.3, gy - ts * 0.36, ts * 0.6, ts * 0.62, 3);
+      g.lineStyle(2, 0x8fd6ff, 0.9); g.strokeRoundedRect(gx - ts * 0.3, gy - ts * 0.36, ts * 0.6, ts * 0.62, 3);
+      g.fillStyle(0xdff2ff, 0.9); g.fillRect(gx - ts * 0.16, gy - ts * 0.22, ts * 0.32, ts * 0.04);
+      g.fillRect(gx - ts * 0.16, gy - ts * 0.1, ts * 0.32, ts * 0.04);
+      g.fillStyle(0x6f5a3a, 1); g.fillRect(gx - ts * 0.04, gy + ts * 0.2, ts * 0.08, ts * 0.16); // くい
+      this.nectarExam.push({ x: s.x, y: s.y, fn: () => this.showDialog(s.lines) });
+    }
+
+    // --- 光の研究者（ユカリ台長の チーム）：みぎの部屋で 光条を 調査中 ---
+    const rx = 20, ry = 8;
+    this.add.image(rx * ts + ts / 2, ry * ts + ts / 2,
+      this.npcTex("cast-sunaga-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: rx, y: ry, fn: () => this.showDialog([
+      "けんきゅういん「やあ。わたしは ユカリ台長の\nチームで 光条を しらべているんだ。」",
+      "けんきゅういん「コペルニクスの 光は、\nこの どうくつの ひかりいしにも\nかすかに つながっている気がしてね。」",
+      "けんきゅういん「おくの チャンバーには、\n月の 光を やどした 石が 眠っている\n——なんて うわさも あるよ。」",
+    ]) });
   }
 
   /** 月の祭壇: 伝説のセレニオス（1回きりの野生ボス・捕獲可）。 */
