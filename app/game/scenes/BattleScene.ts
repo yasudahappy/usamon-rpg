@@ -2023,6 +2023,33 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
+  /** 捕獲したときの経験値（倒したときの1.3倍）を いま出ているアルモンに与える。
+   *  レベルアップ・わざ習得・進化予約は grantExpToInstance がまとめて処理する。
+   *  捕まえたアルモンを 手持ちに加える前に呼ぶこと（同行の二重取得を防ぐ）。 */
+  private grantCaptureExp(done: () => void): void {
+    const enemyData = this.allMonsters.find((m) => m.id === this.enemyInstance.dataId)!;
+    const expGain = Math.floor(getExpReward(enemyData.baseExp, this.enemyInstance.level) * 1.3);
+    if (expGain <= 0 || this.playerInstance.currentHp <= 0) { done(); return; }
+
+    const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
+    const msgs: string[] = [`${playerData.name}は ${expGain}けいけんちを かくとく！`];
+    this.grantExpToInstance(this.playerInstance, expGain, msgs);
+
+    // 「同行」：出ていない生存アルモンにも半分（倒したアルモンの持ち物ぶんは無効）。
+    if (this.hasCompanionItem(new Set([this.playerInstance]))) {
+      const half = Math.floor(expGain / 2);
+      const benched = this.playerState.party.filter(
+        (inst) => inst !== this.playerInstance && inst.currentHp > 0
+      );
+      if (benched.length > 0 && half > 0) {
+        msgs.push(`「同行」の こうかで ひかえの アルモンにも\n${half}けいけんちが はいった！`);
+        for (const inst of benched) this.grantExpToInstance(inst, half, msgs);
+      }
+    }
+    this.refreshPlayerExp();
+    this.showMessages(msgs, done);
+  }
+
   private checkLevelUp(): void {
     const nextLevelExp = getExpForLevel(this.playerInstance.level + 1);
     if (this.playerInstance.exp >= nextLevelExp && this.playerInstance.level < 100) {
@@ -2617,14 +2644,17 @@ export class BattleScene extends Phaser.Scene {
         markCaught(this.playerState, this.enemyInstance.dataId);
         this.showMessages([`やった！ ${enemyData.name}を\nつかまえた！`], () => {
           cap.destroy();
-          if (this.playerState.party.length < 6) {
-            this.playerState.party.push(this.enemyInstance);
-            this.showMessages([`${enemyData.name}が なかまに くわわった！`], () => this.endBattle());
-          } else {
-            this.playerState.box.push(this.enemyInstance);
-            this.showMessages([`手持ちが いっぱい！`,
-              `${enemyData.name}は あずかりボックスへ おくられた！`], () => this.endBattle());
-          }
+          // 捕獲でも経験値（倒したときの1.3倍）。手持ちに加える前に付与する。
+          this.grantCaptureExp(() => {
+            if (this.playerState.party.length < 6) {
+              this.playerState.party.push(this.enemyInstance);
+              this.showMessages([`${enemyData.name}が なかまに くわわった！`], () => this.endBattle());
+            } else {
+              this.playerState.box.push(this.enemyInstance);
+              this.showMessages([`手持ちが いっぱい！`,
+                `${enemyData.name}は あずかりボックスへ おくられた！`], () => this.endBattle());
+            }
+          });
         });
       } else {
         // カプセルが はじけて アルモンが 出てくる（スケールを元に戻してから）
