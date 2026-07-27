@@ -1951,16 +1951,20 @@ export class BattleScene extends Phaser.Scene {
 
   private afterExpCallback: (() => void) | null = null;
 
-  /** 「同行」の効果が使えるか。
-   *  バッグにある or だれかが もちものにしている場合に有効。ただし
-   *  戦闘に出て倒したアルモン自身が「同行」を持っていても効果は出ない
-   *  （参加していない ひかえのアルモンに付き添う どうぐ なので）。 */
-  private hasCompanionItem(participants?: Set<MonsterInstance>): boolean {
-    const inBag = (this.playerState.items || []).some((i) => i.id === "companion" && i.count > 0);
-    if (inBag) return true;
-    return (this.playerState.party || []).some(
-      (m) => m.held === "companion" && !participants?.has(m)
+  /** 「同行」の経験値シェア。どうぐ「同行」を もちものにしている
+   *  ひかえ（非参加）の生存アルモン“だけ”に half の経験値を与える。
+   *  戦闘に出て倒したアルモンは対象外（参加していない アルモンに
+   *  付き添う どうぐ なので）。msgs に途中経過を積む。 */
+  private grantCompanionExp(half: number, participants: Set<MonsterInstance>, msgs: string[]): void {
+    if (half <= 0) return;
+    const holders = (this.playerState.party || []).filter(
+      (m) => m.held === "companion" && m.currentHp > 0 && !participants.has(m)
     );
+    for (const m of holders) {
+      const data = this.allMonsters.find((x) => x.id === m.dataId)!;
+      msgs.push(`「同行」の ${data.name}も\n${half}けいけんちを かくとく！`);
+      this.grantExpToInstance(m, half, msgs);
+    }
   }
 
   /**
@@ -2002,21 +2006,8 @@ export class BattleScene extends Phaser.Scene {
     const playerData = this.allMonsters.find((m) => m.id === this.playerInstance.dataId)!;
     const msgs = [`${playerData.name}は ${expGain}けいけんちを かくとく！`];
 
-    // 「同行」：バトルに出ていない生存アルモンにも半分の経験値。
-    // 倒したアルモン（＝いま出ている playerInstance）が「同行」を持っていると無効。
-    if (this.hasCompanionItem(new Set([this.playerInstance]))) {
-      const half = Math.floor(expGain / 2);
-      const benched = this.playerState.party.filter(
-        (inst) => inst !== this.playerInstance && inst.currentHp > 0
-      );
-      if (benched.length > 0 && half > 0) {
-        msgs.push(`「同行」の こうかで ひかえの アルモンにも\n${half}けいけんちが はいった！`);
-        // レベルアップ・わざ習得も報告する（進化は戦闘後）。
-        for (const inst of benched) {
-          this.grantExpToInstance(inst, half, msgs);
-        }
-      }
-    }
+    // 「同行」：どうぐ「同行」を持っている ひかえアルモンだけに半分の経験値。
+    this.grantCompanionExp(Math.floor(expGain / 2), new Set([this.playerInstance]), msgs);
 
     this.showMessages(msgs, () => {
       this.checkLevelUp();
@@ -2035,17 +2026,8 @@ export class BattleScene extends Phaser.Scene {
     const msgs: string[] = [`${playerData.name}は ${expGain}けいけんちを かくとく！`];
     this.grantExpToInstance(this.playerInstance, expGain, msgs);
 
-    // 「同行」：出ていない生存アルモンにも半分（倒したアルモンの持ち物ぶんは無効）。
-    if (this.hasCompanionItem(new Set([this.playerInstance]))) {
-      const half = Math.floor(expGain / 2);
-      const benched = this.playerState.party.filter(
-        (inst) => inst !== this.playerInstance && inst.currentHp > 0
-      );
-      if (benched.length > 0 && half > 0) {
-        msgs.push(`「同行」の こうかで ひかえの アルモンにも\n${half}けいけんちが はいった！`);
-        for (const inst of benched) this.grantExpToInstance(inst, half, msgs);
-      }
-    }
+    // 「同行」：どうぐ「同行」を持っている ひかえアルモンだけに半分。
+    this.grantCompanionExp(Math.floor(expGain / 2), new Set([this.playerInstance]), msgs);
     this.refreshPlayerExp();
     this.showMessages(msgs, done);
   }
@@ -3581,17 +3563,8 @@ export class BattleScene extends Phaser.Scene {
         if (idx >= 0) this.pendingEvolutions.push({ partyIndex: idx, fromId: inst.dataId, toId: evo.evolvesTo });
       }
     }
-    // 「同行」：参加していない生存アルモンにも半分の経験値。
-    // 戦闘に参加して倒したアルモンが「同行」を持っていても無効。
-    if (this.hasCompanionItem(this.dParticipants)) {
-      const half = Math.floor(total / 2);
-      for (const inst of this.playerState.party) {
-        if (this.dParticipants.has(inst) || inst.currentHp <= 0) continue;
-        const data = this.allMonsters.find(m => m.id === inst.dataId)!;
-        msgs.push(`（同行）${data.name}は ${half}けいけんちを かくとく！`);
-        this.grantExpToInstance(inst, half, msgs);
-      }
-    }
+    // 「同行」：どうぐ「同行」を持っている 非参加の ひかえアルモンだけに半分。
+    this.grantCompanionExp(Math.floor(total / 2), this.dParticipants, msgs);
     if (msgs.length === 0) { cb(); return; }
     this.showMessages(msgs, cb);
   }
