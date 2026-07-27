@@ -486,6 +486,11 @@ export class MapScene extends Phaser.Scene {
       this.placeLunaRille();
     }
 
+    // くものうみの家（屋内）
+    if (this.currentMapKey === "cloud_house") {
+      this.placeCloudHouse();
+    }
+
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
     if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
       this.placeCaveCapsules();
@@ -7962,6 +7967,39 @@ export class MapScene extends Phaser.Scene {
         });
       } });
     }
+  }
+
+  /** くものうみの家（屋内）：雲の海に くらす 家族。 */
+  private placeCloudHouse(): void {
+    const ts = this.tileSize;
+    // かんたんな 家具（テーブル＋本だな）— 左上、当たり判定は マップ側で ブロック済み
+    if (!this.textures.exists("cloud-house-table")) {
+      const c = document.createElement("canvas"); c.width = 64; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      // 本だな（左）
+      ctx.fillStyle = "#7a5a3a"; ctx.fillRect(2, 4, 26, 24);
+      ctx.fillStyle = "#5c4228"; ctx.fillRect(2, 12, 26, 3); ctx.fillRect(2, 20, 26, 3);
+      for (const [bx, bc] of [[5,"#c85a4a"],[10,"#4a7ac8"],[15,"#4ac87a"],[20,"#c8b34a"]] as [number,string][]) {
+        ctx.fillStyle = bc as string; ctx.fillRect(bx, 6, 3, 5); ctx.fillRect(bx, 15, 3, 4);
+      }
+      // テーブル（右）
+      ctx.fillStyle = "#9a7a4a"; ctx.fillRect(34, 14, 26, 10);
+      ctx.fillStyle = "#7a5c34"; ctx.fillRect(34, 22, 26, 4);
+      ctx.fillStyle = "#dfe8f5"; ctx.beginPath(); ctx.ellipse(47, 13, 5, 3, 0, 0, Math.PI * 2); ctx.fill(); // 花びん
+      this.textures.addCanvas("cloud-house-table", c);
+    }
+    this.add.image(2 * ts + ts / 2 + ts / 2, 1 * ts + ts / 2, "cloud-house-table").setDepth(6);
+    // 住人（母）と こども
+    this.add.image(6 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-mom2-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({ x: 6, y: 2, fn: () => this.showDialog([
+      "住人「あら、いらっしゃい。ここは\n雲の海の ほとりの 我が家よ。」",
+      "住人「まいあさ、まどの そとに もやが\nうみみたいに ひろがるの。しずかで\nとっても きれいなのよ。」",
+    ]) });
+    this.add.image(3 * ts + ts / 2, 4 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({ x: 3, y: 4, fn: () => this.showDialog([
+      "こども「きりのたにの おくには、\nこわい ぬしが いるんだって！」",
+      "こども「でも、ちゃんと なかよく なれたら\nすごい ちからを かして くれるらしいよ。」",
+    ]) });
   }
 
   /** くものうみタウン：リーダー クモナ＋ジム扉＋教育看板＋町の作り込み。 */
