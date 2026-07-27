@@ -127,7 +127,7 @@ export function genderSymbol(gender?: Gender): string {
     case "lesbian": return "L";
     case "gay": return "G";
     case "bi": return "B";
-    case "trans": return "T";
+    case "trans": return "⚧";
     case "nonbinary": return "🌈";
     default: return "";
   }
