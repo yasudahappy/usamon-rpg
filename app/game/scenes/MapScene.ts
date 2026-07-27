@@ -2262,7 +2262,9 @@ export class MapScene extends Phaser.Scene {
         if (inst) {
           if (inst.isEgg) {
             if (this.textures.exists("egg-icon")) {
-              const ic = this.add.image(this.uiX(colX[side] + 22), this.uiY(y + (rowH - 8) / 2), "egg-icon").setScrollFactor(0).setDepth(202).setOrigin(0.5).setScale(this.uiS(1));
+              const ic = this.add.image(this.uiX(colX[side] + 22), this.uiY(y + (rowH - 8) / 2), "egg-icon").setScrollFactor(0).setDepth(202).setOrigin(0.5);
+              const box2 = this.uiS(rowH - 14);
+              ic.setScale(Math.min(box2 / ic.width, box2 / ic.height));
               this.menuElements.push(ic);
             }
             this.menuElements.push(this.add.text(this.uiX(colX[side] + 40), this.uiY(y + 12), "タマゴ", {
