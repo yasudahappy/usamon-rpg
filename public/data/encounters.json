@@ -389,38 +389,38 @@
       {
         "id": "mochichi",
         "weight": 26,
-        "minLevel": 31,
-        "maxLevel": 34
+        "minLevel": 26,
+        "maxLevel": 28
       },
       {
         "id": "mochigori",
         "weight": 24,
-        "minLevel": 32,
-        "maxLevel": 35
+        "minLevel": 27,
+        "maxLevel": 29
       },
       {
         "id": "gorimocchi",
         "weight": 16,
-        "minLevel": 33,
-        "maxLevel": 36
+        "minLevel": 28,
+        "maxLevel": 29
       },
       {
         "id": "regonyas",
         "weight": 14,
-        "minLevel": 31,
-        "maxLevel": 34
+        "minLevel": 26,
+        "maxLevel": 28
       },
       {
         "id": "shakurin",
         "weight": 12,
-        "minLevel": 31,
-        "maxLevel": 33
+        "minLevel": 26,
+        "maxLevel": 28
       },
       {
         "id": "hotaruna",
         "weight": 8,
-        "minLevel": 31,
-        "maxLevel": 33
+        "minLevel": 26,
+        "maxLevel": 28
       }
     ]
   }
