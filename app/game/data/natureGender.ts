@@ -141,7 +141,7 @@ export function genderColor(gender?: Gender): string {
     case "lesbian": return "#ff924c";   // レズビアンフラッグ寄りのオレンジ
     case "gay": return "#3fbf7f";       // レインボー グリーン
     case "bi": return "#b060d0";        // バイの紫
-    case "trans": return "#59c9f2";     // トランスの水色
+    case "trans": return "#b06cff";     // 紫
     case "nonbinary": return "#c58bff";
     default: return "#c0c8d0";
   }
