@@ -2880,8 +2880,8 @@ export class MapScene extends Phaser.Scene {
           fontSize: `${this.uiS(13 * Math.min(s2, 2.4))}px`, color: "#5a3f14", fontFamily: F, fontStyle: "bold", ...STK2, stroke: "#fff6df", strokeThickness: 2,
         }).setScrollFactor(0).setDepth(204));
         const near = (mon.eggSteps ?? 0) >= MapScene.EGG_HATCH_STEPS * 0.7;
-        this.menuElements.push(this.add.text(this.uiX(tx2), this.uiY(cy + Math.round(24 * s2)), near ? "もうすぐ かえりそう！" : "あるくと かえるよ", {
-          fontSize: `${this.uiS(10 * Math.min(s2, 2.4))}px`, color: "#5a3f14", fontFamily: F, ...STK2, stroke: "#fff6df", strokeThickness: 2,
+        this.menuElements.push(this.add.text(this.uiX(tx2), this.uiY(cy + Math.round(26 * s2)), near ? "もうすぐ かえりそう！" : "あるくと かえるよ", {
+          fontSize: `${this.uiS(7 * Math.min(s2, 2.4))}px`, color: "#5a3f14", fontFamily: F, ...STK2, stroke: "#fff6df", strokeThickness: 2,
         }).setScrollFactor(0).setDepth(204));
         continue;
       }
