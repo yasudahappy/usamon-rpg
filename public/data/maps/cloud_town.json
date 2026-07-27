@@ -1383,5 +1383,28 @@
       "targetX": 10,
       "targetY": 1
     }
+  ],
+  "buildings": [
+    {
+      "sprite": "bldg-gym",
+      "x": 10,
+      "y": 3,
+      "width": 7,
+      "height": 4
+    },
+    {
+      "sprite": "bldg-house-dome",
+      "x": 3,
+      "y": 15,
+      "width": 4,
+      "height": 3
+    },
+    {
+      "sprite": "bldg-observatory",
+      "x": 19,
+      "y": 15,
+      "width": 4,
+      "height": 3
+    }
   ]
 }

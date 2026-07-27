@@ -7722,9 +7722,13 @@ export class MapScene extends Phaser.Scene {
     ]) });
   }
 
-  /** くものうみタウン：リーダー クモナ（プレビュー）＋ジム扉＋教育看板。 */
+  /** くものうみタウン：リーダー クモナ＋ジム扉＋教育看板＋町の作り込み。 */
   private placeCloudTown(): void {
     const ts = this.tileSize;
+
+    // 雲の海の ふんいき：低く ただよう 白い 雲海のもや。
+    this.placeCloudSeaMist();
+
     // クモナ（ジム前に立つ）。ジム本体は次フェーズ。
     const kx = 10, ky = 8;
     this.add.image(kx * ts + ts / 2, ky * ts + ts / 2, this.npcTex("cast-shiina-down", "npc-kinoshita")).setDepth(9);
@@ -7743,6 +7747,98 @@ export class MapScene extends Phaser.Scene {
       "たて札：『雲の海 Mare Nubium』",
       "みなみの 嵐の大洋の となり。くらい\nげんぶがんの 平原が、雲の うみのように\n見えることから この名が ついた。",
     ]) });
+
+    // 雲海テラス（右の 天文台の前・展望プレート）
+    if (!this.textures.exists("cloud-terrace")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 28;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.beginPath(); ctx.ellipse(16, 25, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#8a94a8"; ctx.fillRect(6, 18, 20, 6);           // だい
+      ctx.fillStyle = "#b7c0d2"; ctx.fillRect(6, 18, 20, 2);
+      ctx.fillStyle = "#5c667a"; ctx.fillRect(6, 22, 20, 2);
+      // 展望ぼう（望遠鏡ぽい）
+      ctx.strokeStyle = "#3a4356"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(16, 18); ctx.lineTo(16, 8); ctx.stroke();
+      ctx.fillStyle = "#dfe8f5"; ctx.beginPath(); ctx.ellipse(16, 7, 5, 3, -0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#7f8aa0"; ctx.stroke();
+      this.textures.addCanvas("cloud-terrace", c);
+    }
+    this.add.image(21 * ts + ts / 2, 19 * ts + ts / 2 - 4, "cloud-terrace").setDepth(8);
+    this.nectarExam.push({ x: 21, y: 19, fn: () => this.showDialog([
+      "『雲海テラス』",
+      "手すりから 見わたすと、白い もやが\n平原に たまって 海のように 見える。",
+      "げんぶがんの くろい 大地と、白い もや。\nまるで 空と 海が さかさまに なったよう。",
+    ]) });
+
+    // 天文台の 気象ずき（月に 天気は ある？の 教育）
+    this.add.image(20 * ts + ts / 2, 18 * ts + ts / 2, this.npcTex("cast-elder-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: 20, y: 18, fn: () => this.showDialog([
+      "気象ずき「この もや、じつは 雲じゃ\nないんじゃ。」",
+      "気象ずき「月には 空気が ほとんど ない。\nだから ほんとうの 雲や 雨は できん。」",
+      "気象ずき「これは 地面ちかくの ガスや\nちりが たまった もの。それでも\n『雲の海』って 名まえは すてきじゃろ？」",
+    ]) });
+
+    // 雲を ながめる子（雲海の 見え方の 教育）
+    this.add.image(18 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({ x: 18, y: 2, fn: () => this.showDialog([
+      "子ども「見て見て、雲の海！」",
+      "子ども「ずっと 見てると、もやが\nゆっくり ながれてるんだよ。」",
+      "子ども「きりのたにから ながれてくるんだ\nって パパが 言ってた。」",
+    ]) });
+
+    // ガスモンスターずきの子（きりのたにの 野生の ヒント）
+    this.add.image(16 * ts + ts / 2, 20 * ts + ts / 2, this.npcTex("cast-char2-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({ x: 16, y: 20, fn: () => this.showDialog([
+      "少年「きりのたにには モチチたちが\nいっぱい いるんだ！」",
+      "少年「モチチ→モチゴリ→ゴリモッチって\nそだつんだよ。きりの中で さがしてみて！」",
+      "少年「たまに レゴニャスや シャクリンも\n出るって うわさ……」",
+    ]) });
+
+    // 町の人（雲海みまいの おみやげ：ムーンハニー）— 左の家の前
+    this.add.image(5 * ts + ts / 2, 19 * ts + ts / 2, this.npcTex("cast-char4-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({ x: 5, y: 19, fn: () => {
+      const given = this.awardNectarItem("cloud_welcome_gift", "moon_honey", "ムーンハニー", [
+        "町の人「よく 雲の海まで きたね！」",
+        "町の人「ここは とおくて 来る人も\nすくないんだ。かんげいするよ。」",
+        "町の人「これ、うちの ムーンハニー。\nつかれた アルモンに どうぞ。」",
+      ]);
+      if (!given) this.showDialog([
+        "町の人「雲の海の もやは、あさが いちばん\nこいんだ。しずかで きれいだよ。」",
+      ]);
+    } });
+  }
+
+  /** 雲の海の もや：白い雲が 町の あちこちで ゆっくり ただよう。 */
+  private placeCloudSeaMist(): void {
+    const ts = this.tileSize;
+    if (!this.textures.exists("cloud-puff")) {
+      const c = document.createElement("canvas"); c.width = 64; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      const blob = (x: number, y: number, r: number, a: number) => {
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+      };
+      blob(20, 20, 13, 0.5); blob(34, 16, 16, 0.55); blob(48, 21, 12, 0.5);
+      blob(28, 22, 11, 0.45); blob(42, 24, 10, 0.45);
+      this.textures.addCanvas("cloud-puff", c);
+    }
+    // 町の あちこちに 低く ただよわせる（歩ける床の上・建物や人には かぶせない位置）。
+    const spots: [number, number, number][] = [
+      [3, 2, 0.9], [21, 3, 1.0], [2, 9, 0.8], [23, 8, 0.95],
+      [2, 20, 1.0], [24, 21, 0.85], [9, 21, 0.9], [14, 14, 0.8],
+    ];
+    spots.forEach(([tx, ty, sc], i) => {
+      const img = this.add.image(tx * ts + ts / 2, ty * ts + ts / 2, "cloud-puff")
+        .setDepth(6).setScrollFactor(1).setAlpha(0.7).setScale(sc);
+      const range = 18 + (i % 3) * 8;
+      this.tweens.add({
+        targets: img, x: img.x + range, duration: 7000 + i * 900,
+        yoyo: true, repeat: -1, ease: "Sine.inOut",
+      });
+      this.tweens.add({
+        targets: img, alpha: { from: 0.55, to: 0.8 }, duration: 4000 + i * 500,
+        yoyo: true, repeat: -1, ease: "Sine.inOut",
+      });
+    });
   }
 
   /** くものうみタウン初回到着のひとこと。 */
@@ -7788,9 +7884,9 @@ export class MapScene extends Phaser.Scene {
       this.textures.addCanvas("daycare-sign", c);
     }
 
-    const cx = 11, cy = 9;   // カウンターの位置（歩いて 話しかける）
+    const cx = 17, cy = 10;   // カウンターの位置（歩いて 話しかける）
     this.add.image(cx * ts + ts / 2, cy * ts + ts / 2, "daycare-counter").setDepth(9);
-    this.add.image((cx - 1) * ts + ts / 2, (cy - 1) * ts + ts / 2, "daycare-sign").setDepth(9);
+    this.add.image(cx * ts + ts / 2, (cy - 1) * ts + ts / 2, "daycare-sign").setDepth(9);
     this.nectarExam.push({ x: cx, y: cy, fn: () => this.openDaycare() });
   }
 
