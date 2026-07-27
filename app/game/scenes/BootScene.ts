@@ -99,6 +99,9 @@ export class BootScene extends Phaser.Scene {
       this.load.image(`monster-${id}-back`, `${base}/assets/monsters/sprites/${id}_back.png`);
     });
 
+    // あずけやの タマゴ画像
+    this.load.image("egg-icon", `${base}/assets/ui/egg.png`);
+
     // Load building sprites
     this.load.image("bldg-habitat", `${base}/assets/buildings/sprites/habitat.png`);
     this.load.image("bldg-observatory", `${base}/assets/buildings/sprites/observatory.png`);
