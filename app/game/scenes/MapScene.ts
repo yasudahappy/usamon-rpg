@@ -115,12 +115,14 @@ export class MapScene extends Phaser.Scene {
   private momNpcX = 2;
   private momNpcY = 3;
 
-  // 仲間（ヒジリ）の追従スプライト。ミノリタウンでだけ プレイヤーの
-  // 1歩うしろを ついてくる。各ステップで 直前のタイルへ移動する。
+  // 仲間の追従スプライト。その町にいるあいだ プレイヤーの1歩うしろを
+  // ついてくる（ミノリタウン=ヒジリ、セレネタウン=倒したユカリ）。
+  // 各ステップで 直前のタイルへ移動する。
   private companionSprite?: Phaser.GameObjects.Image;
   private companionTileX = 0;
   private companionTileY = 0;
   private companionDir: Direction = "down";
+  private companionCast = "hijiri";   // 追従スプライトの cast 名（cast-<名>-<向き>）
 
   // Shopkeeper NPC (Planet Shop) — npc tile is the counter front; the sprite
   // is drawn one tile behind it (RSE-style talking across the counter).
@@ -435,6 +437,7 @@ export class MapScene extends Phaser.Scene {
       this.placeSereneDecor();
       this.placeSereneTownEvents();
       this.placeCopernicusCaveMouth();
+      this.placeCompanionFollower();   // ユカリ台長を倒していれば うしろを ついてくる
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("serene_arrival_seen")) {
         this.time.delayedCall(700, () => this.playSereneArrival());
@@ -848,10 +851,20 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  /** 仲間（ヒジリ）の向きから 俯瞰スプライトのテクスチャキーを返す。 */
+  /** 仲間の向きから 俯瞰スプライトのテクスチャキーを返す。 */
   private companionTexKey(dir: Direction): string {
-    const k = `cast-hijiri-${dir}`;
-    return this.textures.exists(k) ? k : "cast-hijiri-down";
+    const k = `cast-${this.companionCast}-${dir}`;
+    return this.textures.exists(k) ? k : `cast-${this.companionCast}-down`;
+  }
+
+  /** いまの町で うしろを ついてくる仲間の cast 名を返す（いなければ null）。
+   *  ミノリタウン=仲間になったヒジリ、セレネタウン=倒したユカリ台長。 */
+  private activeTownCompanion(): string | null {
+    const ps = this.playerState;
+    if (!ps) return null;
+    if (this.currentMapKey === "minori_town" && ps.companion === "hijiri") return "hijiri";
+    if (this.currentMapKey === "serene_town" && ps.defeatedTrainers.includes("luna")) return "luna";
+    return null;
   }
 
   /** (x,y) から dir を向いたときの「うしろ」のタイル。 */
@@ -862,10 +875,11 @@ export class MapScene extends Phaser.Scene {
     return { x: x - 1, y }; // right
   }
 
-  /** ミノリタウンで、仲間になったヒジリを プレイヤーのうしろに配置する。 */
+  /** その町の仲間を プレイヤーのうしろに配置する（いなければ何もしない）。 */
   private placeCompanionFollower(): void {
-    if (this.currentMapKey !== "minori_town") return;
-    if (this.playerState?.companion !== "hijiri") return;
+    const cast = this.activeTownCompanion();
+    if (!cast) return;
+    this.companionCast = cast;
     this.companionDir = this.facingDirection;
     // プレイヤーの1歩うしろに置く。そこが壁など通れないタイルなら、
     // プレイヤーと同じタイルから出発させる（一歩あるくと自然に離れる）。
@@ -7464,7 +7478,7 @@ export class MapScene extends Phaser.Scene {
 
     // 光ジムの扉（開通！ 踏むと セレネジムへ ワープ）。看板は 案内に。
     this.nectarExam.push({ x: 8, y: 14, fn: () => this.showDialog([
-      "『光のジム 【セレネジム】\nリーダー ルナ。』",
+      "『光のジム 【セレネジム】\nリーダー ユカリ。』",
       "『プリズムで 光の橋を つくって\nおくの リーダーを めざそう。』",
     ]) });
   }
@@ -7694,8 +7708,8 @@ export class MapScene extends Phaser.Scene {
     g.fillStyle(0x1b1630, 1); g.fillEllipse(cx, cy + 5, ts * 0.6, ts * 0.5);
     // 光条クレーターらしく、奥から ほんのり 光がもれる
     g.fillStyle(0xbfe6ff, 0.18); g.fillEllipse(cx, cy + 6, ts * 0.32, ts * 0.26);
-    this.add.text(cx, cy - ts * 0.72, "ほらあな", {
-      fontSize: "12px", color: "#cfe6ff", fontFamily: "'DotGothic16', monospace",
+    this.add.text(cx, cy - ts * 0.72, "コペルニクスどうくつ", {
+      fontSize: "11px", color: "#cfe6ff", fontFamily: "'DotGothic16', monospace",
       stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(7);
   }
