@@ -8156,22 +8156,25 @@ export class MapScene extends Phaser.Scene {
   private placeDaycareInterior(): void {
     const ts = this.tileSize;
     this.ensureDaycareTextures();
-    // カウンター（3マスぶん）
-    for (const x of [4, 5, 6]) {
+    // うけつけカウンター（row3 全幅の しきり）。前のロビーからは 越えられない。
+    for (let x = 2; x <= 8; x++) {
       this.add.image(x * ts + ts / 2, 3 * ts + ts / 2, "daycare-counter").setDepth(6);
-      this.nectarExam.push({ x, y: 3, fn: () => this.openDaycare() });
     }
-    // カウンターの おくに タカ＆ミホ（運営）
-    this.add.image(4 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-taka-down", "npc-kinoshita")).setDepth(9);
-    this.add.image(6 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-miho-down", "npc-kinoshita")).setDepth(9);
-    // ちいさな飾り：たまごの 見本
+    // カウンターの おくに タカ＆ミホ（row2・当たり判定は マップ側で ブロック済み）
+    this.add.image(3 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-taka-down", "npc-kinoshita")).setDepth(9);
+    this.add.image(7 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-miho-down", "npc-kinoshita")).setDepth(9);
+    // 見本のたまご（ふたりのあいだ）
     this.ensureEggTexture();
     if (this.textures.exists("egg-icon")) {
-      const e = this.add.image(8 * ts + ts / 2, 2 * ts + ts / 2, "egg-icon").setDepth(9).setOrigin(0.5);
+      const e = this.add.image(5 * ts + ts / 2, 2 * ts + ts / 2, "egg-icon").setDepth(9).setOrigin(0.5);
       e.setScale(Math.min((ts * 0.7) / e.width, (ts * 0.7) / e.height));
     }
-    // 説明パネル（あずけやの あそびかた）
-    this.nectarExam.push({ x: 2, y: 5, fn: () => this.showDialog([
+    // カウンター前（row4）から 話しかけると あずけやメニュー
+    for (const x of [4, 5, 6]) {
+      this.nectarExam.push({ x, y: 3, fn: () => this.openDaycare() });
+    }
+    // 説明パネル（右かべ・ロビーの (9,5) から 右を むいて 読む）
+    this.nectarExam.push({ x: 10, y: 5, fn: () => this.showDialog([
       "はり紙：『あずけやの あそびかた』",
       "・アルモンを 3びきまで あずかります。",
       "・オスと メスを あずけると、あるくうちに\n　タマゴが 生まれることが あります。",
