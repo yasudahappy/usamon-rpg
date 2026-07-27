@@ -2730,7 +2730,27 @@ export class MapScene extends Phaser.Scene {
     const lead = party[0];
     const leadData = allMonsters.find(m => m.id === lead.dataId);
     const leadFainted = lead.currentHp <= 0;
-    if (leadData) {
+    if (lead.isEgg) {
+      // 先頭が タマゴのときは 専用の やさしい カード。
+      this.ensureEggTexture();
+      const card = this.add.graphics().setScrollFactor(0).setDepth(201);
+      card.lineStyle(3, 0xf8a830);
+      card.strokeRoundedRect(this.uiX(leadX - 3), this.uiY(leadY - 3), this.uiS(leadW + 6), this.uiS(leadH + 6), this.uiS(10));
+      card.fillStyle(0xd8b25a);
+      card.fillRoundedRect(this.uiX(leadX), this.uiY(leadY), this.uiS(leadW), this.uiS(leadH), this.uiS(8));
+      card.fillStyle(0xf0d488, 0.35);
+      card.fillRect(this.uiX(leadX + 3), this.uiY(leadY + 3), this.uiS(leadW - 6), this.uiS(14));
+      this.menuElements.push(card);
+      if (this.textures.exists("egg-icon")) {
+        const img = this.add.image(this.uiX(leadX + leadW / 2), this.uiY(leadY + leadH * 0.42), "egg-icon").setScrollFactor(0).setDepth(203).setOrigin(0.5);
+        const eggBox = Math.min(leadW - 20, leadH * 0.5);
+        img.setScale(Math.min(this.uiS(eggBox) / img.width, this.uiS(eggBox) / img.height));
+        this.menuElements.push(img);
+      }
+      this.menuElements.push(this.add.text(this.uiX(leadX + leadW / 2), this.uiY(leadY + leadH - 14), "タマゴ", {
+        fontSize: `${this.uiS(14)}px`, color: "#5a3f14", fontFamily: F, fontStyle: "bold", stroke: "#fff6df", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(204).setOrigin(0.5));
+    } else if (leadData) {
       const card = this.add.graphics().setScrollFactor(0).setDepth(201);
       // Orange highlight border
       card.lineStyle(3, 0xf8a830);
@@ -2850,7 +2870,9 @@ export class MapScene extends Phaser.Scene {
         this.menuElements.push(card);
         if (this.textures.exists("egg-icon")) {
           const img = this.add.image(this.uiX(cx + 4 + rightIconSize / 2), this.uiY(cy + rightSlotH / 2), "egg-icon").setScrollFactor(0).setDepth(203);
-          img.setScale(Math.min(this.uiS(rightIconSize) / img.width, this.uiS(rightIconSize) / img.height));
+          // たまごは 画像全体が びっしり つまっているので、少し小さめに おさめる。
+          const eggBox = rightIconSize * 0.66;
+          img.setScale(Math.min(this.uiS(eggBox) / img.width, this.uiS(eggBox) / img.height));
           this.menuElements.push(img);
         }
         const tx2 = cx + rightIconSize + Math.round(10 * s2);
