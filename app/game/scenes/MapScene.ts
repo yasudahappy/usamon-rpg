@@ -7853,17 +7853,78 @@ export class MapScene extends Phaser.Scene {
       ], () => { this.setPitFlag("luna_nushi_done"); this.startBattle("sharian", 33); }) });
     }
 
-    // ---- ルカの ものがたり ----
+    // ---- とちゅうの回想：ルカの旅の 思い出（光るかけら）----
+    if (!this.textures.exists("luna-memory")) {
+      const c = document.createElement("canvas"); c.width = 24; c.height = 24;
+      const ctx = c.getContext("2d")!;
+      const g = ctx.createRadialGradient(12, 12, 1, 12, 12, 12);
+      g.addColorStop(0, "rgba(215,230,255,0.95)");
+      g.addColorStop(0.5, "rgba(160,190,255,0.5)");
+      g.addColorStop(1, "rgba(160,190,255,0)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 24, 24);
+      this.textures.addCanvas("luna-memory", c);
+    }
+    const memory = (x: number, y: number, lines: string[]) => {
+      const gx = x * ts + ts / 2, gy = y * ts + ts / 2;
+      const m = this.add.image(gx, gy - 6, "luna-memory").setDepth(7).setScale(1.1);
+      this.tweens.add({ targets: m, alpha: { from: 0.55, to: 1 }, scale: { from: 1.0, to: 1.3 },
+        duration: 1300, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.nectarExam.push({ x, y, fn: () => this.showDialog(lines) });
+    };
+    memory(5, 7, [
+      "光る かけらに ふれると、ルカの 記憶が\n心に ながれこんできた……。",
+      "《宇宙の 最果て。ちいさな 星の みなとで、\nルカは ソラと であった。『また 会おう』\nそう やくそくして、船は はなればなれに。》",
+    ]);
+    memory(2, 11, [
+      "《それから ルカの 長い たびが はじまった。\n貨物船、かんそく船、ときには 見も知らぬ\n船に たのみこんで——ヒッチハイクの 日々。》",
+      "《こおりの こと、うちゅうの あらしの こと。\n111年の あいだに、ルカは たくさんの\n人に たすけられ、たくさんを 学んだ。》",
+    ]);
+    memory(13, 16, [
+      "《ある日、まどの むこうに 青白い 光——\n月だ。『やっと ここまで きた』\nルカの ほおを、なみだが つたった。》",
+      "《ソラは あの 月で うまれ育った人。\nきっと まだ、空を 見上げて いてくれる。\nそう 信じて、ルカは 谷へ おりていく。》",
+    ]);
+
+    // ---- ヒッチハイクで であった 旅人たち ----
+    this.add.image(13 * ts + ts / 2, 7 * ts + ts / 2, this.npcTex("cast-astronaut-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: 13, y: 7, fn: () => this.showDialog([
+      "貨物船の船長「ルカを 木星の あたりで\nひろったのは わしさ。」",
+      "船長「あいつは いつも ちいさな 声で\nだれかの 名前を つぶやいてた。\n……『ソラ』って、な。」",
+    ]) });
+    this.add.image(5 * ts + ts / 2, 20 * ts + ts / 2, this.npcTex("cast-redcap-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: 5, y: 20, fn: () => this.showDialog([
+      "星の商人「111年も たびを つづける 人を\nのせたのは、はじめてだったよ。」",
+      "商人「よほど 大切な人が いるんだねって\nきいたら、あいつ てれくさそうに わらった。\nいい 顔だったなあ。」",
+    ]) });
+
+    // ---- ルカ と ソラ の ものがたり ----
     const reunited = this.hasPitFlag("luka_reunited");
     if (reunited) {
-      // 再会ずみ：ルカ＆ソラが 谷の おくで しあわせそうに いる
+      // 再会ずみ：ルカ＆ソラが 谷の おくで よりそっている
       this.add.image(8 * ts + ts / 2, 31 * ts + ts / 2, this.npcTex("cast-shin-down", "npc-kinoshita")).setDepth(9);
       this.add.image(9 * ts + ts / 2, 31 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
-      this.nectarExam.push({ x: 8, y: 32, fn: () => this.showDialog([
-        "ルカ「111年 ぶんの さびしさが、\nきみのおかげで きえたよ。」",
-        "ソラ「わたしも ずっと ここで\n星を かぞえて まってた。ありがとう。」",
-        "ルカ「この谷の むこうは くものうみタウンへ\nつづく 近道だ。いつでも おいでよ。」",
-      ]) });
+      this.nectarExam.push({ x: 8, y: 32, fn: () => {
+        if (!this.hasPitFlag("luka_epilogue")) {
+          // 後日談：ふたりの その後＋ソラの生い立ち＋おくりもの
+          this.showDialog([
+            "ルカ「また 来てくれたんだね。」",
+            "ソラ「わたしね、この 月で 生まれ育ったの。\n空気の うすい 空に、地球が いつも\nおなじ 場所で かがやいてた。」",
+            "ソラ「毎ばん その 地球の 下で、\nあなたが どこかで 旅を つづけてるって\n信じて、空を 見上げてたのよ。」",
+            "ルカ「111年、こわく なかったと いえば\nうそに なる。でも きみが いてくれると\n信じてたから、あるき つづけられた。」",
+            "ルカ「ふたりで きめたんだ。これからは\nこの月で、いっしょに くらしていくって。」",
+          ], () => {
+            this.setPitFlag("luka_epilogue");
+            this.awardNectarItem("luka_epilogue_gift", "revive_star", "リバイブスター", [
+              "ソラ「これ、うけとって。ルカが 旅の\nあいだ ずっと まもりに してた 星。\nあなたの たびの おまもりに。」",
+            ]);
+          });
+        } else {
+          this.showDialog([
+            "ルカ「111年 ぶんの さびしさが、\nきみのおかげで きえたよ。」",
+            "ソラ「また いつでも、会いに きてね。」",
+            "ルカ「この谷の おくは くものうみタウンへの\n近道だ。つかって いって。」",
+          ]);
+        }
+      } });
       // 近道の出口（谷の おく → くものうみタウン）
       this.nectarExam.push({ x: 9, y: 32, fn: () => {
         this.showDialog(["谷の おくの 近道を とおって\nくものうみタウンへ もどろう。"], () => {
@@ -7874,22 +7935,23 @@ export class MapScene extends Phaser.Scene {
       // まだ：ルカが 入口ちかくに、ソラが 谷の おくで まっている
       this.add.image(11 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-shin-down", "npc-kinoshita")).setDepth(9);
       this.nectarExam.push({ x: 11, y: 2, fn: () => this.showDialog([
-        "ルカ「やあ、旅の人。おれは ルカ。」",
+        "ルカ「やあ、旅の人。おれは ルカ。人間だよ。」",
         "ルカ「111年——たった ひとりで 宇宙を\nただよって、いろんな 宇宙船を ヒッチハイク\nして、やっと この月に ついたんだ。」",
-        "ルカ「宇宙の 最果てで やくそくしたんだ。\n『いつか かならず むかえに いく』って。」",
-        "ルカ「この谷の おくに、その人が\nいる気がする。でも きりが こわくて……\nいっしょに いって くれないか？」",
+        "ルカ「宇宙の 最果てで であった 恋人——ソラと\nやくそくした。『いつか かならず 月へ\n むかえに いく』って。」",
+        "ルカ「ソラは この 月で 生まれ育った人。\nこの谷の おくで まってる 気がする。\nでも きりが こわくて……力を かして！」",
       ]) });
       // ソラ（谷の おく）— 話しかけると 再会イベント
       this.add.image(9 * ts + ts / 2, 31 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
       this.nectarExam.push({ x: 9, y: 32, fn: () => {
         this.showDialog([
-          "きりの おくに、だれかが 星を\nかぞえながら すわっている……。",
-          "ソラ「あなたは……ルカの 友だち？\nわたし、ソラ。ずっと ここで まってたの。」",
-          "ソラ「111年 まえ、宇宙の 最果てで\nはぐれてしまって……もう 会えないかと。」",
-          "——そのとき、きりの むこうから\nあわてて かけおりてくる 足音が！",
-          "ルカ「ソラ——！ ほんとうに ソラなのか！」",
-          "ソラ「ルカ！ ずっと……ずっと\n会いたかった……！」",
-          "ふたりは かたく 手を にぎりあった。\n111年 ぶんの 想いが、月の谷に あふれる。",
+          "きりの おくに、だれかが 空を\n見上げて すわっている……。",
+          "ソラ「あなたは……もしかして、\nルカの? わたし、ソラ。この 月で\n生まれ育ったの。」",
+          "ソラ「111年 まえ、宇宙の 最果てで\nルカと 恋に おちて……そして はぐれた。\n『月で まってて』と やくそくして。」",
+          "ソラ「毎ばん 空を 見上げて、あの人が\n来ると 信じて まってた……。」",
+          "——そのとき、きりの むこうから\nかけおりてくる 足音が！",
+          "ルカ「ソラ……！ ほんとうに ソラなのか！」",
+          "ソラ「ルカ！ ずっと……ずっと\n あいたかった……！」",
+          "ふたりは かたく だきしめあった。\n111年 こえた 二人の 愛が、月の谷を\nやさしく てらす。",
         ], () => {
           this.setPitFlag("luka_reunited");
           // ごほうび：ふたりの きずなが 光になった——ホタルナが なかまに
