@@ -30,6 +30,8 @@ export class EvolutionScene extends Phaser.Scene {
   private evoData!: EvoSceneData;
   private sprite!: Phaser.GameObjects.Image;
   private msgText!: Phaser.GameObjects.Text;
+  private box!: Phaser.GameObjects.Graphics;
+  private celebObjs: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super({ key: "EvolutionScene" });
@@ -79,6 +81,7 @@ export class EvolutionScene extends Phaser.Scene {
     box.fillRoundedRect(12, H - boxH - 12, W - 24, boxH, 10);
     box.lineStyle(3, 0x5f7fb0, 1);
     box.strokeRoundedRect(12, H - boxH - 12, W - 24, boxH, 10);
+    this.box = box;
     this.msgText = this.add
       .text(34, H - boxH + 6, "", {
         fontSize: "22px",
@@ -114,6 +117,11 @@ export class EvolutionScene extends Phaser.Scene {
     const fromData = this.allMonsters.find((m) => m.id === evo.fromId)!;
     const toData = this.allMonsters.find((m) => m.id === evo.toId)!;
 
+    // 前の しんか演出のお祝いを片づけ、暗い変身画面に戻す。
+    this.clearCeleb();
+    this.box.setVisible(true);
+    this.msgText.setVisible(true);
+
     this.sprite.setTexture(`monster-${evo.fromId}`);
     this.sprite.setAlpha(1);
     this.fitSprite(this.sprite);
@@ -146,12 +154,83 @@ export class EvolutionScene extends Phaser.Scene {
               restorePP(inst, this.allMoves);   // しんか時にPP全回復
             }
 
-            this.setMsg(`おめでとう！ ${fromData.name}は ${toData.name}に しんかした！`);
-            this.time.delayedCall(2200, () => this.runEvolution(i + 1));
+            this.showCeleb(fromData.name, toData.name);
+            this.time.delayedCall(2800, () => this.runEvolution(i + 1));
           }
         },
       });
     });
+  }
+
+  /** しんか完了のお祝い演出。画面を明るい白っぽい背景にして、
+   *  大きく「おめでとう！」＋ しんかした！のパネル＋キラキラを出す。 */
+  private showCeleb(fromName: string, toName: string): void {
+    const W = this.scale.width;
+    const H = this.scale.height;
+    // 暗い枠は隠して、お祝いのレイヤーに切り替える。
+    this.box.setVisible(false);
+    this.msgText.setVisible(false);
+
+    const cx = W / 2;
+    const cy = Math.floor(H * 0.34);
+
+    // 明るい 白っぽい 背景（お祝いムード）。スプライト(2)より下の深度に置く。
+    const bg = this.add.graphics().setDepth(0.9);
+    bg.fillGradientStyle(0xffffff, 0xffffff, 0xffe7c0, 0xffdcef, 1);
+    bg.fillRect(0, 0, W, H);
+    this.celebObjs.push(bg);
+
+    // スプライトの後ろの やわらかい ひかり。
+    const glow = this.add.graphics().setDepth(1);
+    glow.fillStyle(0xfff4c2, 0.55);
+    glow.fillCircle(cx, cy, Math.floor(W * 0.32));
+    this.celebObjs.push(glow);
+
+    // でかい「おめでとう！」。
+    const big = this.add.text(cx, Math.floor(H * 0.11), "おめでとう！", {
+      fontSize: "52px", color: "#ff7a1a", fontFamily: "'DotGothic16', monospace",
+      fontStyle: "bold", stroke: "#ffffff", strokeThickness: 9,
+    }).setOrigin(0.5).setDepth(7);
+    this.celebObjs.push(big);
+    this.tweens.add({ targets: big, scale: { from: 0.3, to: 1 }, ease: "Back.out", duration: 500 });
+
+    // しんかした！ の 明るいパネル。
+    const boxH = Math.floor(H * 0.16);
+    const panelY = H - boxH - 16;
+    const panel = this.add.graphics().setDepth(6);
+    panel.fillStyle(0xffffff, 0.92);
+    panel.fillRoundedRect(16, panelY, W - 32, boxH, 14);
+    panel.lineStyle(3, 0xffb84d, 1);
+    panel.strokeRoundedRect(16, panelY, W - 32, boxH, 14);
+    this.celebObjs.push(panel);
+    const pText = this.add.text(cx, panelY + boxH / 2, `${fromName}は ${toName}に\nしんかした！`, {
+      fontSize: "23px", color: "#3a2a10", fontFamily: "'DotGothic16', monospace",
+      fontStyle: "bold", align: "center", lineSpacing: 6,
+    }).setOrigin(0.5).setDepth(7);
+    this.celebObjs.push(pText);
+
+    // キラキラが はじける。
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const st = this.add.star(cx + Math.cos(a) * 20, cy + Math.sin(a) * 20, 5, 5, 11, 0xffdf6e).setDepth(6);
+      this.celebObjs.push(st);
+      this.tweens.add({
+        targets: st,
+        x: cx + Math.cos(a) * (W * 0.36),
+        y: cy + Math.sin(a) * (H * 0.22),
+        alpha: { from: 1, to: 0 }, scale: { from: 1.2, to: 0.3 }, angle: 180,
+        duration: 950, ease: "Cubic.out",
+      });
+    }
+
+    // 進化後スプライトを ぽん と 弾ませる。
+    const sc = this.sprite.scale;
+    this.tweens.add({ targets: this.sprite, scale: { from: sc * 0.82, to: sc }, ease: "Back.out", duration: 500 });
+  }
+
+  private clearCeleb(): void {
+    this.celebObjs.forEach((o) => o.destroy());
+    this.celebObjs = [];
   }
 
   private finish(): void {
