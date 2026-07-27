@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4", "copernicus_cave", "moon_altar", "kiri_valley", "cloud_town", "house_12", "house_13", "daycare", "luna_rille", "cloud_house"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4", "copernicus_cave", "moon_altar", "kiri_valley", "cloud_town", "house_12", "house_13", "daycare", "luna_rille", "cloud_house", "recovery_pod_6"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -517,6 +517,35 @@ export class BootScene extends Phaser.Scene {
         ctx.beginPath(); ctx.arc(16, 16, 2, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(15, 15, 1, 1);
+      } else if (id === "140") {
+        // くものうみ：雲の海の原。くらい玄武岩の平原に 青白い もやが うっすら
+        // ただよう、ひんやりした 地面（となり同士で つながるよう 目地は控えめ）。
+        let s = 140;
+        const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#565f70"; ctx.fillRect(0, 0, ts, ts);          // 玄武岩ベース
+        ctx.fillStyle = "#48505f";                                       // 暗い斑
+        for (let i = 0; i < 26; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.fillStyle = "#697389"; // 明るい斑
+        for (let i = 0; i < 16; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        // 青白い もやの ぼかし
+        const mg = ctx.createRadialGradient(rand() * ts, rand() * ts, 1, ts / 2, ts / 2, 20);
+        mg.addColorStop(0, "rgba(200,214,240,0.12)"); mg.addColorStop(1, "rgba(200,214,240,0)");
+        ctx.fillStyle = mg; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(40,46,58,0.35)"; ctx.lineWidth = 1;      // 控えめな目地
+        ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
+      } else if (id === "141") {
+        // くものうみ：くものみち。青白く ほのかに 光る もやの 歩道。
+        ctx.fillStyle = "#aeb9d0"; ctx.fillRect(0, 0, ts, ts);
+        const g = ctx.createRadialGradient(16, 16, 1, 16, 16, 18);
+        g.addColorStop(0, "rgba(232,240,255,0.5)"); g.addColorStop(1, "rgba(232,240,255,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, ts, ts);
+        let s2 = 141; const r2 = () => { s2 = (s2 * 16807) % 2147483647; return s2 / 2147483647; };
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        for (let i = 0; i < 8; i++) ctx.fillRect(r2() * ts, r2() * ts, 1, 1);
+        ctx.strokeStyle = "rgba(120,140,175,0.4)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
       } else if (id === "61") {
         // Paved walkway: light stone panels with seams + corner rivets
         ctx.strokeStyle = "#c2baa8"; ctx.lineWidth = 1;
