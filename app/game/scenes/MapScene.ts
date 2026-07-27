@@ -2036,8 +2036,8 @@ export class MapScene extends Phaser.Scene {
     const contentTop = 212, contentBottom = H - 44;
 
     // ヘッダー：No.／タイトル／ページドット
-    this.menuElements.push(this.add.text(this.uiX(20), this.uiY(22), `No.${String(dexNo).padStart(3, "0")}`, {
-      fontSize: `${this.uiS(15)}px`, color: "#eaf3ff", fontFamily: F, stroke: "#12305a", strokeThickness: 4,
+    this.menuElements.push(this.add.text(this.uiX(20), this.uiY(20), `No.${String(dexNo).padStart(3, "0")}`, {
+      fontSize: `${this.uiS(20)}px`, color: "#eaf3ff", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 5,
     }).setScrollFactor(0).setDepth(201));
     const pageTitles = ["じょうほう", "のうりょく", "わざ"];
     this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(20), pageTitles[this.monDetailPage], {
@@ -2071,8 +2071,8 @@ export class MapScene extends Phaser.Scene {
       fontSize: `${this.uiS(20)}px`, color: "#fff0c0", fontFamily: F, fontStyle: "bold", stroke: "#12305a", strokeThickness: 4,
     }).setScrollFactor(0).setDepth(201);
     this.menuElements.push(lvText);
-    // タイプバッジは Lv の右横に置く（Lv とかぶらないよう十分に右へ）
-    if (data) this.drawTypeBadge(nameX + 120, 136, data.type, 1.5);
+    // タイプバッジは 名前・Lv とかぶらないよう 右下へ寄せて置く。
+    if (data) this.drawTypeBadge(W * 0.80, 144, data.type, 1.5);
 
     if (this.monDetailPage === 0) {
       // じょうほう：チャンキーな行で画面いっぱいに情報を並べる
@@ -2082,7 +2082,8 @@ export class MapScene extends Phaser.Scene {
       if (data?.evolution) {
         const to = all.find(x => x.id === data.evolution!.to);
         const toName = to && seen.has(to.id) ? to.name : "？？？";
-        evoText = `Lv${data.evolution.level}で ${toName}に しんか`;
+        // いつ しんかするかは あえて ふせる（何レベルか わからない ワクワク感）。
+        evoText = `いつか ${toName}に しんか`;
       }
       const isCaught = caught.has(inst.dataId);
       const rows: [string, string, string][] = [
@@ -2122,9 +2123,12 @@ export class MapScene extends Phaser.Scene {
       this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(boxY + 12), "ずかんせつめい", {
         fontSize: `${this.uiS(14)}px`, color: "#ffd98a", fontFamily: F, fontStyle: "bold", stroke: "#0a1f3c", strokeThickness: 3,
       }).setScrollFactor(0).setDepth(202));
-      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(boxY + 40), data?.description ?? "", {
+      // 日本語はスペースが無く Phaser の word-wrap が効かないので、文字数で折り返す。
+      const descMaxChars = Math.max(8, Math.floor((rx - lx) / 18));
+      const descWrapped = this.wrapJp(data?.description ?? "", descMaxChars);
+      this.menuElements.push(this.add.text(this.uiX(lx), this.uiY(boxY + 40), descWrapped, {
         fontSize: `${this.uiS(17)}px`, color: "#eef6ff", fontFamily: F, stroke: "#0a1f3c", strokeThickness: 3,
-        wordWrap: { width: this.uiS((rx - lx)) }, lineSpacing: 9,
+        lineSpacing: 9,
       }).setScrollFactor(0).setDepth(202));
     } else if (this.monDetailPage === 1) {
       // のうりょく：HP / こうげき / ぼうぎょ / すばやさ ＋ けいけんち＋ゲージ
@@ -2659,6 +2663,22 @@ export class MapScene extends Phaser.Scene {
     this.zukanScrollTop = 0;
     this.zukanGpPrevDpad = null;
     this.drawZukanScreen();
+  }
+
+  /** 日本語（スペース無し）を 文字数で折り返す。句読点は行頭に来ないよう前の行に付ける。 */
+  private wrapJp(text: string, maxCharsPerLine: number): string {
+    const noHead = "、。，．・）」』】〉》〕｝";   // 行頭に置きたくない記号
+    const out: string[] = [];
+    let line = "";
+    for (const ch of text) {
+      if (ch === "\n") { out.push(line); line = ""; continue; }
+      if ([...line].length >= maxCharsPerLine && !noHead.includes(ch)) {
+        out.push(line); line = "";
+      }
+      line += ch;
+    }
+    if (line) out.push(line);
+    return out.join("\n");
   }
 
   private drawTypeBadge(cx: number, cy: number, type: string, scale = 1): void {
