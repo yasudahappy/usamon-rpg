@@ -1951,11 +1951,16 @@ export class BattleScene extends Phaser.Scene {
 
   private afterExpCallback: (() => void) | null = null;
 
-  /** 「同行」を持っているか（バッグにある or だれかが もちものにしている）。 */
-  private hasCompanionItem(): boolean {
+  /** 「同行」の効果が使えるか。
+   *  バッグにある or だれかが もちものにしている場合に有効。ただし
+   *  戦闘に出て倒したアルモン自身が「同行」を持っていても効果は出ない
+   *  （参加していない ひかえのアルモンに付き添う どうぐ なので）。 */
+  private hasCompanionItem(participants?: Set<MonsterInstance>): boolean {
     const inBag = (this.playerState.items || []).some((i) => i.id === "companion" && i.count > 0);
-    const held = (this.playerState.party || []).some((m) => m.held === "companion");
-    return inBag || held;
+    if (inBag) return true;
+    return (this.playerState.party || []).some(
+      (m) => m.held === "companion" && !participants?.has(m)
+    );
   }
 
   /**
@@ -1998,7 +2003,8 @@ export class BattleScene extends Phaser.Scene {
     const msgs = [`${playerData.name}は ${expGain}けいけんちを かくとく！`];
 
     // 「同行」：バトルに出ていない生存アルモンにも半分の経験値。
-    if (this.hasCompanionItem()) {
+    // 倒したアルモン（＝いま出ている playerInstance）が「同行」を持っていると無効。
+    if (this.hasCompanionItem(new Set([this.playerInstance]))) {
       const half = Math.floor(expGain / 2);
       const benched = this.playerState.party.filter(
         (inst) => inst !== this.playerInstance && inst.currentHp > 0
@@ -3546,7 +3552,8 @@ export class BattleScene extends Phaser.Scene {
       }
     }
     // 「同行」：参加していない生存アルモンにも半分の経験値。
-    if (this.hasCompanionItem()) {
+    // 戦闘に参加して倒したアルモンが「同行」を持っていても無効。
+    if (this.hasCompanionItem(this.dParticipants)) {
       const half = Math.floor(total / 2);
       for (const inst of this.playerState.party) {
         if (this.dParticipants.has(inst) || inst.currentHp <= 0) continue;
