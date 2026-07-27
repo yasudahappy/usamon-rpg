@@ -481,6 +481,11 @@ export class MapScene extends Phaser.Scene {
       this.placeDaycareInterior();
     }
 
+    // 月の谷（ルカのたに）— ガス・霧の峡谷。ルカの ものがたり。
+    if (this.currentMapKey === "luna_rille") {
+      this.placeLunaRille();
+    }
+
     // タウルスのどうくつ — 暗闇の2フロア洞窟。地下には ぬしのガンブロス。
     if (this.currentMapKey === "taurus_cave" || this.currentMapKey === "taurus_cave_b1") {
       this.placeCaveCapsules();
@@ -1290,6 +1295,9 @@ export class MapScene extends Phaser.Scene {
 
         // あずけや：繁殖・ゲイ化・タマゴの孵化を歩数で進める
         this.checkDaycare();
+
+        // 月の谷の 段差（ドロップタイル）：踏むと 下の段へ すべりおりる
+        this.checkDropTile();
 
         // Nectar Town step-on triggers (overlook / eavesdrop cutscenes)
         this.checkNectarStepTriggers();
@@ -7727,12 +7735,197 @@ export class MapScene extends Phaser.Scene {
     ]) });
   }
 
+  /** 月の谷の 段差タイル：踏むと 下の段へ すべりおりる（mapData.drops）。 */
+  private checkDropTile(): void {
+    const drops = (this.mapData as MapData & { drops?: { x: number; y: number; tx: number; ty: number }[] }).drops;
+    if (!drops || this.isWarping || this.startingBattle) return;
+    const d = drops.find(dd => dd.x === this.gridX && dd.y === this.gridY);
+    if (!d) return;
+    this.gridX = d.tx; this.gridY = d.ty;
+    const nx = d.tx * this.tileSize + this.tileSize / 2;
+    const ny = d.ty * this.tileSize + this.tileSize / 2;
+    this.player.setPosition(nx, ny - 10);
+    this.tweens.add({ targets: this.player, y: ny, duration: 200, ease: "Bounce.easeOut" });
+    // 着地の土けむり
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const p = this.add.ellipse(nx, ny + 6, 8, 4, 0xb9c0cc, 0.5).setDepth(9);
+      this.tweens.add({ targets: p, x: nx + Math.cos(a) * 16, y: ny + 6 + Math.sin(a) * 5,
+        alpha: 0, duration: 350, ease: "Cubic.out", onComplete: () => p.destroy() });
+    }
+  }
+
+  /** モンスターを 1体 プレゼントする（手持ちが いっぱいなら ボックスへ）。 */
+  private giveGiftMonster(dataId: string, level: number, lines: string[]): void {
+    if (!this.playerState) return;
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const allMoves = this.cache.json.get("moves") as MoveData[];
+    const inst = createMonsterInstance(dataId, level, all, allMoves);
+    const nm = all.find(m => m.id === dataId)?.name ?? dataId;
+    const toBox = this.playerState.party.length >= 6;
+    if (toBox) this.playerState.box.push(inst); else this.playerState.party.push(inst);
+    // ずかん登録
+    if (!this.playerState.caught) this.playerState.caught = [];
+    if (!this.playerState.caught.includes(dataId)) this.playerState.caught.push(dataId);
+    this.showDialog([...lines,
+      toBox ? `${nm}は あずかりボックスへ おくられた！` : `${nm}が なかまに くわわった！`]);
+  }
+
+  /**
+   * 月の谷（ルカのたに）— ガス・霧の峡谷。
+   * ルカ：111年 宇宙を ただよい、いろんな 宇宙船を ヒッチハイクして
+   * やっと 月に ついた 旅人。谷の おくで 本当の愛（ソラ）と 再会する。
+   */
+  private placeLunaRille(): void {
+    const ts = this.tileSize;
+    const W = this.mapData.width * ts, H = this.mapData.height * ts;
+
+    // 谷ならではの うす暗い むらさきトーン
+    this.add.rectangle(0, 0, W, H, 0x2a2440, 0.20).setOrigin(0).setDepth(54);
+
+    // 霧テクスチャ（きりのたにと共用）
+    if (!this.textures.exists("kiri-fog")) {
+      const c = document.createElement("canvas"); c.width = 128; c.height = 128;
+      const g = c.getContext("2d")!;
+      const grad = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+      grad.addColorStop(0, "rgba(255,255,255,0.55)");
+      grad.addColorStop(0.55, "rgba(255,255,255,0.22)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+      this.textures.addCanvas("kiri-fog", c);
+    }
+    let ks = 9137; const krnd = () => { ks = (ks * 16807) % 2147483647; return ks / 2147483647; };
+    // ながれる 霧のかたまり（谷いっぱい）
+    for (let i = 0; i < 14; i++) {
+      const cx = krnd() * W, cy = (1.5 + krnd() * (this.mapData.height - 3)) * ts;
+      const scl = 2.6 + krnd() * 3.4;
+      const bank = this.add.image(cx, cy, "kiri-fog").setDisplaySize(ts * scl, ts * scl * 0.6)
+        .setTint(0xc7cbe4).setDepth(56).setAlpha(0.12 + krnd() * 0.12);
+      const drift = (krnd() < 0.5 ? 1 : -1) * (ts * 2 + krnd() * ts * 3);
+      this.tweens.add({ targets: bank, x: cx + drift, duration: 7000 + krnd() * 6000,
+        yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: krnd() * 3000 });
+    }
+    // ガスの噴きだし口
+    for (const [gx, gy] of [[4, 9], [13, 11], [6, 22], [14, 27]] as [number, number][]) {
+      const vx = gx * ts + ts / 2, vy = gy * ts + ts / 2;
+      this.add.ellipse(vx, vy + 6, 14, 6, 0x8f8bb0, 0.35).setDepth(3);
+      this.time.addEvent({ delay: 900 + krnd() * 700, loop: true, callback: () => {
+        const puff = this.add.image(vx + (krnd() * 8 - 4), vy, "kiri-fog")
+          .setDisplaySize(ts * 1.2, ts * 1.0).setTint(0xe6e2f4).setDepth(58).setAlpha(0.3);
+        this.tweens.add({ targets: puff, y: vy - ts * (1.6 + krnd()), scaleX: puff.scaleX * 1.8,
+          scaleY: puff.scaleY * 1.8, alpha: 0, duration: 2200 + krnd() * 800, ease: "Sine.easeOut",
+          onComplete: () => puff.destroy() });
+      } });
+    }
+    // プレイヤー追従の 霧ヴィネット（きりのたにと共用の仕組み）
+    if (!this.textures.exists("kiri-vignette")) {
+      const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+      const ctx = c.getContext("2d")!;
+      const g = ctx.createRadialGradient(256, 256, 54, 256, 256, 240);
+      g.addColorStop(0, "rgba(226,234,244,0)");
+      g.addColorStop(0.5, "rgba(210,214,236,0.34)");
+      g.addColorStop(1, "rgba(200,204,232,0.66)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+      this.textures.addCanvas("kiri-vignette", c);
+    }
+    this.kiriFog = this.add.image(this.player.x, this.player.y, "kiri-vignette").setDepth(60);
+
+    // 入口の たて札（谷の 教育＋雰囲気）
+    this.nectarExam.push({ x: 6, y: 2, fn: () => this.showDialog([
+      "たて札：『月の谷（リレー）』",
+      "大むかし、あつい 溶岩が 川のように\nながれて けずった 細い谷。地球にも\n『谷（リレー）』と よばれる 地形が ある。",
+    ]) });
+
+    // 谷の ぬし：シャリアン（1回きり・捕獲可）— レアとの であい
+    if (!this.hasPitFlag("luna_nushi_done") && this.textures.exists("monster-sharian")) {
+      const ax = 8, ay = 16;
+      const cx = ax * ts + ts / 2, cy = ay * ts + ts / 2;
+      const halo = this.add.graphics().setDepth(7);
+      halo.fillStyle(0x9a6cff, 0.18); halo.fillCircle(cx, cy - 6, ts * 1.4);
+      this.tweens.add({ targets: halo, alpha: 0.5, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      const spr = this.add.image(cx, cy + 6, "monster-sharian").setDepth(8).setOrigin(0.5, 1);
+      const src = this.textures.get("monster-sharian").getSourceImage() as { width: number; height: number };
+      spr.setScale((ts * 2.2) / Math.max(src.width, src.height));
+      this.tweens.add({ targets: spr, y: cy, duration: 2000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.nectarExam.push({ x: ax, y: ay, fn: () => this.showDialog([
+        "きりの 中に、大きな かげが うずくまっている……。",
+        "谷の ぬし——シャリアンだ！",
+      ], () => { this.setPitFlag("luna_nushi_done"); this.startBattle("sharian", 33); }) });
+    }
+
+    // ---- ルカの ものがたり ----
+    const reunited = this.hasPitFlag("luka_reunited");
+    if (reunited) {
+      // 再会ずみ：ルカ＆ソラが 谷の おくで しあわせそうに いる
+      this.add.image(8 * ts + ts / 2, 31 * ts + ts / 2, this.npcTex("cast-shin-down", "npc-kinoshita")).setDepth(9);
+      this.add.image(9 * ts + ts / 2, 31 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
+      this.nectarExam.push({ x: 8, y: 32, fn: () => this.showDialog([
+        "ルカ「111年 ぶんの さびしさが、\nきみのおかげで きえたよ。」",
+        "ソラ「わたしも ずっと ここで\n星を かぞえて まってた。ありがとう。」",
+        "ルカ「この谷の むこうは くものうみタウンへ\nつづく 近道だ。いつでも おいでよ。」",
+      ]) });
+      // 近道の出口（谷の おく → くものうみタウン）
+      this.nectarExam.push({ x: 9, y: 32, fn: () => {
+        this.showDialog(["谷の おくの 近道を とおって\nくものうみタウンへ もどろう。"], () => {
+          this.scene.start("MapScene", { mapKey: "cloud_town", playerX: 4, playerY: 3, playerState: this.playerState });
+        });
+      } });
+    } else {
+      // まだ：ルカが 入口ちかくに、ソラが 谷の おくで まっている
+      this.add.image(11 * ts + ts / 2, 2 * ts + ts / 2, this.npcTex("cast-shin-down", "npc-kinoshita")).setDepth(9);
+      this.nectarExam.push({ x: 11, y: 2, fn: () => this.showDialog([
+        "ルカ「やあ、旅の人。おれは ルカ。」",
+        "ルカ「111年——たった ひとりで 宇宙を\nただよって、いろんな 宇宙船を ヒッチハイク\nして、やっと この月に ついたんだ。」",
+        "ルカ「宇宙の 最果てで やくそくしたんだ。\n『いつか かならず むかえに いく』って。」",
+        "ルカ「この谷の おくに、その人が\nいる気がする。でも きりが こわくて……\nいっしょに いって くれないか？」",
+      ]) });
+      // ソラ（谷の おく）— 話しかけると 再会イベント
+      this.add.image(9 * ts + ts / 2, 31 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
+      this.nectarExam.push({ x: 9, y: 32, fn: () => {
+        this.showDialog([
+          "きりの おくに、だれかが 星を\nかぞえながら すわっている……。",
+          "ソラ「あなたは……ルカの 友だち？\nわたし、ソラ。ずっと ここで まってたの。」",
+          "ソラ「111年 まえ、宇宙の 最果てで\nはぐれてしまって……もう 会えないかと。」",
+          "——そのとき、きりの むこうから\nあわてて かけおりてくる 足音が！",
+          "ルカ「ソラ——！ ほんとうに ソラなのか！」",
+          "ソラ「ルカ！ ずっと……ずっと\n会いたかった……！」",
+          "ふたりは かたく 手を にぎりあった。\n111年 ぶんの 想いが、月の谷に あふれる。",
+        ], () => {
+          this.setPitFlag("luka_reunited");
+          // ごほうび：ふたりの きずなが 光になった——ホタルナが なかまに
+          this.giveGiftMonster("hotaruna", 28, [
+            "ルカ「きみには 感謝しても しきれない。」",
+            "ソラ「わたしたちの きずなが、\n小さな 光に なったみたい。この子を\nつれて いって あげて。」",
+          ]);
+        });
+      } });
+    }
+  }
+
   /** くものうみタウン：リーダー クモナ＋ジム扉＋教育看板＋町の作り込み。 */
   private placeCloudTown(): void {
     const ts = this.tileSize;
 
     // 雲の海の ふんいき：低く ただよう 白い 雲海のもや。
     this.placeCloudSeaMist();
+
+    // 月の谷（ルカのたに）への入口（左上）。看板で 案内。
+    if (!this.textures.exists("valley-sign")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#6b4a28"; ctx.fillRect(14, 16, 4, 14);
+      ctx.fillStyle = "#b0a6c0"; ctx.fillRect(3, 6, 26, 12);
+      ctx.strokeStyle = "#5a5270"; ctx.lineWidth = 2; ctx.strokeRect(3, 6, 26, 12);
+      ctx.fillStyle = "#2a2440"; ctx.font = "bold 7px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("月の谷", 16, 14);
+      ctx.fillText("→", 16, 16 + 0);
+      this.textures.addCanvas("valley-sign", c);
+    }
+    this.add.image(5 * ts + ts / 2, 2 * ts + ts / 2, "valley-sign").setDepth(9);
+    this.nectarExam.push({ x: 5, y: 2, fn: () => this.showDialog([
+      "たて札：『← 月の谷（リレー）』",
+      "きりの ふかい 谷。おくには なにか\nいわく ありげな 気配が……。",
+    ]) });
 
     // クモナ（ジム前に立つ）。ジム本体は次フェーズ。
     const kx = 10, ky = 8;
