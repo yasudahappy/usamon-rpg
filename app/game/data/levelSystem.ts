@@ -43,6 +43,18 @@ export function getExpReward(enemyBaseExp: number, enemyLevel: number): number {
 /**
  * Get all moves a monster should know at a given level (up to 4, latest ones).
  */
+/** あずけや生まれの特別な子（bred）は のうりょくが少し高い（各+8%）。
+ *  bred でなければ そのまま返す（冪等）。 */
+export function applyBred(stats: Stats, bred?: boolean): Stats {
+  if (!bred) return stats;
+  return {
+    hp: Math.floor(stats.hp * 1.08),
+    attack: Math.floor(stats.attack * 1.08),
+    defense: Math.floor(stats.defense * 1.08),
+    speed: Math.floor(stats.speed * 1.08),
+  };
+}
+
 export function getMovesForLevel(
   data: MonsterData,
   level: number,
@@ -104,7 +116,7 @@ export function refreshInstanceStats(
 ): void {
   const data = allMonsters.find((m) => m.id === instance.dataId);
   if (!data) return;
-  instance.stats = applyGender(applyNature(calculateStats(data, instance.level), instance.nature), instance.gender);
+  instance.stats = applyBred(applyGender(applyNature(calculateStats(data, instance.level), instance.nature), instance.gender), instance.bred);
   instance.maxHp = instance.stats.hp;
   if (instance.currentHp > instance.maxHp) instance.currentHp = instance.maxHp;
 }
@@ -141,7 +153,7 @@ export function applyEvolution(
 
   const oldMaxHp = instance.maxHp;
   instance.dataId = newDataId;
-  const newStats = applyGender(applyNature(calculateStats(newData, instance.level), instance.nature), instance.gender);
+  const newStats = applyBred(applyGender(applyNature(calculateStats(newData, instance.level), instance.nature), instance.gender), instance.bred);
   instance.stats = newStats;
   instance.maxHp = newStats.hp;
   // Heal proportionally
@@ -160,7 +172,7 @@ export function applyLevelUp(
   if (!data) return;
 
   const oldMaxHp = instance.maxHp;
-  const newStats = applyGender(applyNature(calculateStats(data, instance.level), instance.nature), instance.gender);
+  const newStats = applyBred(applyGender(applyNature(calculateStats(data, instance.level), instance.nature), instance.gender), instance.bred);
   instance.stats = newStats;
   instance.maxHp = newStats.hp;
   // Heal the HP gained

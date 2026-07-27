@@ -58,6 +58,11 @@ export interface MonsterInstance {
   nature?: string;            // せいかく（フレーバー）
   gender?: "male" | "female" | "lesbian" | "gay" | "bi" | "trans" | "nonbinary"; // せいべつ（多様性を含む）
   held?: string;              // もちもの（道具ID。1体につき1つ）
+  bred?: boolean;             // あずけや生まれの特別な子（のうりょくが少し高い）
+  // ---- タマゴ（あずけやでもらう。歩くとかえる）----
+  isEgg?: boolean;            // このインスタンスは タマゴ
+  eggSteps?: number;          // 孵化までの あるいた歩数
+  eggFatherMove?: string;     // 親から うけつぐ わざ（孵化時に反映）
 }
 
 // ---- Player state ----
@@ -75,6 +80,20 @@ export interface PlayerState {
   caught?: string[]; // ずかん: dataIds the player has owned/caught (つかまえた)
   companion?: string; // 仲間になって ついてくる キャラ（例: "hijiri"）
   gayWalkSteps?: number; // ゲイ＋オスが手持ちにいる間の歩数（5000歩でオス→ゲイ）
+  daycare?: DaycareState; // あずけや（くものうみタウン・タカ＆ミホ運営）
+}
+
+// ---- あずけや（Daycare）----
+export interface DaycareState {
+  deposited: MonsterInstance[];  // 最大3体
+  breedSteps?: number;           // オス＋メスがいる間の歩数（1万歩ごとに卵抽選）
+  gaySteps?: number;             // ゲイ2＋オス1のときの歩数（5000歩でオス→ゲイ）
+  pendingEgg?: DaycareEgg | null; // 生まれて うけとり待ちの タマゴ
+}
+
+export interface DaycareEgg {
+  species: string;      // 母親と同じ種類
+  fatherMove?: string;  // 父親から うけつぐ わざ
 }
 
 // ---- Trainer data ----

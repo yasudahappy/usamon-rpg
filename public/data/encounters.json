@@ -384,25 +384,43 @@
     ]
   },
   "kiri_valley": {
-    "encounterRate": 0.072,
+    "encounterRate": 0.1,
     "monsters": [
       {
         "id": "mochichi",
-        "weight": 34,
+        "weight": 26,
         "minLevel": 31,
         "maxLevel": 34
       },
       {
         "id": "mochigori",
-        "weight": 40,
+        "weight": 24,
         "minLevel": 32,
         "maxLevel": 35
       },
       {
         "id": "gorimocchi",
-        "weight": 26,
+        "weight": 16,
         "minLevel": 33,
         "maxLevel": 36
+      },
+      {
+        "id": "regonyas",
+        "weight": 14,
+        "minLevel": 31,
+        "maxLevel": 34
+      },
+      {
+        "id": "shakurin",
+        "weight": 12,
+        "minLevel": 31,
+        "maxLevel": 33
+      },
+      {
+        "id": "hotaruna",
+        "weight": 8,
+        "minLevel": 31,
+        "maxLevel": 33
       }
     ]
   }

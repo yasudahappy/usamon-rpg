@@ -1,8 +1,8 @@
 import * as Phaser from "phaser";
 import { MapData } from "../types";
-import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData } from "../data/types";
+import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData, DaycareState } from "../data/types";
 import { loadSettings, saveSettings, GameSettings } from "../data/settings";
-import { calculateStats, getExpForLevel, refreshInstanceStats } from "../data/levelSystem";
+import { calculateStats, getExpForLevel, refreshInstanceStats, createMonsterInstance } from "../data/levelSystem";
 
 const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
@@ -207,7 +207,7 @@ export class MapScene extends Phaser.Scene {
 
   // Menu system
   private menuOpen = false;
-  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" | "hold_item" | "pc_box" = "none";
+  private menuSubScreen: "none" | "party" | "save" | "stub" | "settings" | "restart-confirm" | "bag" | "bag_target" | "zukan" | "zukan_detail" | "party_action" | "mon_detail" | "hold_item" | "pc_box" | "daycare" = "none";
   // てもちのアクションメニュー／アルモン詳細ビュー
   private partyActionSel = 0;
   private monDetailPage = 0;   // 0=じょうほう, 1=のうりょく, 2=わざ
@@ -469,6 +469,7 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "cloud_town") {
       this.placeCloudTown();
       this.placeCloudResourceBiz();
+      this.placeDaycare();
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("cloud_arrival_seen")) {
         this.time.delayedCall(700, () => this.playCloudArrival());
@@ -1282,6 +1283,9 @@ export class MapScene extends Phaser.Scene {
         // ゲイ＋オスが手持ちにいると、歩くうちにオスもゲイになる仕掛け
         this.checkGayConversion();
 
+        // あずけや：繁殖・ゲイ化・タマゴの孵化を歩数で進める
+        this.checkDaycare();
+
         // Nectar Town step-on triggers (overlook / eavesdrop cutscenes)
         this.checkNectarStepTriggers();
 
@@ -1560,6 +1564,7 @@ export class MapScene extends Phaser.Scene {
       if (this.menuSubScreen === "party_action") { this.updatePartyActionMenu(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "hold_item") { this.updateHoldItemScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "pc_box") { this.updatePcBoxScreen(a, b, menu, dpad); return; }
+      if (this.menuSubScreen === "daycare") { this.updateDaycareScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "mon_detail") { this.updateMonDetail(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "bag" || this.menuSubScreen === "bag_target") { this.updateBagScreen(a, b, menu, dpad); return; }
       if (this.menuSubScreen === "zukan" || this.menuSubScreen === "zukan_detail") { this.updateZukanScreen(a, b, menu, dpad); return; }
@@ -1622,6 +1627,12 @@ export class MapScene extends Phaser.Scene {
     if (justDown || kbDown) { this.partySelIndex = (this.partySelIndex + 1) % n; this.drawPartyScreen(); return; }
     if (a || kbEnter) {
       if (this.partyPickIndex < 0) {
+        // タマゴには メニューを ひらかない（まだ なにも できない）。
+        const sel = this.playerState?.party[this.partySelIndex];
+        if (sel?.isEgg) {
+          this.showDialog(["これは タマゴだ。\nあるいて かえるのを まとう！"]);
+          return;
+        }
         // いれかえ待ちでないときは、選んだアルモンのアクションメニューを開く。
         this.partyActionSel = 0;
         this.menuSubScreen = "party_action";
@@ -1846,6 +1857,128 @@ export class MapScene extends Phaser.Scene {
   private pcGpPrevDpad: string | null = null;
   private static PC_VISIBLE = 6;   // ボックスの表示行数
 
+  // ---- あずけや（Daycare）----
+  private static DAYCARE_MAX = 3;          // 預けられる数
+  private static EGG_ROLL_STEPS = 10000;   // 卵抽選までの歩数
+  private static EGG_CHANCE = 0.5;         // 卵が生まれる確率
+  private static EGG_HATCH_STEPS = 10000;  // 卵が孵化するまでの歩数
+  private static DAYCARE_GAY_STEPS = 5000; // ゲイ2＋オス1でオスがゲイになるまでの歩数
+  private dcSide: 0 | 1 = 0;   // 0=てもち, 1=あずけや
+  private dcSel = 0;
+  private dcMsg = "";
+  private dcGpPrevDpad: string | null = null;
+
+  /** 旧セーブ互換：daycare が無ければ初期化して返す。 */
+  private ensureDaycare(): DaycareState {
+    const ps = this.playerState!;
+    if (!ps.daycare) ps.daycare = { deposited: [], breedSteps: 0, gaySteps: 0, pendingEgg: null };
+    if (!ps.daycare.deposited) ps.daycare.deposited = [];
+    return ps.daycare;
+  }
+
+  /** タマゴのテクスチャ（手持ち・あずけや表示用）を用意する。 */
+  private ensureEggTexture(): void {
+    if (this.textures.exists("egg-icon")) return;
+    const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+    const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+    // たまご本体
+    ctx.fillStyle = "#fff3d6";
+    ctx.beginPath(); ctx.ellipse(16, 18, 9, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#e0b877"; ctx.lineWidth = 1.5; ctx.stroke();
+    // まだら模様
+    ctx.fillStyle = "#f2c46b";
+    ctx.beginPath(); ctx.ellipse(13, 14, 2.4, 2.0, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(19, 20, 2.8, 2.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(14, 23, 2.0, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+    // ハイライト
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.ellipse(12, 11, 2.2, 3.0, -0.5, 0, Math.PI * 2); ctx.fill();
+    this.textures.addCanvas("egg-icon", c);
+  }
+
+  /** 毎歩よばれる：あずけやの繁殖・ゲイ化と、手持ちのタマゴの孵化を進める。 */
+  private checkDaycare(): void {
+    const ps = this.playerState;
+    if (!ps || this.dialogActive || this.inCutscene) return;
+
+    // 手持ちのタマゴを孵化させる
+    const egg = (ps.party || []).find(m => m.isEgg);
+    if (egg) {
+      egg.eggSteps = (egg.eggSteps ?? 0) + 1;
+      if (egg.eggSteps >= MapScene.EGG_HATCH_STEPS) { this.hatchEgg(egg); return; }
+    }
+
+    const dc = ps.daycare;
+    if (!dc || !dc.deposited || dc.deposited.length === 0) return;
+    const dep = dc.deposited;
+
+    // ゲイ2＋オス1 を預けていると、5000歩でオスがゲイになる
+    const gays = dep.filter(m => m.gender === "gay").length;
+    const male = dep.find(m => m.gender === "male");
+    if (dep.length === 3 && gays === 2 && male) {
+      dc.gaySteps = (dc.gaySteps ?? 0) + 1;
+      if (dc.gaySteps >= MapScene.DAYCARE_GAY_STEPS) {
+        dc.gaySteps = 0;
+        male.gender = "gay";
+        const all = this.cache.json.get("monsters") as MonsterData[];
+        refreshInstanceStats(male, all);
+        const nm = all.find(m => m.id === male.dataId)?.name ?? "アルモン";
+        this.showDialog([
+          "あずけやで 5000ぽ——",
+          `${nm}は ゲイの なかまと すごすうちに\n自分の きもちに 気づいたようだ。`,
+          `${nm}は ゲイに なった！`,
+        ]);
+        return;
+      }
+    } else {
+      dc.gaySteps = 0;
+    }
+
+    // オス＋メスを預けていると、1万歩ごとに50%で卵が生まれる
+    const hasMale = dep.some(m => m.gender === "male");
+    const hasFemale = dep.some(m => m.gender === "female");
+    if (hasMale && hasFemale && !dc.pendingEgg) {
+      dc.breedSteps = (dc.breedSteps ?? 0) + 1;
+      if (dc.breedSteps >= MapScene.EGG_ROLL_STEPS) {
+        dc.breedSteps = 0;
+        if (Math.random() < MapScene.EGG_CHANCE) {
+          const mother = dep.find(m => m.gender === "female")!;
+          const father = dep.find(m => m.gender === "male")!;
+          const fatherMove = father.moves && father.moves.length
+            ? father.moves[Math.floor(Math.random() * father.moves.length)]
+            : undefined;
+          dc.pendingEgg = { species: mother.dataId, fatherMove };
+        }
+      }
+    }
+  }
+
+  /** タマゴを その場で 母親と同じ種類の アルモンに かえす。 */
+  private hatchEgg(egg: MonsterInstance): void {
+    const all = this.cache.json.get("monsters") as MonsterData[];
+    const allMoves = this.cache.json.get("moves") as MoveData[];
+    const species = egg.dataId;
+    const fatherMove = egg.eggFatherMove;
+    const baby = createMonsterInstance(species, 5, all, allMoves);
+    baby.bred = true;
+    // 父親のわざを1つ うけつぐ（枠が いっぱいなら 末尾を おきかえ）
+    if (fatherMove && !baby.moves.includes(fatherMove) && allMoves.some(mv => mv.id === fatherMove)) {
+      if (baby.moves.length < 4) baby.moves.push(fatherMove);
+      else baby.moves[baby.moves.length - 1] = fatherMove;
+    }
+    refreshInstanceStats(baby, all);   // bred の のうりょくボーナスを反映
+    baby.currentHp = baby.maxHp;
+    ensureInstancePP(baby, allMoves);
+    // egg インスタンスを その場で 赤ちゃんに 置きかえる（配列内の参照を保つ）
+    Object.assign(egg, baby);
+    delete egg.isEgg; delete egg.eggSteps; delete egg.eggFatherMove;
+    const nm = all.find(m => m.id === species)?.name ?? "アルモン";
+    this.showDialog([
+      "おや……？ タマゴが うごいてる！",
+      `タマゴから ${nm}が うまれた！`,
+    ]);
+  }
+
   /** リカバリーポッドの右下パソコンを起動。 */
   private openPcBox(): void {
     if (!this.playerState) return;
@@ -1971,7 +2104,8 @@ export class MapScene extends Phaser.Scene {
       // てもち → ボックス（あずける）
       const inst = party[this.pcSel];
       if (!inst) return;
-      if (party.length <= 1) { this.pcMsg = "さいごの 1ぴきは あずけられないよ！"; this.drawPcBoxScreen(); return; }
+      if (inst.isEgg) { this.pcMsg = "タマゴは あずけられないよ。"; this.drawPcBoxScreen(); return; }
+      if (party.filter(m => !m.isEgg).length <= 1) { this.pcMsg = "さいごの 1ぴきは あずけられないよ！"; this.drawPcBoxScreen(); return; }
       party.splice(this.pcSel, 1);
       box.push(inst);
       this.pcMsg = `${this.monName(inst.dataId)}を ボックスに あずけた！`;
@@ -2007,6 +2141,223 @@ export class MapScene extends Phaser.Scene {
     if (justUp || kbUp) { this.pcSel--; this.clampPcCursor(); this.drawPcBoxScreen(); return; }
     if (justDown || kbDown) { this.pcSel++; this.clampPcCursor(); this.drawPcBoxScreen(); return; }
     if (a) this.activatePcRow();
+  }
+
+  // ==== あずけや（Daycare）：くものうみタウン・タカ＆ミホ ====
+  /** あずけやを ひらく。タマゴが 生まれていて 手持ちに 空きがあれば うけとる。 */
+  private openDaycare(): void {
+    if (!this.playerState) return;
+    const dc = this.ensureDaycare();
+    this.ensureEggTexture();
+    const intro = () => {
+      // タマゴの うけとり（手持ちに 空きが 必要）
+      if (dc.pendingEgg) {
+        if ((this.playerState!.party.length) < 6) {
+          const egg = dc.pendingEgg;
+          const all = this.cache.json.get("monsters") as MonsterData[];
+          const nm = all.find(m => m.id === egg.species)?.name ?? "アルモン";
+          this.playerState!.party.push({
+            dataId: egg.species, level: 1, exp: 0, currentHp: 0, maxHp: 0,
+            stats: { hp: 0, attack: 0, defense: 0, speed: 0 }, moves: [],
+            isEgg: true, eggSteps: 0, eggFatherMove: egg.fatherMove,
+          });
+          dc.pendingEgg = null;
+          this.showDialog([
+            "ミホ「あっ、タマゴが 生まれてたのよ！」",
+            `タカ「${nm}の タマゴだ。だいじに\nあたためて あげてね。」`,
+            "（タマゴを うけとった！ あるくと\n やがて かえるよ。）",
+          ], () => this.drawDaycareScreen());
+          return;
+        } else {
+          this.showDialog([
+            "ミホ「タマゴが 生まれてるけど、\n手持ちが いっぱいねぇ。」",
+            "タカ「1ぴき あずけるか にがすかして、\nすきまを あけてから おいで。」",
+          ], () => this.drawDaycareScreen());
+          return;
+        }
+      }
+      this.drawDaycareScreen();
+    };
+    this.menuOpen = true;
+    this.dcSide = 0; this.dcSel = 0; this.dcGpPrevDpad = null;
+    this.dcMsg = "あずける アルモンや ひきだす アルモンを えらんでね。";
+    // はじめの あいさつ
+    const greet = dc.deposited.length === 0 && !dc.pendingEgg
+      ? [
+          "タカ「ここは あずけや。おれと ミホで\nやってるんだ。」",
+          "ミホ「アルモンを 3びきまで あずかるわ。\nオスと メスを あずけると、タマゴが\n生まれることも あるのよ。」",
+        ]
+      : [];
+    if (greet.length) this.showDialog(greet, intro);
+    else intro();
+  }
+
+  private dcListLen(side: 0 | 1): number {
+    if (side === 0) return this.playerState?.party.length || 0;
+    return this.ensureDaycare().deposited.length;
+  }
+
+  private clampDcCursor(): void {
+    const len = this.dcListLen(this.dcSide);
+    if (len === 0) { this.dcSel = 0; return; }
+    if (this.dcSel >= len) this.dcSel = len - 1;
+    if (this.dcSel < 0) this.dcSel = 0;
+  }
+
+  /** あずけやの じょうたい文（繁殖・卵の様子）。 */
+  private daycareStatus(): string {
+    const dc = this.ensureDaycare();
+    const dep = dc.deposited;
+    if (dc.pendingEgg) return "タマゴが 生まれているよ！ 手持ちを 空けて うけとってね。";
+    if (dep.length === 0) return "アルモンを あずけてみよう（3びきまで）。";
+    const hasMale = dep.some(m => m.gender === "male");
+    const hasFemale = dep.some(m => m.gender === "female");
+    const gays = dep.filter(m => m.gender === "gay").length;
+    const male = dep.find(m => m.gender === "male");
+    if (dep.length === 3 && gays === 2 && male) return "ゲイ2ひきと オス1ぴき……なにか おこりそう。";
+    if (hasMale && hasFemale) return "オスと メスが なかよし。あるくと タマゴが 生まれるかも！";
+    return "あずかり中。オスと メスを そろえると タマゴが 生まれるよ。";
+  }
+
+  private drawDaycareScreen(): void {
+    this.menuSubScreen = "daycare";
+    this.clearMenuElements();
+    this.ensureEggTexture();
+    const W = this.scale.width, H = this.scale.height;
+    const F = "'DotGothic16', monospace";
+    const party = this.playerState?.party || [];
+    const dc = this.ensureDaycare();
+    const box = dc.deposited;
+
+    const bg = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bg.fillStyle(0x141d10, 0.98); bg.fillRect(this.uiX(0), this.uiY(0), this.uiS(W), this.uiS(H));
+    this.menuElements.push(bg);
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(24), "あずけや", {
+      fontSize: `${this.uiS(20)}px`, color: "#b6e77f", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
+
+    const colW = (W - 48) / 2;
+    const colX = [24, 24 + colW];
+    const top = 70, rowH = 48;
+    const headers = ["てもち", `あずけや (${box.length}/3)`];
+
+    for (let side = 0; side < 2; side++) {
+      const list = side === 0 ? party : box;
+      const active = this.dcSide === side;
+      this.menuElements.push(this.add.text(this.uiX(colX[side] + colW / 2), this.uiY(top - 18), `${headers[side]}${side === 0 ? ` (${party.length}/6)` : ""}`, {
+        fontSize: `${this.uiS(16)}px`, color: active ? "#e6ff9f" : "#9fb47f", fontFamily: F, fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+      }).setScrollFactor(0).setDepth(201).setOrigin(0.5));
+
+      const rows = side === 0 ? 6 : MapScene.DAYCARE_MAX;
+      for (let r = 0; r < rows; r++) {
+        const y = top + r * rowH;
+        const inst = list[r];
+        const on = active && r === this.dcSel;
+        const panel = this.add.graphics().setScrollFactor(0).setDepth(201);
+        panel.fillStyle(on ? 0x35521f : 0x1c2a12, on ? 0.96 : 0.8);
+        panel.fillRoundedRect(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8), 6);
+        panel.lineStyle(on ? 3 : 1, on ? 0xbde86a : 0x4a5f33);
+        panel.strokeRoundedRect(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8), 6);
+        this.menuElements.push(panel);
+        if (inst) {
+          if (inst.isEgg) {
+            if (this.textures.exists("egg-icon")) {
+              const ic = this.add.image(this.uiX(colX[side] + 22), this.uiY(y + (rowH - 8) / 2), "egg-icon").setScrollFactor(0).setDepth(202).setOrigin(0.5).setScale(this.uiS(1));
+              this.menuElements.push(ic);
+            }
+            this.menuElements.push(this.add.text(this.uiX(colX[side] + 40), this.uiY(y + 12), "タマゴ", {
+              fontSize: `${this.uiS(17)}px`, color: "#fff0c0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+            }).setScrollFactor(0).setDepth(202));
+          } else {
+            this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 10), this.monName(inst.dataId), {
+              fontSize: `${this.uiS(18)}px`, color: "#ffffff", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+            }).setScrollFactor(0).setDepth(202));
+            this.menuElements.push(this.add.text(this.uiX(colX[side] + colW - 14), this.uiY(y + 12), `Lv${inst.level}`, {
+              fontSize: `${this.uiS(15)}px`, color: "#ffe0a0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+            }).setScrollFactor(0).setDepth(202).setOrigin(1, 0));
+          }
+        } else {
+          this.menuElements.push(this.add.text(this.uiX(colX[side] + 14), this.uiY(y + 10), "―", {
+            fontSize: `${this.uiS(18)}px`, color: "#5c6a44", fontFamily: F,
+          }).setScrollFactor(0).setDepth(202));
+        }
+        const zone = this.add.zone(this.uiX(colX[side] + 4), this.uiY(y), this.uiS(colW - 8), this.uiS(rowH - 8)).setOrigin(0, 0).setScrollFactor(0).setInteractive().setDepth(203);
+        const cs = side, ci = r;
+        zone.on("pointerdown", () => { this.dcSide = cs as 0 | 1; this.dcSel = ci; this.activateDaycareRow(); });
+        this.menuElements.push(zone);
+      }
+    }
+
+    const msgY = top + 6 * rowH + 14;
+    const mbox = this.add.graphics().setScrollFactor(0).setDepth(201);
+    mbox.fillStyle(0x14240c, 0.95); mbox.fillRoundedRect(this.uiX(20), this.uiY(msgY), this.uiS(W - 40), this.uiS(70), 8);
+    mbox.lineStyle(2, 0x5a7a36); mbox.strokeRoundedRect(this.uiX(20), this.uiY(msgY), this.uiS(W - 40), this.uiS(70), 8);
+    this.menuElements.push(mbox);
+    this.menuElements.push(this.add.text(this.uiX(32), this.uiY(msgY + 10), this.dcMsg, {
+      fontSize: `${this.uiS(14)}px`, color: "#eef8e0", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      wordWrap: { width: this.uiS(W - 64) }, lineSpacing: 4,
+    }).setScrollFactor(0).setDepth(202));
+    this.menuElements.push(this.add.text(this.uiX(32), this.uiY(msgY + 44), this.daycareStatus(), {
+      fontSize: `${this.uiS(13)}px`, color: "#ffe08a", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+      wordWrap: { width: this.uiS(W - 64) }, lineSpacing: 3,
+    }).setScrollFactor(0).setDepth(202));
+    this.menuElements.push(this.add.text(this.uiX(W / 2), this.uiY(msgY + 84), "◀▶でリスト  ▲▼でせんたく  A:あずける/ひきだす  B:とじる", {
+      fontSize: `${this.uiS(12)}px`, color: "#9fbf6a", fontFamily: F, stroke: "#000000", strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(202).setOrigin(0.5, 0));
+    this.applyTextResolution(this.menuElements);
+  }
+
+  /** 選択中の行に対して あずける／ひきだす を実行。 */
+  private activateDaycareRow(): void {
+    if (!this.playerState) return;
+    const party = this.playerState.party;
+    const dc = this.ensureDaycare();
+    const box = dc.deposited;
+    if (this.dcSide === 0) {
+      // てもち → あずけや
+      const inst = party[this.dcSel];
+      if (!inst) return;
+      if (inst.isEgg) { this.dcMsg = "タマゴは あずけられないよ。"; this.drawDaycareScreen(); return; }
+      if (box.length >= MapScene.DAYCARE_MAX) { this.dcMsg = "あずけやが いっぱい！（3びきまで）"; this.drawDaycareScreen(); return; }
+      const realLeft = party.filter(m => !m.isEgg).length;
+      if (realLeft <= 1) { this.dcMsg = "さいごの 1ぴきは あずけられないよ！"; this.drawDaycareScreen(); return; }
+      party.splice(this.dcSel, 1);
+      box.push(inst);
+      dc.breedSteps = 0; dc.gaySteps = 0;   // 顔ぶれが変わったので カウンターをリセット
+      this.dcMsg = `${this.monName(inst.dataId)}を あずけた！`;
+    } else {
+      // あずけや → てもち
+      const inst = box[this.dcSel];
+      if (!inst) return;
+      if (party.length >= 6) { this.dcMsg = "てもちが いっぱい！（6ひきまで）"; this.drawDaycareScreen(); return; }
+      box.splice(this.dcSel, 1);
+      party.push(inst);
+      dc.breedSteps = 0; dc.gaySteps = 0;
+      this.dcMsg = `${this.monName(inst.dataId)}を ひきとった！`;
+    }
+    this.clampDcCursor();
+    this.drawDaycareScreen();
+  }
+
+  private updateDaycareScreen(a: boolean, b: boolean, menu: boolean, dpad: string | null): void {
+    const justUp = dpad === "up" && this.dcGpPrevDpad !== "up";
+    const justDown = dpad === "down" && this.dcGpPrevDpad !== "down";
+    const justLeft = dpad === "left" && this.dcGpPrevDpad !== "left";
+    const justRight = dpad === "right" && this.dcGpPrevDpad !== "right";
+    let kbUp = false, kbDown = false, kbLeft = false, kbRight = false;
+    if (this.input.keyboard && this.cursors) {
+      kbUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+      kbDown = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+      kbLeft = Phaser.Input.Keyboard.JustDown(this.cursors.left);
+      kbRight = Phaser.Input.Keyboard.JustDown(this.cursors.right);
+    }
+    this.dcGpPrevDpad = dpad;
+    if (b || menu) { this.closeMenu(); return; }
+    if (justLeft || kbLeft) { this.dcSide = 0; this.dcSel = 0; this.clampDcCursor(); this.drawDaycareScreen(); return; }
+    if (justRight || kbRight) { this.dcSide = 1; this.dcSel = 0; this.clampDcCursor(); this.drawDaycareScreen(); return; }
+    if (justUp || kbUp) { this.dcSel--; this.clampDcCursor(); this.drawDaycareScreen(); return; }
+    if (justDown || kbDown) { this.dcSel++; this.clampDcCursor(); this.drawDaycareScreen(); return; }
+    if (a) this.activateDaycareRow();
   }
 
   // ---- アルモン詳細ビュー（のうりょく / わざ の2ページ） ----
@@ -2484,6 +2835,32 @@ export class MapScene extends Phaser.Scene {
       const cx = rightX;
 
       const fainted = mon.currentHp <= 0;
+
+      // タマゴは 専用表示（HP/EXPは出さない）
+      if (mon.isEgg) {
+        this.ensureEggTexture();
+        const s2 = rightSlotH / 42;
+        const card = this.add.graphics().setScrollFactor(0).setDepth(201);
+        card.fillStyle(0xd8b25a);
+        card.fillRoundedRect(this.uiX(cx), this.uiY(cy), this.uiS(rightW), this.uiS(rightSlotH), this.uiS(5));
+        card.fillStyle(0xf0d488, 0.35);
+        card.fillRect(this.uiX(cx + 3), this.uiY(cy + 3), this.uiS(rightW - 6), this.uiS(8));
+        this.menuElements.push(card);
+        if (this.textures.exists("egg-icon")) {
+          const img = this.add.image(this.uiX(cx + 4 + rightIconSize / 2), this.uiY(cy + rightSlotH / 2), "egg-icon").setScrollFactor(0).setDepth(203);
+          img.setScale(Math.min(this.uiS(rightIconSize) / img.width, this.uiS(rightIconSize) / img.height));
+          this.menuElements.push(img);
+        }
+        const tx2 = cx + rightIconSize + Math.round(10 * s2);
+        this.menuElements.push(this.add.text(this.uiX(tx2), this.uiY(cy + Math.round(6 * s2)), "タマゴ", {
+          fontSize: `${this.uiS(13 * Math.min(s2, 2.4))}px`, color: "#5a3f14", fontFamily: F, fontStyle: "bold", ...STK2, stroke: "#fff6df", strokeThickness: 2,
+        }).setScrollFactor(0).setDepth(204));
+        const near = (mon.eggSteps ?? 0) >= MapScene.EGG_HATCH_STEPS * 0.7;
+        this.menuElements.push(this.add.text(this.uiX(tx2), this.uiY(cy + Math.round(24 * s2)), near ? "もうすぐ かえりそう！" : "あるくと かえるよ", {
+          fontSize: `${this.uiS(10 * Math.min(s2, 2.4))}px`, color: "#5a3f14", fontFamily: F, ...STK2, stroke: "#fff6df", strokeThickness: 2,
+        }).setScrollFactor(0).setDepth(204));
+        continue;
+      }
 
       // Row card（ひんし時は赤背景でひと目でわかるように）
       const card = this.add.graphics().setScrollFactor(0).setDepth(201);
@@ -7353,6 +7730,44 @@ export class MapScene extends Phaser.Scene {
       "（きりを ぬけると、ひらけた 平原が\nひろがっていた……）",
       "ここが 雲の海——くものうみタウン。\nガスの ジムが あるらしい。",
     ], () => { this.inCutscene = false; });
+  }
+
+  /** あずけや：タカ＆ミホが 運営する 施設。カウンターに 話しかけると ひらく。 */
+  private placeDaycare(): void {
+    const ts = this.tileSize;
+    // あずけやカウンター（たまごモチーフ）のテクスチャ
+    if (!this.textures.exists("daycare-counter")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.30)";
+      ctx.beginPath(); ctx.ellipse(16, 29, 13, 3, 0, 0, Math.PI * 2); ctx.fill();
+      // カウンター（木目）
+      ctx.fillStyle = "#a9743e"; ctx.fillRect(3, 16, 26, 12);
+      ctx.fillStyle = "#c68a4c"; ctx.fillRect(3, 16, 26, 3);
+      ctx.fillStyle = "#8a5b2e"; ctx.fillRect(3, 25, 26, 3);
+      // 上の わらの巣＋たまご
+      ctx.fillStyle = "#c9a24a"; ctx.beginPath(); ctx.ellipse(16, 13, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff3d6"; ctx.beginPath(); ctx.ellipse(13, 11, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(19, 12, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#e0b877"; ctx.lineWidth = 1; ctx.stroke();
+      this.textures.addCanvas("daycare-counter", c);
+    }
+    // 看板テクスチャ
+    if (!this.textures.exists("daycare-sign")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#6b4a28"; ctx.fillRect(14, 14, 4, 16);
+      ctx.fillStyle = "#8fce6a"; ctx.fillRect(4, 6, 24, 12);
+      ctx.strokeStyle = "#4f7a34"; ctx.lineWidth = 2; ctx.strokeRect(4, 6, 24, 12);
+      ctx.fillStyle = "#22391a"; ctx.font = "bold 8px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("あずけや", 16, 15);
+      this.textures.addCanvas("daycare-sign", c);
+    }
+
+    const cx = 11, cy = 9;   // カウンターの位置（歩いて 話しかける）
+    this.add.image(cx * ts + ts / 2, cy * ts + ts / 2, "daycare-counter").setDepth(9);
+    this.add.image((cx - 1) * ts + ts / 2, (cy - 1) * ts + ts / 2, "daycare-sign").setDepth(9);
+    this.nectarExam.push({ x: cx, y: cy, fn: () => this.openDaycare() });
   }
 
   /**
