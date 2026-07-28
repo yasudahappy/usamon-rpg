@@ -7784,8 +7784,34 @@ export class MapScene extends Phaser.Scene {
     this.nectarExam.push({ x: rx, y: ry, fn: () => this.showDialog([
       "けんきゅういん「やあ。わたしは ユカリ台長の\nチームで 光条を しらべているんだ。」",
       "けんきゅういん「コペルニクスの 光は、\nこの どうくつの ひかりいしにも\nかすかに つながっている気がしてね。」",
-      "けんきゅういん「おくの チャンバーには、\n月の 光を やどした 石が 眠っている\n——なんて うわさも あるよ。」",
+      "けんきゅういん「おくの チャンバーで、光の\nもぐらを 見た人が いるらしい。ほった あとが\n光条みたいに ひかるんだって。」",
     ]) });
+
+    // --- レイモグラ（光のもぐら）：最奥チャンバーの レア。まだ 手に入れて
+    //     いなければ 出現する（つかまえると もう でない）。 ---
+    const ps = this.playerState;
+    const owned = !!ps && ((ps.caught || []).includes("raymogura") ||
+      [...ps.party, ...ps.box].some(m => m.dataId === "raymogura"));
+    if (!owned) {
+      const mx = 11, my = 3;
+      const gx = mx * ts + ts / 2, gy = my * ts + ts / 2;
+      const halo = this.add.graphics().setDepth(61);
+      halo.fillStyle(0xbfe6ff, 0.22); halo.fillCircle(gx, gy, ts * 1.1);
+      halo.fillStyle(0xeaf6ff, 0.30); halo.fillCircle(gx, gy, ts * 0.58);
+      this.tweens.add({ targets: halo, alpha: 0.6, duration: 1500, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      if (this.textures.exists("monster-raymogura")) {
+        const spr = this.add.image(gx, gy + 8, "monster-raymogura").setDepth(62).setOrigin(0.5, 1);
+        const src = this.textures.get("monster-raymogura").getSourceImage() as { width: number; height: number };
+        spr.setScale((ts * 1.7) / Math.max(src.width, src.height));
+        this.tweens.add({ targets: spr, y: gy + 2, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+      this.nectarExam.push({ x: mx, y: my, fn: () => {
+        this.showDialog([
+          "ひかりいしの あいだで、なにかが\nもそもそ うごいている……。",
+          "星形の 鼻を ぴかっと ひからせた\n光のもぐら——レイモグラが あらわれた！",
+        ], () => this.startBattle("raymogura", 30));
+      } });
+    }
   }
 
   /** 月の祭壇: 伝説のセレニオス（1回きりの野生ボス・捕獲可）。 */
