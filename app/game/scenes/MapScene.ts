@@ -8221,7 +8221,19 @@ export class MapScene extends Phaser.Scene {
       "くものうみジム——とびらは まだ かたく\nとじている。",
       "『リーダー クモナ。かいかん もうすこし\nまっててね。』",
     ]) });
-    // 海の教育看板
+    // 海の教育看板（立て札の 見た目を つける。無いと『見えない かべ』になる）
+    if (!this.textures.exists("sea-sign")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.beginPath(); ctx.ellipse(16, 30, 9, 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#6b4a28"; ctx.fillRect(14, 16, 4, 14);          // くい
+      ctx.fillStyle = "#aeb9d0"; ctx.fillRect(3, 6, 26, 12);           // 板（雲の海の色）
+      ctx.strokeStyle = "#5a5270"; ctx.lineWidth = 2; ctx.strokeRect(3, 6, 26, 12);
+      ctx.fillStyle = "#2a2440"; ctx.font = "bold 8px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("雲の海", 16, 15);
+      this.textures.addCanvas("sea-sign", c);
+    }
+    this.add.image(4 * ts + ts / 2, 13 * ts + ts / 2, "sea-sign").setDepth(9);
     this.nectarExam.push({ x: 4, y: 13, fn: () => this.showDialog([
       "たて札：『雲の海 Mare Nubium』",
       "みなみの 嵐の大洋の となり。くらい\nげんぶがんの 平原が、雲の うみのように\n見えることから この名が ついた。",
