@@ -863,7 +863,7 @@ export class MapScene extends Phaser.Scene {
     const ps = this.playerState;
     if (!ps) return null;
     if (this.currentMapKey === "minori_town" && ps.companion === "hijiri") return "hijiri";
-    if (this.currentMapKey === "serene_town" && ps.defeatedTrainers.includes("luna")) return "luna";
+    if (this.currentMapKey === "serene_town" && (ps.pickups || []).includes("yukari_join")) return "luna";
     return null;
   }
 
@@ -4378,6 +4378,32 @@ export class MapScene extends Phaser.Scene {
         this.startBattle(undefined, undefined, leader);
       }
       return;
+    }
+    // 倒したユカリ台長に 話しかけると、セレネタウンでの 追従を 開始する
+    // （会話きっかけ）。ジムリーダーは defeated 後 上の leader ブロックを
+    // 通らないので、ここで 個別に 受ける。
+    if (this.currentMapKey === "gym_4" && this.playerState?.defeatedTrainers.includes("luna")) {
+      const yuka = this.allTrainers.find(t => t.id === "luna");
+      if (yuka) {
+        const p = this.trainerTile(yuka);
+        if (p.x === fx && p.y === fy) {
+          this.faceSpriteToPlayer(this.trainerSprites.get("luna"), { x: yuka.x, y: yuka.y });
+          const pk = (this.playerState.pickups ||= []);
+          if (!pk.includes("yukari_join")) {
+            pk.push("yukari_join");
+            this.showDialog([
+              "ユカリ「いい しょうぶだった。きみと もっと\n星の話が したくなっちゃった。」",
+              "ユカリ「セレネタウンを あるくあいだ、\nわたしも いっしょに いっていい？」",
+              "ユカリが ついてくるように なった！\n（セレネタウンを あるくと うしろに つくよ）",
+            ]);
+          } else {
+            this.showDialog([
+              "ユカリ「セレネタウンを あるくの たのしいね。\n星も 町も、光で いっぱい。」",
+            ]);
+          }
+          return;
+        }
+      }
     }
     // 通常トレーナー: どの向きから 話しかけても 振り向いて相手をする
     // （視線に入らなくても Aボタンで バトル開始）。
