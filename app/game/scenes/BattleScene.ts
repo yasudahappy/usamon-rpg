@@ -836,6 +836,7 @@ export class BattleScene extends Phaser.Scene {
     fureado: 1.15,
     prominence: 1.3,
     serenios: 1.3,
+    raymogura: 0.68,
   };
 
   // Extra multiplier applied ONLY to the back-view (the player's own monster).

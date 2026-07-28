@@ -7802,7 +7802,7 @@ export class MapScene extends Phaser.Scene {
       if (this.textures.exists("monster-raymogura")) {
         const spr = this.add.image(gx, gy + 8, "monster-raymogura").setDepth(62).setOrigin(0.5, 1);
         const src = this.textures.get("monster-raymogura").getSourceImage() as { width: number; height: number };
-        spr.setScale((ts * 1.7) / Math.max(src.width, src.height));
+        spr.setScale((ts * 1.25) / Math.max(src.width, src.height));
         this.tweens.add({ targets: spr, y: gy + 2, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       }
       this.nectarExam.push({ x: mx, y: my, fn: () => {
