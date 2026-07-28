@@ -1699,5 +1699,53 @@
     ],
     "color": "#ffd86a",
     "baseExp": 320
+  },
+  {
+    "id": "raymogura",
+    "name": "レイモグラ",
+    "type": "光",
+    "role": "すばやさ型",
+    "description": "コペルニクスの 地下を ほりすすむ 光のもぐら。ほった あとが 光条(レイ)のように かがやくという。星形の 鼻で くらやみでも 道が わかる。",
+    "baseStats": {
+      "hp": 20,
+      "attack": 16,
+      "defense": 12,
+      "speed": 18
+    },
+    "statsAt50": {
+      "hp": 102,
+      "attack": 108,
+      "defense": 70,
+      "speed": 122
+    },
+    "evolution": null,
+    "learnset": [
+      {
+        "level": 1,
+        "moveId": "tataku"
+      },
+      {
+        "level": 1,
+        "moveId": "hikari_no_tsubu"
+      },
+      {
+        "level": 8,
+        "moveId": "tsukiakari"
+      },
+      {
+        "level": 16,
+        "moveId": "lantern_flash"
+      },
+      {
+        "level": 26,
+        "moveId": "shooting_star"
+      },
+      {
+        "level": 34,
+        "moveId": "ryuseigun"
+      }
+    ],
+    "color": "#f6e6b0",
+    "baseExp": 92
   }
 ]
