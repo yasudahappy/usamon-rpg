@@ -29,6 +29,8 @@ export class OnlineScene extends Phaser.Scene {
   private peerTeam: TeamMon[] | null = null;
   private msg = "";
   private helloSent = false;
+  private myReady = false;
+  private peerReady = false;
 
   constructor() { super({ key: "OnlineScene" }); }
 
@@ -37,6 +39,7 @@ export class OnlineScene extends Phaser.Scene {
     this.page = "home";
     this.code = ""; this.entry = ""; this.peerName = "";
     this.peerTeam = null; this.msg = ""; this.helloSent = false;
+    this.myReady = false; this.peerReady = false;
     this.net = new BattleNet();
   }
 
@@ -221,10 +224,45 @@ export class OnlineScene extends Phaser.Scene {
         }).setOrigin(0.5));
       });
     }
-    this.els.push(this.add.text(W / 2, cy + cardH / 2 + 34, "たいせんバトルは じゅんびちゅう！\nつぎの アップデートで あそべるよ。", {
-      fontSize: "14px", color: "#c9702a", fontFamily: F, align: "center", lineSpacing: 5,
-    }).setOrigin(0.5));
-    this.button(W / 2, cy + cardH / 2 + 96, 220, 50, "とじる", () => this.returnToMap(), "secondary");
+    // じゅんびOK ボタン（両者が おすと たいせん開始）
+    const statusY = cy + cardH / 2 + 30;
+    if (this.myReady) {
+      this.els.push(this.add.text(W / 2, statusY, this.peerReady ? "はじまるよ！" : "あいての じゅんびを まってる…", {
+        fontSize: "15px", color: "#1a9a5a", fontFamily: F, fontStyle: "bold",
+      }).setOrigin(0.5));
+      this.button(W / 2, statusY + 46, 200, 48, "とじる", () => this.returnToMap(), "secondary");
+    } else {
+      if (this.peerReady) {
+        this.els.push(this.add.text(W / 2, statusY, "あいては じゅんびOK！", {
+          fontSize: "14px", color: "#c9702a", fontFamily: F,
+        }).setOrigin(0.5));
+      }
+      this.button(W / 2, statusY + (this.peerReady ? 30 : 8), 240, 56, "たいせん スタート", () => this.onReady(), "primary");
+      this.button(W / 2, statusY + (this.peerReady ? 96 : 74), 180, 44, "とじる", () => this.returnToMap(), "secondary");
+    }
+  }
+
+  private onReady(): void {
+    if (this.myReady) return;
+    this.myReady = true;
+    this.net.send({ k: "ready" });
+    if (this.peerReady) this.startBattle();
+    else this.render();
+  }
+
+  private startBattle(): void {
+    this.scene.start("NetBattleScene", {
+      net: this.net,
+      isHost: this.net.role === "host",
+      peerName: this.peerName,
+      myParty: this.sceneData.playerState?.party || [],
+      ret: {
+        mapKey: this.sceneData.mapKey,
+        playerX: this.sceneData.playerX,
+        playerY: this.sceneData.playerY,
+        playerState: this.sceneData.playerState,
+      },
+    });
   }
 
   private renderMessage(): void {
@@ -278,6 +316,10 @@ export class OnlineScene extends Phaser.Scene {
       this.sendHello();
       this.page = "connected";
       this.render();
+    } else if (d && d.k === "ready") {
+      this.peerReady = true;
+      if (this.myReady) this.startBattle();
+      else if (this.page === "connected") this.render();
     }
   }
 

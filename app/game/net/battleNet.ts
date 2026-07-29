@@ -67,6 +67,11 @@ export class BattleNet {
     ws.onclose = () => this.h.onClose?.();
   }
 
+  /** ハンドラを 差し替える（ロビー→対戦へ 引き継ぐときに使う）。 */
+  setHandlers(handlers: NetHandlers): void {
+    this.h = handlers;
+  }
+
   /** 相手へ データを 送る（中継が そのまま 転送する）。 */
   send(data: unknown): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
