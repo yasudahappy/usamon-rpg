@@ -32,6 +32,12 @@ export class OnlineScene extends Phaser.Scene {
   private myReady = false;
   private peerReady = false;
   private levelCap: number | null = null;   // null=そのまま / 50=Lv50にそろえる（ホストが決める）
+  // 十字キー/AB ナビゲーション
+  private focus: { cx: number; cy: number; w: number; h: number; onTap: () => void }[] = [];
+  private focusIdx = 0;
+  private navCols = 1;
+  private navBack: (() => void) | null = null;
+  private navPage: Page | "" = "";
 
   constructor() { super({ key: "OnlineScene" }); }
 
@@ -63,6 +69,7 @@ export class OnlineScene extends Phaser.Scene {
 
   private render(): void {
     this.clearEls();
+    this.focus = []; this.navCols = 1; this.navBack = null;
     const W = this.scale.width, H = this.scale.height;
     // 明るい背景（うすい空色のグラデーション風・2段）
     const bg = this.add.graphics();
@@ -83,7 +90,41 @@ export class OnlineScene extends Phaser.Scene {
     else if (this.page === "connected") this.renderConnected();
     else if (this.page === "message") this.renderMessage();
 
+    // ページが変わったら 選択位置を先頭へ。十字キーの ハイライトを描く。
+    if (this.navPage !== this.page) { this.focusIdx = 0; this.navPage = this.page; }
+    if (this.focusIdx >= this.focus.length) this.focusIdx = Math.max(0, this.focus.length - 1);
+    this.hlG = undefined;
+    this.drawFocusHighlightUpdate();
+
     this.els.forEach((o) => { if (o instanceof Phaser.GameObjects.Text) o.setResolution(2); });
+  }
+
+  // 十字キー / A / B の ナビゲーション。
+  update(): void {
+    const gp = (typeof window !== "undefined") ? (window as unknown as { __gamepad?: { dpad: string | null; dpadJust: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad : null;
+    if (!gp || this.focus.length === 0) { if (gp) { gp.aJust = false; gp.bJust = false; gp.menuJust = false; gp.dpadJust = null; } return; }
+    const dj = gp.dpadJust; gp.dpadJust = null;
+    if (dj) {
+      const n = this.focus.length, cols = Math.max(1, this.navCols);
+      if (dj === "right") this.focusIdx = Math.min(n - 1, this.focusIdx + 1);
+      else if (dj === "left") this.focusIdx = Math.max(0, this.focusIdx - 1);
+      else if (dj === "down") this.focusIdx = Math.min(n - 1, this.focusIdx + cols);
+      else if (dj === "up") this.focusIdx = Math.max(0, this.focusIdx - cols);
+      this.drawFocusHighlightUpdate();
+    }
+    if (gp.aJust) { gp.aJust = false; const f = this.focus[this.focusIdx]; if (f) f.onTap(); }
+    if (gp.bJust) { gp.bJust = false; if (this.navBack) this.navBack(); }
+    gp.menuJust = false;
+  }
+
+  // ハイライトだけ 更新（再描画せず 軽く）。
+  private hlG?: Phaser.GameObjects.Graphics;
+  private drawFocusHighlightUpdate(): void {
+    const f = this.focus[this.focusIdx];
+    if (!f) return;
+    if (!this.hlG || !this.hlG.active) { this.hlG = this.add.graphics(); this.els.push(this.hlG); }
+    this.hlG.clear();
+    this.hlG.lineStyle(3, 0xffd23f); this.hlG.strokeRoundedRect(f.cx - f.w / 2 - 4, f.cy - f.h / 2 - 4, f.w + 8, f.h + 8, 12);
   }
 
   /** 白いカード（コンテンツを囲って 余白を『意図した余白』に見せる）。 */
@@ -113,9 +154,11 @@ export class OnlineScene extends Phaser.Scene {
     const z = this.add.zone(cx - w / 2, cy - h / 2, w, h).setOrigin(0).setInteractive();
     z.on("pointerdown", onTap);
     this.els.push(g, t, z);
+    this.focus.push({ cx, cy, w, h, onTap });
   }
 
   private renderHome(): void {
+    this.navBack = () => this.returnToMap();
     const W = this.scale.width, cy = this.scale.height * 0.5;
     const cardH = 336;
     this.card(W / 2, cy, 380, cardH);
@@ -140,6 +183,7 @@ export class OnlineScene extends Phaser.Scene {
   }
 
   private renderHost(): void {
+    this.navBack = () => { this.net.close(); this.page = "home"; this.render(); };
     const W = this.scale.width, cy = this.scale.height * 0.5;
     this.card(W / 2, cy, 360, 250);
     this.els.push(this.add.text(W / 2, cy - 92, "この あいことばを\nともだちに おしえてね", {
@@ -160,6 +204,8 @@ export class OnlineScene extends Phaser.Scene {
   }
 
   private renderKeypad(): void {
+    this.navCols = 3;
+    this.navBack = () => { this.page = "home"; this.render(); };
     const W = this.scale.width;
     const kw = 82, kh = 58, gap = 12;
     const gridW = kw * 3 + gap * 2, gridH = kh * 4 + gap * 3;
@@ -286,6 +332,7 @@ export class OnlineScene extends Phaser.Scene {
   }
 
   private renderMessage(): void {
+    this.navBack = () => { this.net.close(); this.page = "home"; this.render(); };
     const W = this.scale.width, cy = this.scale.height * 0.5;
     this.card(W / 2, cy, 360, 200);
     this.els.push(this.add.text(W / 2, cy - 20, this.msg, {
