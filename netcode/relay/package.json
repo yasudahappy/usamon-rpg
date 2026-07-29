@@ -1,0 +1,10 @@
+{
+  "name": "usamon-battle-relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "うさもんRPG オンライン対戦の WebSocket 中継サーバー（あいことば=ルームコードで1対1をつなぐ）",
+  "main": "server.mjs",
+  "scripts": { "start": "node server.mjs" },
+  "dependencies": { "ws": "^8.18.0" }
+}
