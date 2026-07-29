@@ -31,6 +31,7 @@ export class OnlineScene extends Phaser.Scene {
   private helloSent = false;
   private myReady = false;
   private peerReady = false;
+  private levelCap: number | null = null;   // null=そのまま / 50=Lv50にそろえる（ホストが決める）
 
   constructor() { super({ key: "OnlineScene" }); }
 
@@ -39,7 +40,7 @@ export class OnlineScene extends Phaser.Scene {
     this.page = "home";
     this.code = ""; this.entry = ""; this.peerName = "";
     this.peerTeam = null; this.msg = ""; this.helloSent = false;
-    this.myReady = false; this.peerReady = false;
+    this.myReady = false; this.peerReady = false; this.levelCap = null;
     this.net = new BattleNet();
   }
 
@@ -224,8 +225,18 @@ export class OnlineScene extends Phaser.Scene {
         }).setOrigin(0.5));
       });
     }
+    // ルール：レベルを そろえるか（ホストが きめる・相手にも 共有）
+    const ruleY = cy + cardH / 2 + 24;
+    const isHost = this.net.role === "host";
+    const ruleLabel = this.levelCap ? `レベル：${this.levelCap}に そろえる` : "レベル：そのまま";
+    if (isHost && !this.myReady) {
+      this.els.push(this.add.text(W / 2 - 150, ruleY, "ルール", { fontSize: "13px", color: "#6b7ea0", fontFamily: F }).setOrigin(0, 0.5));
+      this.button(W / 2 + 30, ruleY, 240, 40, ruleLabel.replace("レベル：", ""), () => this.toggleRule(), "secondary");
+    } else {
+      this.els.push(this.add.text(W / 2, ruleY, ruleLabel, { fontSize: "13px", color: "#5a6b8c", fontFamily: F }).setOrigin(0.5));
+    }
     // じゅんびOK ボタン（両者が おすと たいせん開始）
-    const statusY = cy + cardH / 2 + 30;
+    const statusY = cy + cardH / 2 + 66;
     if (this.myReady) {
       this.els.push(this.add.text(W / 2, statusY, this.peerReady ? "はじまるよ！" : "あいての じゅんびを まってる…", {
         fontSize: "15px", color: "#1a9a5a", fontFamily: F, fontStyle: "bold",
@@ -242,10 +253,18 @@ export class OnlineScene extends Phaser.Scene {
     }
   }
 
+  /** ホストが レベルルールを 切り替える（そのまま ↔ Lv50にそろえる）。 */
+  private toggleRule(): void {
+    if (this.net.role !== "host" || this.myReady) return;
+    this.levelCap = this.levelCap ? null : 50;
+    this.net.send({ k: "rule", levelCap: this.levelCap });
+    this.render();
+  }
+
   private onReady(): void {
     if (this.myReady) return;
     this.myReady = true;
-    this.net.send({ k: "ready" });
+    this.net.send({ k: "ready", levelCap: this.levelCap });
     if (this.peerReady) this.startBattle();
     else this.render();
   }
@@ -256,6 +275,7 @@ export class OnlineScene extends Phaser.Scene {
       isHost: this.net.role === "host",
       peerName: this.peerName,
       myParty: this.sceneData.playerState?.party || [],
+      levelCap: this.levelCap,
       ret: {
         mapKey: this.sceneData.mapKey,
         playerX: this.sceneData.playerX,
@@ -316,8 +336,15 @@ export class OnlineScene extends Phaser.Scene {
       this.sendHello();
       this.page = "connected";
       this.render();
+    } else if (d && d.k === "rule") {
+      // ホストのルールを ゲストが 受け取って 同期
+      const dd = data as { levelCap?: number | null };
+      if (this.net.role !== "host") { this.levelCap = dd.levelCap ?? null; if (this.page === "connected") this.render(); }
     } else if (d && d.k === "ready") {
       this.peerReady = true;
+      const dd = data as { levelCap?: number | null };
+      // ゲストは ホストの ルールに あわせる（念のため ready にも のせている）
+      if (this.net.role !== "host" && dd.levelCap !== undefined) this.levelCap = dd.levelCap ?? null;
       if (this.myReady) this.startBattle();
       else if (this.page === "connected") this.render();
     }
