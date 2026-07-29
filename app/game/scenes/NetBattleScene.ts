@@ -332,7 +332,14 @@ export class NetBattleScene extends Phaser.Scene {
 
   // move menu
   private menuEls: Phaser.GameObjects.GameObject[] = [];
-  private clearMoveMenu(): void { this.menuEls.forEach((e) => e.destroy()); this.menuEls = []; }
+  private focus: { cx: number; cy: number; w: number; h: number; onTap: () => void }[] = [];
+  private focusIdx = 0;
+  private navCols = 1;
+  private hlG?: Phaser.GameObjects.Graphics;
+  private clearMoveMenu(): void {
+    this.menuEls.forEach((e) => e.destroy()); this.menuEls = [];
+    this.focus = []; this.hlG?.destroy(); this.hlG = undefined;
+  }
   private drawMoveMenu(): void {
     this.clearMoveMenu();
     const W = this.scale.width, H = this.scale.height;
@@ -344,6 +351,7 @@ export class NetBattleScene extends Phaser.Scene {
       const cx = x0 + col * (bw + gap), cy = y0 - (1 - row) * (bh + gap) + (bh + gap);
       this.moveButton(cx, cy, bw, bh, `${mv.name}`, () => this.chooseMove(i));
     });
+    this.navCols = 2; this.focusIdx = 0; this.drawHighlight();
   }
 
   private moveButton(cx: number, cy: number, w: number, h: number, label: string, onTap: () => void): void {
@@ -354,6 +362,7 @@ export class NetBattleScene extends Phaser.Scene {
     const z = this.add.zone(cx - w / 2, cy - h / 2, w, h).setOrigin(0).setInteractive();
     z.on("pointerdown", onTap);
     this.menuEls.push(g, t, z);
+    this.focus.push({ cx, cy, w, h, onTap });
   }
 
   private button(cx: number, cy: number, w: number, h: number, label: string, onTap: () => void): void {
@@ -364,5 +373,33 @@ export class NetBattleScene extends Phaser.Scene {
     const z = this.add.zone(cx - w / 2, cy - h / 2, w, h).setOrigin(0).setInteractive();
     z.on("pointerdown", onTap);
     this.els.push(g, t, z);
+    this.focus.push({ cx, cy, w, h, onTap });
+    this.navCols = 1; this.focusIdx = this.focus.length - 1; this.drawHighlight();
+  }
+
+  private drawHighlight(): void {
+    const f = this.focus[this.focusIdx];
+    this.hlG?.destroy(); this.hlG = undefined;
+    if (!f) return;
+    this.hlG = this.add.graphics();
+    this.hlG.lineStyle(3, 0xffd23f); this.hlG.strokeRoundedRect(f.cx - f.w / 2 - 4, f.cy - f.h / 2 - 4, f.w + 8, f.h + 8, 10);
+  }
+
+  // 十字キー / A ボタン ナビゲーション。
+  update(): void {
+    const gp = (typeof window !== "undefined") ? (window as unknown as { __gamepad?: { dpad: string | null; dpadJust: string | null; aJust: boolean; bJust: boolean; menuJust: boolean } }).__gamepad : null;
+    if (!gp) return;
+    if (this.focus.length === 0) { gp.aJust = false; gp.bJust = false; gp.menuJust = false; gp.dpadJust = null; return; }
+    const dj = gp.dpadJust; gp.dpadJust = null;
+    if (dj) {
+      const n = this.focus.length, cols = Math.max(1, this.navCols);
+      if (dj === "right") this.focusIdx = Math.min(n - 1, this.focusIdx + 1);
+      else if (dj === "left") this.focusIdx = Math.max(0, this.focusIdx - 1);
+      else if (dj === "down") this.focusIdx = Math.min(n - 1, this.focusIdx + cols);
+      else if (dj === "up") this.focusIdx = Math.max(0, this.focusIdx - cols);
+      this.drawHighlight();
+    }
+    if (gp.aJust) { gp.aJust = false; const f = this.focus[this.focusIdx]; if (f) f.onTap(); }
+    gp.bJust = false; gp.menuJust = false;
   }
 }
