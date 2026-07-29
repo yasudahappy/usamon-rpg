@@ -4,7 +4,7 @@ import { MonsterData, MoveData, MonsterInstance, PlayerState, TrainerData, Dayca
 import { loadSettings, saveSettings, GameSettings } from "../data/settings";
 import { calculateStats, getExpForLevel, refreshInstanceStats, createMonsterInstance } from "../data/levelSystem";
 
-const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "とじる"];
+const MENU_LABELS = ["ずかん", "てもち", "どうぐ", "プレイヤー", "レポート", "せってい", "たいせん", "とじる"];
 import { EncounterData, rollEncounter } from "../data/encounterSystem";
 import { ensureItemIconTexture } from "../data/itemIcons";
 import { ensureNatureGender, genderLabel, genderColor, genderSymbol, rollNatureGender, NATURE_MODS, applyNature } from "../data/natureGender";
@@ -2752,8 +2752,21 @@ export class MapScene extends Phaser.Scene {
       case 3: this.showPlayerInfoScreen(); break;
       case 4: this.showSaveScreen(); break;
       case 5: this.showSettingsScreen(); break;
-      case 6: this.closeMenu(); break;
+      case 6: this.openOnlineVersus(); break;
+      case 7: this.closeMenu(); break;
     }
+  }
+
+  /** オンライン対戦ロビー（OnlineScene）へ。もどると 現在地に 復帰する。 */
+  private openOnlineVersus(): void {
+    if (!this.playerState) return;
+    this.closeMenu();
+    this.scene.start("OnlineScene", {
+      playerState: this.playerState,
+      mapKey: this.currentMapKey,
+      playerX: this.gridX,
+      playerY: this.gridY,
+    });
   }
 
   // ---- Party Screen (ポケモン ルビサファ風) ----
