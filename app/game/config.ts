@@ -6,6 +6,7 @@ import { SetupScene } from "./scenes/SetupScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { EvolutionScene } from "./scenes/EvolutionScene";
 import { OnlineScene } from "./scenes/OnlineScene";
+import { NetBattleScene } from "./scenes/NetBattleScene";
 
 export function createGameConfig(
   parent: string | HTMLElement
@@ -35,6 +36,6 @@ export function createGameConfig(
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, TitleScene, SetupScene, MapScene, BattleScene, EvolutionScene, OnlineScene],
+    scene: [BootScene, TitleScene, SetupScene, MapScene, BattleScene, EvolutionScene, OnlineScene, NetBattleScene],
   };
 }
