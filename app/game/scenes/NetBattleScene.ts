@@ -14,6 +14,7 @@ interface NetBattleData {
   isHost: boolean;
   peerName: string;
   myParty: MonsterInstance[];
+  levelCap?: number | null;   // 指定があれば その レベルに そろえて 対戦（フェア）
   ret: RetInfo;
 }
 // ネットワーク上を流れる モンスター（自分の1体を 相手へ渡す）。
@@ -97,7 +98,9 @@ export class NetBattleScene extends Phaser.Scene {
     const all = (this.cache.json.get("monsters") || []) as MonsterData[];
     const data = all.find((m) => m.id === inst.dataId);
     const allMoves = (this.cache.json.get("moves") || []) as MoveData[];
-    const st = data ? calculateStats(data, inst.level) : { hp: 20, attack: 10, defense: 10, speed: 10 };
+    // レベルルール：cap 指定があれば その レベルで 能力を そろえる。
+    const level = this.d.levelCap ? this.d.levelCap : inst.level;
+    const st = data ? calculateStats(data, level) : { hp: 20, attack: 10, defense: 10, speed: 10 };
     const ids = inst.moves && inst.moves.length ? inst.moves : ["tataku"];
     const moves: BattleMove[] = ids.slice(0, 4).map((id) => {
       const m = allMoves.find((x) => x.id === id) || { name: "たたく", type: "ノーマル", power: 40, isSupport: false, pp: 20 } as MoveData;
@@ -105,7 +108,7 @@ export class NetBattleScene extends Phaser.Scene {
     });
     return {
       dataId: inst.dataId, name: data?.name ?? inst.dataId, type: data?.type ?? "ノーマル",
-      level: inst.level, maxHp: st.hp, currentHp: st.hp, attack: st.attack, defense: st.defense, speed: st.speed,
+      level, maxHp: st.hp, currentHp: st.hp, attack: st.attack, defense: st.defense, speed: st.speed,
       moves, attackMod: 1, defenseMod: 1, speedMod: 1,
     };
   }
