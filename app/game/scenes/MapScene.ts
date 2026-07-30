@@ -479,9 +479,15 @@ export class MapScene extends Phaser.Scene {
       this.placeCloudTown();
       this.placeCloudResourceBiz();
       this.placeDaycare();
+      this.placeVoiceGrunt();   // ヴォイスの したっぱ（最前線の町に 湧く）
       const pk = this.playerState?.pickups || [];
       if (this.playerState && !pk.includes("cloud_arrival_seen")) {
         this.time.delayedCall(700, () => this.playCloudArrival());
+      } else if (this.playerState &&
+                 this.playerState.defeatedTrainers.includes("kumona") &&
+                 !pk.includes("voice_shinobu_seen")) {
+        // ジム5クリア後に 町へ もどると シノブ初登場（ヴォイス編・転）
+        this.time.delayedCall(700, () => this.playShinobuIntro());
       }
     }
 
@@ -8449,6 +8455,87 @@ export class MapScene extends Phaser.Scene {
       "（きりを ぬけると、ひらけた 平原が\nひろがっていた……）",
       "ここが 雲の海——くものうみタウン。\nガスの ジムが あるらしい。",
     ], () => { this.inCutscene = false; });
+  }
+
+  /**
+   * ヴォイス編「転」：ジム5（クモナ）を倒したあと、くものうみタウンに
+   * 総帥 シノブが あらわれる。戦わずに 去る——プレイヤーを 値踏みして、
+   * 南極の水という 野望の 芯を におわせる 一幕。
+   */
+  private playShinobuIntro(): void {
+    if (this.hasPitFlag("voice_shinobu_seen")) return;
+    const ts = this.tileSize;
+    this.setPitFlag("voice_shinobu_seen");
+    this.inCutscene = true;
+    // プレイヤーの すこし北に 立たせる
+    const sx = this.gridX, sy = Math.max(1, this.gridY - 3);
+    const spr = this.add.image(sx * ts + ts / 2, sy * ts + ts / 2,
+      this.npcTex("cast-shinobu-down", "npc-kinoshita")).setDepth(9).setAlpha(0);
+    this.tweens.add({ targets: spr, alpha: 1, duration: 700 });
+    this.time.delayedCall(700, () => {
+      this.showDialog([
+        "？？？「——みごとな けむの さばきかた。」",
+        "（きりの中から、黒ずくめの 男が\n しずかに あらわれた）",
+        "シノブ「はじめまして。わたしは シノブ。\nヴォイスの そうすいだ。」",
+        "シノブ「バッジを 5つ。きみは もう\n『月の 有望株』らしいな。」",
+        "シノブ「ひとつ 教えよう。この 月で\nいちばん たかい ものは 何だと思う？」",
+        "シノブ「——水だ。のむ水、そだてる水、\nロケットの ねんりょうにもなる。\n月で 生きるための すべてだ。」",
+        "シノブ「その水が、南極の 永久影に\nこおって ねむっている。\nだれのものでもない、まだ ね。」",
+        "シノブ「わたしは それを 手に入れる。\nそして 正しい ねだんを つける。」",
+        "シノブ「きみが じゃまを するというなら——\nいや、いまは やめておこう。\nまだ 見ておきたい。」",
+        "（シノブは きりの中へ 消えていった……）",
+      ], () => {
+        this.tweens.add({
+          targets: spr, alpha: 0, duration: 800,
+          onComplete: () => { spr.destroy(); this.inCutscene = false; },
+        });
+      });
+    });
+  }
+
+  /**
+   * ヴォイスの したっぱ「追跡型」：物語の 最前線の町に 団員が 湧く。
+   * 話すと 水・南極・組織の 目的の『情報の断片』が 順に あつまる。
+   * 何度でも 話せる（撃破管理とは 別。ここでは 会話のみ）。
+   */
+  private placeVoiceGrunt(): void {
+    const ps = this.playerState;
+    if (!ps) return;
+    // 最前線＝進行フラグから いまの町を 決める（進むと 前の町から 消える）
+    const pk = ps.pickups || [];
+    const frontier = pk.includes("voice_shinobu_seen") ? "cloud_town" : "";
+    if (frontier !== this.currentMapKey) return;
+
+    const ts = this.tileSize;
+    const gx = 7, gy = 12;
+    this.add.image(gx * ts + ts / 2, gy * ts + ts / 2,
+      this.npcTex("cast-voice_grunt2-down", "npc-kinoshita")).setDepth(9);
+    // 情報の断片（話すたびに 次へ・最後まで 行ったら 最後のを くり返す）
+    const fragments: string[][] = [
+      [
+        "だんいん「うへぇ、そうすいの あとを\nついてきたら こんな 田舎か。」",
+        "だんいん「いいか、月で いちばんの お宝は\n金でも ヘリウムでもない。『水』だ。」",
+      ],
+      [
+        "だんいん「水はな、わけると 水素と 酸素。\nつまり ロケットの ねんりょうにも、\nすう 空気にも なるんだよ。」",
+        "だんいん「地球から 運んだら いくらかかると\n思う？ とんでもねぇ 額さ。」",
+      ],
+      [
+        "だんいん「だから 南極なんだ。\nクレーターの そこには 何十おく年も\n日が あたらない『永久影』がある。」",
+        "だんいん「そこに 氷が ねむってる。\n——ぜんぶ ヴォイスの ものになる。」",
+      ],
+      [
+        "だんいん「そうすいは 言ってる。\n『ただの 水に、正しい ねだんを つける』\nってな。」",
+        "だんいん「タダで くばるなんて バカらしい。\nそう 思わないか？」",
+      ],
+    ];
+    this.nectarExam.push({ x: gx, y: gy, fn: () => {
+      const seen = (ps.pickups ||= []);
+      let idx = 0;
+      while (idx < fragments.length - 1 && seen.includes(`voice_frag_${idx}`)) idx++;
+      if (!seen.includes(`voice_frag_${idx}`)) seen.push(`voice_frag_${idx}`);
+      this.showDialog(fragments[idx]);
+    } });
   }
 
   /** あずけや用テクスチャ（カウンター＋看板）を用意する。 */
