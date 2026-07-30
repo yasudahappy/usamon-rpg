@@ -71,6 +71,7 @@ export class MapScene extends Phaser.Scene {
     ryuma: ["genki", "kagen"],
     simone: ["rei", "tsurara"],
     luna: ["luna_gym1", "luna_gym2"],
+    kumona: ["cloud_gym1", "cloud_gym2"],
   };
   // Sealed exits/doors: openings that are not yet passable. Stepping toward one
   // of its tiles shows the messages and blocks passage.
@@ -466,6 +467,11 @@ export class MapScene extends Phaser.Scene {
     // きりのたに — ジム5への道の 霧ダンジョン（ガス出現）。
     if (this.currentMapKey === "kiri_valley") {
       this.placeKiriValley();
+    }
+
+    // くものうみジム — ガス。きりの中を ひかりの道しるべで すすむ。
+    if (this.currentMapKey === "gym_5") {
+      this.placeGym5();
     }
 
     // くものうみタウン — ジム5の町。リーダー クモナ。
@@ -7889,6 +7895,47 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
+  /** くものうみジム（ガス）：きりの もや＋ひかりの道しるべ＋教育看板。 */
+  private placeGym5(): void {
+    const ts = this.tileSize;
+    const W = this.mapData.width * ts, H = this.mapData.height * ts;
+    if (!this.textures.exists("kiri-fog")) {
+      const c = document.createElement("canvas"); c.width = 128; c.height = 128;
+      const g = c.getContext("2d")!;
+      const grad = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+      grad.addColorStop(0, "rgba(255,255,255,0.55)");
+      grad.addColorStop(0.55, "rgba(255,255,255,0.22)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+      this.textures.addCanvas("kiri-fog", c);
+    }
+    this.add.rectangle(0, 0, W, H, 0x9fb0d0, 0.12).setOrigin(0).setDepth(54);
+    let ks = 9151; const krnd = () => { ks = (ks * 16807) % 2147483647; return ks / 2147483647; };
+    for (let i = 0; i < 9; i++) {
+      const cx = krnd() * W, cy = (1.5 + krnd() * (this.mapData.height - 3)) * ts;
+      const scl = 2.4 + krnd() * 2.6;
+      const bank = this.add.image(cx, cy, "kiri-fog").setDisplaySize(ts * scl, ts * scl * 0.6)
+        .setTint(0xdfe4f2).setDepth(56).setAlpha(0.14 + krnd() * 0.12);
+      const drift = (krnd() < 0.5 ? 1 : -1) * (ts * 2 + krnd() * ts * 3);
+      this.tweens.add({ targets: bank, x: cx + drift, duration: 7000 + krnd() * 5000, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: krnd() * 3000 });
+    }
+    // ひかりの みちしるべ（きりの中の 正しい道）
+    const lights: [number, number][] = [[9, 21], [13, 18], [9, 15], [4, 12], [9, 9], [13, 6], [9, 4]];
+    for (const [x, y] of lights) {
+      const gx = x * ts + ts / 2, gy = y * ts + ts / 2;
+      const glow = this.add.graphics().setDepth(58);
+      glow.fillStyle(0xbfe6ff, 0.28); glow.fillCircle(gx, gy, ts * 0.5);
+      glow.fillStyle(0xffffff, 0.9); glow.fillCircle(gx, gy, ts * 0.12);
+      this.tweens.add({ targets: glow, alpha: 0.6, duration: 1300, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    // 教育看板（左かべ (1,10) から 左を むいて 読む）
+    this.nectarExam.push({ x: 0, y: 10, fn: () => this.showDialog([
+      "はり紙：『雲の海に 雲は ない』",
+      "月には 空気が ほとんど ない。だから\nほんとうの 雲や きりは できないんだ。",
+      "ここの きりは、地面ちかくに たまった\nガスと ちりの まぼろし。ひかりを\nたよりに すすもう。",
+    ]) });
+  }
+
   /** きりのたに：霧のヘイズ＋ただよう雲＋教育看板。 */
   private placeKiriValley(): void {
     const ts = this.tileSize;
@@ -8273,19 +8320,15 @@ export class MapScene extends Phaser.Scene {
       "きりの ふかい 谷。おくには なにか\nいわく ありげな 気配が……。",
     ]) });
 
-    // クモナ（ジム前に立つ）。ジム本体は次フェーズ。
+    // クモナ（ジム前に立つ・案内役）。ジムは かいかん済み（本体は gym_5）。
     const kx = 10, ky = 8;
     this.add.image(kx * ts + ts / 2, ky * ts + ts / 2, this.npcTex("cast-shiina-down", "npc-kinoshita")).setDepth(9);
     this.nectarExam.push({ x: kx, y: ky, fn: () => this.showDialog([
       "クモナ「あら、晴れの海から きたのね。」",
-      "クモナ「ここは 雲の海——きりと ガスの町。\nわたしの ジムは いま ととのえてる ところ。」",
-      "クモナ「じゅんびが できたら、けむに\nまかれない 自信、ためしに きてね。」",
+      "クモナ「ここは 雲の海——きりと ガスの町。\nわたしの くものうみジムは かいかんしたわ。」",
+      "クモナ「ジムの おくで まってる。\nけむに まかれない 自信、ためしに きてね。」",
     ]) });
-    // ジムの扉（準備中）
-    this.nectarExam.push({ x: 13, y: 7, fn: () => this.showDialog([
-      "くものうみジム——とびらは まだ かたく\nとじている。",
-      "『リーダー クモナ。かいかん もうすこし\nまっててね。』",
-    ]) });
+    // ジムの扉は 上の (13,7)→gym_5 ワープで 中へ 入れる（当たり判定を ふさがない）。
     // 海の教育看板（立て札の 見た目を つける。無いと『見えない かべ』になる）
     if (!this.textures.exists("sea-sign")) {
       const c = document.createElement("canvas"); c.width = 32; c.height = 32;

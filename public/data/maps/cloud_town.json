@@ -1420,6 +1420,13 @@
       "targetMap": "recovery_pod_6",
       "targetX": 5,
       "targetY": 6
+    },
+    {
+      "x": 13,
+      "y": 7,
+      "targetMap": "gym_5",
+      "targetX": 9,
+      "targetY": 23
     }
   ],
   "buildings": [
