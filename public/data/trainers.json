@@ -943,5 +943,55 @@
     ],
     "battleSprite": "trainer-girl",
     "overworldSprite": "shiina"
+  },
+  {
+    "id": "cloud_gym1",
+    "name": "ジムトレーナー モヤ",
+    "mapKey": "gym_5",
+    "x": 13,
+    "y": 17,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 950,
+    "dialogBefore": "くものうみジムへ ようこそ！\nここは きりが ふかくて 先が 見えない。\nでも ひかりの みちしるべが たすけてくれる。",
+    "dialogWin": "うわ、きりの中でも まよわないなんて！",
+    "dialogLose": "ふふ、けむに まかれたわね。",
+    "party": [
+      {
+        "id": "mochigori",
+        "level": 38
+      },
+      {
+        "id": "gorimocchi",
+        "level": 39
+      }
+    ],
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "worker"
+  },
+  {
+    "id": "cloud_gym2",
+    "name": "ジムトレーナー キリオ",
+    "mapKey": "gym_5",
+    "x": 4,
+    "y": 11,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 1000,
+    "dialogBefore": "月の『海』に 空気は ないんだ。\nだから ほんとうの 雲や きりは できない。\nここの きりは ちかくに たまった ガスと ちり。",
+    "dialogWin": "みごと！ ガスの ながれを 読んだね。",
+    "dialogLose": "きりの中では あわてないことさ。",
+    "party": [
+      {
+        "id": "gorimocchi",
+        "level": 39
+      },
+      {
+        "id": "mochigori",
+        "level": 40
+      }
+    ],
+    "battleSprite": "trainer-hoodie",
+    "overworldSprite": "hoodie"
   }
 ]
