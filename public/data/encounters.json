@@ -464,5 +464,46 @@
         "maxLevel": 33
       }
     ]
+  },
+  "kinan_route": {
+    "encounterRate": 0.11,
+    "monsters": [
+      {
+        "id": "sharisu",
+        "weight": 26,
+        "minLevel": 40,
+        "maxLevel": 43
+      },
+      {
+        "id": "regonyas",
+        "weight": 22,
+        "minLevel": 40,
+        "maxLevel": 42
+      },
+      {
+        "id": "sharian",
+        "weight": 16,
+        "minLevel": 42,
+        "maxLevel": 44
+      },
+      {
+        "id": "gorimocchi",
+        "weight": 16,
+        "minLevel": 41,
+        "maxLevel": 43
+      },
+      {
+        "id": "meteodon",
+        "weight": 12,
+        "minLevel": 41,
+        "maxLevel": 43
+      },
+      {
+        "id": "lunalux",
+        "weight": 8,
+        "minLevel": 41,
+        "maxLevel": 43
+      }
+    ]
   }
 }

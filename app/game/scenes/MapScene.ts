@@ -72,6 +72,7 @@ export class MapScene extends Phaser.Scene {
     simone: ["rei", "tsurara"],
     luna: ["luna_gym1", "luna_gym2"],
     kumona: ["cloud_gym1", "cloud_gym2"],
+    kageri: ["kinan_gym1", "kinan_gym2"],
   };
   // Sealed exits/doors: openings that are not yet passable. Stepping toward one
   // of its tiles shows the messages and blocks passage.
@@ -473,6 +474,18 @@ export class MapScene extends Phaser.Scene {
     if (this.currentMapKey === "gym_5") {
       this.placeGym5();
     }
+
+    // 危難の海（Mare Crisium）編：わたり・町・ジム6。
+    if (this.currentMapKey === "kinan_route") this.placeKinanRoute();
+    if (this.currentMapKey === "kinan_town") {
+      this.placeKinanTown();
+      this.placeVoiceGrunt();
+      const pk2 = this.playerState?.pickups || [];
+      if (this.playerState && !pk2.includes("kinan_arrival_seen")) {
+        this.time.delayedCall(700, () => this.playKinanArrival());
+      }
+    }
+    if (this.currentMapKey === "gym_6") this.placeGym6();
 
     // くものうみタウン — ジム5の町。リーダー クモナ。
     if (this.currentMapKey === "cloud_town") {
@@ -7940,6 +7953,137 @@ export class MapScene extends Phaser.Scene {
       "月には 空気が ほとんど ない。だから\nほんとうの 雲や きりは できないんだ。",
       "ここの きりは、地面ちかくに たまった\nガスと ちりの まぼろし。ひかりを\nたよりに すすもう。",
     ]) });
+  }
+
+  /** 青白い「地球照」のトーンを マップ全体に かける（危難の海 共通の 空気感）。 */
+  private earthshineTint(alpha = 0.10): void {
+    const W = this.mapData.width * this.tileSize, H = this.mapData.height * this.tileSize;
+    this.add.rectangle(0, 0, W, H, 0x7fa0d8, alpha).setOrigin(0).setDepth(52);
+  }
+
+  /** きなんのわたり：太陽が ひくく、影が ながい みち。 */
+  private placeKinanRoute(): void {
+    const ts = this.tileSize;
+    this.earthshineTint(0.08);
+    // ながい影：岩の 東がわに のびる 影を 描く
+    let s = 777; const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    for (let i = 0; i < 26; i++) {
+      const x = (1 + Math.floor(rnd() * (this.mapData.width - 2))) * ts;
+      const y = (1 + Math.floor(rnd() * (this.mapData.height - 2))) * ts;
+      if (!this.isCollision(Math.floor(x / ts), Math.floor(y / ts))) continue;
+      const g = this.add.graphics().setDepth(4);
+      g.fillStyle(0x0d0f16, 0.42);
+      g.fillEllipse(x + ts * 1.4, y + ts * 0.7, ts * 2.6, ts * 0.5);
+    }
+    this.nectarExam.push({ x: 8, y: 12, fn: () => this.showDialog([
+      "たて札：『危難の海（Mare Crisium）』",
+      "ほかの 海と つながらない、ぽつんと\n浮かぶ まるい 海。ふちの 山なみが\nぐるりと 囲んでいる。",
+      "太陽が ひくいので、影が とても\nながく のびる。だから 影の アルモンが\nあつまるらしい。",
+    ]) });
+  }
+
+  /** きなんのうみタウン：孤立した円の町。地球照・ルナ24号きねんひ（水の伏線）。 */
+  private placeKinanTown(): void {
+    const ts = this.tileSize;
+    this.earthshineTint(0.12);
+    // 低い空に かかる 地球（この町の シンボル）
+    if (!this.textures.exists("earth-low")) {
+      const c = document.createElement("canvas"); c.width = 64; c.height = 64;
+      const ctx = c.getContext("2d")!;
+      const g = ctx.createRadialGradient(28, 26, 4, 32, 32, 30);
+      g.addColorStop(0, "#7fb6f0"); g.addColorStop(0.55, "#3f6fbf"); g.addColorStop(1, "#16305e");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(32, 32, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(120,200,140,0.55)";
+      ctx.beginPath(); ctx.ellipse(25, 26, 9, 6, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(40, 39, 7, 5, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.beginPath(); ctx.ellipse(33, 22, 11, 4, 0.2, 0, Math.PI * 2); ctx.fill();
+      this.textures.addCanvas("earth-low", c);
+    }
+    const earth = this.add.image(24 * ts, 2 * ts, "earth-low").setDepth(3).setScale(1.6).setAlpha(0.95);
+    this.tweens.add({ targets: earth, y: earth.y - 6, duration: 4200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+
+    // ルナ24号 きねんひ（町の中央）——実話：もち帰った 土から 水の こん跡
+    if (!this.textures.exists("luna24-monument")) {
+      const c = document.createElement("canvas"); c.width = 32; c.height = 40;
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.ellipse(16, 37, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5b6478"; ctx.fillRect(6, 28, 20, 8);        // だい
+      ctx.fillStyle = "#7c8698"; ctx.fillRect(11, 10, 10, 18);      // 塔
+      ctx.fillStyle = "#9fb0c8"; ctx.fillRect(11, 10, 3, 18);
+      ctx.fillStyle = "#c9d8ee"; ctx.fillRect(9, 6, 14, 4);         // 上部
+      ctx.fillStyle = "#8fd4ff"; ctx.fillRect(14, 14, 4, 4);        // 水の しずく（青）
+      this.textures.addCanvas("luna24-monument", c);
+    }
+    this.add.image(15 * ts + ts / 2, 12 * ts + ts / 2 - 4, "luna24-monument").setDepth(8);
+    this.nectarExam.push({ x: 15, y: 12, fn: () => this.showDialog([
+      "『ルナ24号 きねんひ』",
+      "1976年、ソれんの ルナ24号が この\n危難の海に 着陸。地下 2mまで ほって\n約170gの 土を 地球へ 持ち帰った。",
+      "——それが 人類さいごの『無人 試料\n回収』に なった。つぎに 月の 石が\nとどくまで、40年以上 かかったんだ。",
+      "そして その 土から、ごく わずかな\n『水』の こん跡が 見つかったという。\n月に 水はない、と 思われていたのに。",
+      "（水……ヴォイスが 追っている ものだ）",
+    ]) });
+
+    // 町の人たち（この町の 個性：孤立・地球照・ルナ24号）
+    this.add.image(11 * ts + ts / 2, 15 * ts + ts / 2, this.npcTex("cast-elder-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: 11, y: 15, fn: () => this.showDialog([
+      "ろうじん「この海は なぁ、ほかの海と\nつながっとらん。ぐるりと 山に かこまれた\n『ひとりぼっちの 円』じゃ。」",
+      "ろうじん「だからかの。ここの 者は\nみな、たがいを 大事にする。」",
+    ]) });
+    this.add.image(19 * ts + ts / 2, 15 * ts + ts / 2, this.npcTex("cast-char6-down", "npc-mom")).setDepth(9);
+    this.nectarExam.push({ x: 19, y: 15, fn: () => this.showDialog([
+      "こども「よるでも まっくらじゃ ないんだ！」",
+      "こども「地球が ぼんやり てらしてくれる。\n『地球照』って いうんだって。」",
+      "こども「地球は 月より ずっと 大きく 見える。\nしかも 空の おなじ ところに いるんだよ。」",
+    ]) });
+    this.add.image(15 * ts + ts / 2, 17 * ts + ts / 2, this.npcTex("cast-sunaga-down", "npc-kinoshita")).setDepth(9);
+    this.nectarExam.push({ x: 15, y: 17, fn: () => {
+      const given = this.awardNectarItem("kinan_welcome_gift", "moon_honey", "ムーンハニー", [
+        "けんきゅういん「危難の海へ ようこそ。\nルナ24号の 土を いまも しらべてるんだ。」",
+        "けんきゅういん「水の こん跡は ほんの\nすこし。でも『ある』と『ない』は\n天と地ほど ちがう。」",
+        "けんきゅういん「これ、どうぞ。\n長い たびに なるだろうから。」",
+      ]);
+      if (!given) this.showDialog([
+        "けんきゅういん「南極には もっと たくさんの\n氷が ある。……ねらう者も いるがね。」",
+      ]);
+    } });
+    // ジム案内
+    this.nectarExam.push({ x: 13, y: 8, fn: () => this.showDialog([
+      "『影のジム 【きなんジム】\nリーダー カゲリ。』",
+      "『影は ひかりが あるから 生まれる。』",
+    ]) });
+  }
+
+  /** きなんジム（影）：影の柱＋地球照の あかりの 道しるべ。 */
+  private placeGym6(): void {
+    const ts = this.tileSize;
+    this.earthshineTint(0.07);
+    // 地球照の あかりが ぼうっと 光る（道しるべ）
+    const lights: [number, number][] = [[9, 21], [3, 19], [3, 15], [12, 15], [12, 11], [3, 11], [3, 7], [9, 7], [9, 4]];
+    for (const [x, y] of lights) {
+      const gx = x * ts + ts / 2, gy = y * ts + ts / 2;
+      const glow = this.add.graphics().setDepth(6);
+      glow.fillStyle(0x9fc4f5, 0.22); glow.fillCircle(gx, gy, ts * 0.75);
+      glow.fillStyle(0xdcebff, 0.30); glow.fillCircle(gx, gy, ts * 0.32);
+      this.tweens.add({ targets: glow, alpha: 0.55, duration: 1500, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    this.nectarExam.push({ x: 0, y: 20, fn: () => this.showDialog([
+      "はり紙：『地球照（ちきゅうしょう）』",
+      "月の 夜を てらすのは、地球が はねかえした\n太陽の 光。地球は 月から 見ると\nとても 大きく、いつも 同じ ところにある。",
+      "影の柱に まよったら、この あかりを\nたどれば いい。",
+    ]) });
+  }
+
+  /** きなんのうみタウン 到着カットシーン。 */
+  private playKinanArrival(): void {
+    if (this.hasPitFlag("kinan_arrival_seen")) return;
+    this.setPitFlag("kinan_arrival_seen");
+    this.inCutscene = true;
+    this.showDialog([
+      "（山なみを こえると、まるい 海が\n ぽつんと 広がっていた……）",
+      "ここが 危難の海——きなんのうみタウン。",
+      "空の ひくい ところに 地球が かかり、\n町を 青白く てらしている。",
+    ], () => { this.inCutscene = false; });
   }
 
   /** きりのたに：霧のヘイズ＋ただよう雲＋教育看板。 */
