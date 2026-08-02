@@ -993,5 +993,134 @@
     ],
     "battleSprite": "trainer-hoodie",
     "overworldSprite": "hoodie"
+  },
+  {
+    "id": "kinan_route1",
+    "name": "かげふみ ノキ",
+    "mapKey": "kinan_route",
+    "x": 6,
+    "y": 8,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 1050,
+    "dialogBefore": "見て、影が こんなに ながい。\n危難の海は 太陽が ひくいんだ。\n——かげの こさで しょうぶ しよう！",
+    "dialogWin": "きみの 影は こくて つよいね。",
+    "dialogLose": "ながい影に のまれたな。",
+    "party": [
+      {
+        "id": "sharisu",
+        "level": 42
+      },
+      {
+        "id": "regonyas",
+        "level": 42
+      }
+    ],
+    "battleSprite": "trainer-hoodie",
+    "overworldSprite": "hoodie"
+  },
+  {
+    "id": "kinan_route2",
+    "name": "かんそくいん ミオ",
+    "mapKey": "kinan_route",
+    "x": 15,
+    "y": 6,
+    "direction": "left",
+    "sightRange": 3,
+    "prizeMoneyBase": 1100,
+    "dialogBefore": "あの まるい 海が 危難の海。\nほかの海と つながってない、\nぽつんと ひとつの 海なの。",
+    "dialogWin": "…みごと。いい 観測データに なったわ。",
+    "dialogLose": "孤立した海は きびしいのよ。",
+    "party": [
+      {
+        "id": "sharian",
+        "level": 43
+      },
+      {
+        "id": "meteodon",
+        "level": 42
+      }
+    ],
+    "battleSprite": "trainer-shiina",
+    "overworldSprite": "shiina"
+  },
+  {
+    "id": "kinan_gym1",
+    "name": "ジムトレーナー ソイ",
+    "mapKey": "gym_6",
+    "x": 4,
+    "y": 16,
+    "direction": "down",
+    "sightRange": 3,
+    "prizeMoneyBase": 1150,
+    "dialogBefore": "きなんジムへ ようこそ。\n影の柱で 道は くぎられている。\n地球照の あかりを たどるんだ。",
+    "dialogWin": "あかりを 見うしなわなかったか。",
+    "dialogLose": "影に まぎれたな。",
+    "party": [
+      {
+        "id": "regonyas",
+        "level": 44
+      },
+      {
+        "id": "sharisu",
+        "level": 45
+      }
+    ],
+    "battleSprite": "trainer-worker",
+    "overworldSprite": "worker"
+  },
+  {
+    "id": "kinan_gym2",
+    "name": "ジムトレーナー ヨミ",
+    "mapKey": "gym_6",
+    "x": 12,
+    "y": 12,
+    "direction": "left",
+    "sightRange": 3,
+    "prizeMoneyBase": 1200,
+    "dialogBefore": "月の 夜は まっくらだと 思う？\nちがうの。地球が てらしてくれる。\n『地球照』——月の 夜の あかり。",
+    "dialogWin": "あなたにも あかりが 見えたのね。",
+    "dialogLose": "まだ 夜は ふかいわ。",
+    "party": [
+      {
+        "id": "sharisu",
+        "level": 45
+      },
+      {
+        "id": "sharian",
+        "level": 46
+      }
+    ],
+    "battleSprite": "trainer-emo",
+    "overworldSprite": "emo"
+  },
+  {
+    "id": "kageri",
+    "name": "ジムリーダー カゲリ",
+    "mapKey": "gym_6",
+    "x": 9,
+    "y": 2,
+    "direction": "down",
+    "sightRange": 0,
+    "prizeMoneyBase": 2900,
+    "dialogBefore": "よく ここまで きたね。\nわたしは カゲリ。危難の海の ジムリーダー。\nここは ほかの海と つながらない、\nひとりぼっちの まるい 海。\n——でも 影は、ひかりが あるから 生まれる。\nわたしの 影、うけとめてみて。",
+    "dialogWin": "……つよい。\nあなたの ひかりが、わたしの影を\nくっきり させたのね。\nクライシスバッジを どうぞ。",
+    "dialogLose": "影は かんたんには つかめないよ。",
+    "party": [
+      {
+        "id": "regonyas",
+        "level": 45
+      },
+      {
+        "id": "sharisu",
+        "level": 47
+      },
+      {
+        "id": "sharian",
+        "level": 49
+      }
+    ],
+    "battleSprite": "trainer-bikyaku",
+    "overworldSprite": "bikyaku"
   }
 ]

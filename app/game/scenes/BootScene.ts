@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 import { MapData } from "../types";
 import { MonsterData } from "../data/types";
 
-const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4", "gym_5", "copernicus_cave", "moon_altar", "kiri_valley", "cloud_town", "house_12", "house_13", "daycare", "luna_rille", "cloud_house", "recovery_pod_6"];
+const MAP_KEYS = ["moonbase", "moon_town", "sand_route_1", "sand_route_2", "crater_city", "gym_1", "recovery_pod", "planet_shop", "player_home", "rival_home", "medical_center", "house_1", "house_2", "house_3", "house_4", "farm_dome", "crater_cave", "crater_cave_b1", "crater_cave_b2", "nectar_town", "recovery_pod_2", "planet_shop_2", "house_5", "house_6", "house_7", "gym_2", "frost_route_1", "pit_village", "lava_tube", "recovery_pod_3", "house_8", "planet_shop_3", "lava_tube_deep", "rill_route", "minori_town", "gym_3", "recovery_pod_4", "planet_shop_4", "house_9", "taurus_pass", "taurus_cave", "taurus_cave_b1", "serene_town", "recovery_pod_5", "planet_shop_5", "house_10", "house_11", "gym_4", "gym_5", "gym_6", "kinan_route", "kinan_town", "recovery_pod_7", "planet_shop_6", "house_14", "house_15", "copernicus_cave", "moon_altar", "kiri_valley", "cloud_town", "house_12", "house_13", "daycare", "luna_rille", "cloud_house", "recovery_pod_6"];
 
 // Full-body pixel-art sprites (front-facing: enemy in battle, party, dex).
 const MONSTER_SPRITE_IDS = [
@@ -547,6 +547,61 @@ export class BootScene extends Phaser.Scene {
         ctx.strokeStyle = "rgba(120,140,175,0.4)"; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
         ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
+      } else if (id === "150") {
+        // 危難の海：くろ玄武岩。ほかの海と つながらない 孤立した円の 暗い地面。
+        let s = 150; const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#2f3340"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#272b36";
+        for (let i = 0; i < 24; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.fillStyle = "#3b4152";
+        for (let i = 0; i < 14; i++) ctx.fillRect(rand() * ts, rand() * ts, 1, 1);
+        ctx.strokeStyle = "rgba(18,20,26,0.5)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
+      } else if (id === "151") {
+        // 危難の海：地球照の道。地球の 反射光で 青白く ぼんやり 照らされた 歩道。
+        ctx.fillStyle = "#49566e"; ctx.fillRect(0, 0, ts, ts);
+        const g = ctx.createRadialGradient(16, 16, 1, 16, 16, 19);
+        g.addColorStop(0, "rgba(150,190,240,0.30)"); g.addColorStop(1, "rgba(150,190,240,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, ts, ts);
+        let s2 = 151; const r2 = () => { s2 = (s2 * 16807) % 2147483647; return s2 / 2147483647; };
+        ctx.fillStyle = "rgba(200,225,255,0.35)";
+        for (let i = 0; i < 7; i++) ctx.fillRect(r2() * ts, r2() * ts, 1, 1);
+        ctx.strokeStyle = "rgba(30,36,48,0.45)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.lineTo(ts, 0.5);
+        ctx.moveTo(0.5, 0); ctx.lineTo(0.5, ts); ctx.stroke();
+      } else if (id === "152") {
+        // 危難の海：きねんの広場（ルナ24号の記念広場）。石畳に 青白い ふちどり。
+        ctx.fillStyle = "#55617a"; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(160,195,240,0.45)"; ctx.lineWidth = 1;
+        ctx.strokeRect(2.5, 2.5, ts - 5, ts - 5);
+        ctx.fillStyle = "rgba(190,215,250,0.30)";
+        for (const [rx, ry] of [[5, 5], [ts - 7, 5], [5, ts - 7], [ts - 7, ts - 7]] as [number, number][]) {
+          ctx.fillRect(rx, ry, 2, 2);
+        }
+      } else if (id === "160") {
+        // きなんジム：床。
+        let s = 160; const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+        ctx.fillStyle = "#262a38"; ctx.fillRect(0, 0, ts, ts);
+        ctx.fillStyle = "#1f2331";
+        for (let i = 0; i < 18; i++) ctx.fillRect(rand() * ts, rand() * ts, 2, 1);
+        ctx.strokeStyle = "rgba(16,18,24,0.5)"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
+      } else if (id === "161") {
+        // きなんジム：影の柱（通れない）。
+        ctx.fillStyle = "#14161e"; ctx.fillRect(0, 0, ts, ts);
+        const g = ctx.createLinearGradient(0, 0, 0, ts);
+        g.addColorStop(0, "rgba(70,80,105,0.35)"); g.addColorStop(1, "rgba(10,11,16,0)");
+        ctx.fillStyle = g; ctx.fillRect(3, 0, ts - 6, ts);
+        ctx.fillStyle = "rgba(90,105,135,0.25)"; ctx.fillRect(3, 0, 2, ts);
+      } else if (id === "162") {
+        // きなんジム：地球照の あかり（道しるべ）。
+        ctx.fillStyle = "#5a6b8c"; ctx.fillRect(0, 0, ts, ts);
+        const g = ctx.createRadialGradient(16, 16, 1, 16, 16, 17);
+        g.addColorStop(0, "rgba(190,220,255,0.55)"); g.addColorStop(1, "rgba(190,220,255,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, ts, ts);
+        ctx.strokeStyle = "rgba(28,34,46,0.45)"; ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, ts - 1, ts - 1);
       } else if (id === "61") {
         // Paved walkway: light stone panels with seams + corner rivets
         ctx.strokeStyle = "#c2baa8"; ctx.lineWidth = 1;

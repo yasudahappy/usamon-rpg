@@ -1427,6 +1427,13 @@
       "targetMap": "gym_5",
       "targetX": 9,
       "targetY": 23
+    },
+    {
+      "x": 24,
+      "y": 12,
+      "targetMap": "kinan_route",
+      "targetX": 1,
+      "targetY": 11
     }
   ],
   "buildings": [
